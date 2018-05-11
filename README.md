@@ -22,21 +22,21 @@ Windows-Interact also relies moderately on [nircmd](http://nircmd.nirsoft.net/),
 ---
 Used to set various thing within Windows, as well as set preferences for windows-interact
 
-### Set the volume of the current audio device
+#### Set the volume of the current audio device
 ---
 This 99% accurate due to the math required behind the scenes
 ```javascript
 System.set.volume('50');
 ```
 
-### Set the default playback device in Windows
+#### Set the default playback device in Windows
 ---
 
 ```javascript
 System.set.defaultSoundDevice('Headset Earphone');
 ```
 
-### Set Global user preferences for Windows Interact
+#### Set Global user preferences for Windows Interact
 ---
 
 ```javascript
@@ -184,7 +184,7 @@ To get started, you need to register your apps. You will need the absolute path 
 
 NOTICE: The registered name must be the same as the executable.
 
-### Register a new application
+#### Register a new application
 
 ```javascript
 System.appManager.register({
@@ -212,31 +212,31 @@ System.appManager.register({
 });
 ```
 
-### Retrieve registered applications
+#### Retrieve registered applications
 
 ```javascript
 System.appManager.registeredApplications
 ```
 
-### Launch a registered application
+#### Launch a registered application
 
 ```javascript
 System.appManager.launch('notepad');
 ```
 
-### Kill a registered application
+#### Kill a registered application
 
 ```javascript
 System.appManager.kill('notepad');
 ```
 
-### Hide a registered application
+#### Hide a registered application
 
 ```javascript
 System.appManager.hide('notepad');
 ```
 
-### Switch to a registered application
+#### Switch to a registered application
 
 ```javascript
 System.appManager.switchTo('notepad');
@@ -249,7 +249,7 @@ System.appManager.switchTo('notepad');
 `System.process` is very similar to `appManager`, but can be used for unregistered apps. Use sparcely and avoid loops, this is not as efficient as `appManager`.
 
 
-### Get PID of a running process
+#### Get PID of a running process
 
 Returns an array of PIDs associated with a running process. If no process is found, false is returned. The data is piped into a callback.
 
@@ -259,13 +259,13 @@ System.process.getPid('notepad', function(output) {
 });
 ```
 
-### Kill a running app
+#### Kill a running app
 
 ```javascript
 System.process.kill('notepad', callback);
 ```
 
-### Run a callback when a process is killed
+#### Run a callback when a process is killed
 App must already be running, if not, it will wait until it has started and then tell powershell to wait until the app is done before continuing.
 
 ```javascript
@@ -274,7 +274,7 @@ System.process.onKill('notepad', function() {
 });
 ```
 
-### Run a callback when a process is spawned
+#### Run a callback when a process is spawned
 
 Honestly this probably doesn't even work. This is on the todo list to fix, so just don't use it.
 
@@ -284,7 +284,7 @@ System.process.onLaunch('notepad', function() {
 });
 ```
 
-### Get Window Title of running application
+#### Get Window Title of running application
 
 ```javascript
 System.process.getWindowTitle('notepad', function(output) {
@@ -292,7 +292,7 @@ System.process.getWindowTitle('notepad', function(output) {
 });
 ```
 
-### Check if a process is running
+#### Check if a process is running
 
 ```javascript
     System.process.isRunning('notepad', function(bool) {
