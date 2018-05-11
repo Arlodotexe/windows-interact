@@ -1,12 +1,12 @@
 # windows-interact
 This library is a collection of tools for interacting with and automating Windows. It is designed to simplify and enhance existing tools while providing access to powerful new features. 
 
-This started out as a personal project to help automate some IoT stuff and automate Windows, and as such there may be some functionality that would only make sense in such a use case (such as `System.error`'s `receivingDevice` parameter). I plan on leaving this type of functionality unless enough people ask otherwise.
-
 ## NOTICE
 ---
 
 This is incomplete documentation. I originally intended for this module to remain private and for personal use. I changed my mind, and since I worked on it for two months, I have 2 months worth of code to document. 
+
+This started out as a personal project to help automate some IoT stuff and automate Windows, and as such there may be some functionality that would only make sense in such a use case (such as `System.error`'s `receivingDevice` parameter). I plan on leaving this type of functionality unless enough people ask otherwise.
 
 # Installation 
 --- 
@@ -88,7 +88,11 @@ System.error('Logged information');
 System.error('Error changing temp', 'Thermostat'); // Output: ERROR @ Thermostat: Error changing temp
 ```
 
-### 
+### `System.path`
+Return a properly formatted Windows path for use in Javascript. This allows you to simply copy and paste a path from the File Explorer without having to alter character-escaping (`\`) slashes
+```javascript
+System.path`C:\WINDOWS\system32\notepad.exe`;
+```
 
 ### `System.speak()`
 ---
