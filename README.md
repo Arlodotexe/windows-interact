@@ -22,25 +22,22 @@ Windows-Interact also relies moderately on [nircmd](http://nircmd.nirsoft.net/),
 ---
 Used to set various thing within Windows, as well as set preferences for windows-interact
 
-### `System.set.volume()`
+### Set the volume of the current audio device
 ---
-Set the volume of the current audio device (99% accurate)
-
+This 99% accurate due to the math required behind the scenes
 ```javascript
 System.set.volume('50');
 ```
 
-### `System.set.defaultSoundDevice()`
+### Set the default playback device in Windows
 ---
-Set the default playback device in Windows
 
 ```javascript
 System.set.defaultSoundDevice('Headset Earphone');
 ```
 
-### `System.set.preferences`
+### Set Global user preferences for Windows Interact
 ---
-Set Global user preferences for Windows Interact
 
 ```javascript
 System.set.preferences({ 
@@ -366,6 +363,7 @@ System.PowerShell('Restart-Service -Name Audiosrv', function(output){
     doSomething();
 }, {supressErorrs: true, noLog: true});
 ```
+
 
 
 ## More to come very very soon.
