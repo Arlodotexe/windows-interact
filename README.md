@@ -366,6 +366,68 @@ System.PowerShell('Restart-Service -Name Audiosrv', function(output){
 }, {supressErorrs: true, noLog: true});
 ```
 
+### `System.requestTo()`
+---
 
+Make an HTTP request the easy way.
+
+To simplify this feature and make using it more natural, there is some flexibility with the parameters
+
+- There are 4 default parameters which will work in every scenario (no shorthand): `deviceName, method, formData, callback`
+- If the all parameters are ommited, an assumed GET request will be made.
+- If the second paramter is a function, it will assume that this is a callback and an assumed GET request will be made
+- If the third parameter is an object, it will send this as form data.
+- If the third parameter is a function, it execute it as a callback
+
+You can give friendly, reuseable names to URLs with `System.set.preferences`. These are used in place of a URL when sending a request.
+
+```javascript
+System.set.preferences({
+    httpUrls: { 
+        thisMachine: 'http://127.0.0.1:80/',
+        thermostat: 'http://localhost:8084/'
+    }
+});
+```
+
+```javascript
+// Make a POST request
+System.requestTo('http://httpbin.org/post/', 'POST', {
+    property: 'value'
+});
+
+// Make a POST request, then do something with the response
+System.requestTo('http://httpbin.org/post/', 'POST', {
+    property: 'value'
+}, function(response) {
+    System.log(response);
+});
+
+// Make a GET request
+System.requestTo('http://httpbin.org/get/', 'GET', function(response) {
+    System.log(response)
+});
+
+// Make an assumed GET request
+System.requestTo('http://httpbin.org/get/', function(response) {
+    System.log(response)
+});
+
+// Make an assumed GET request to a predefined URL, and do nothing else
+System.requestTo('thermostat');
+
+// Make a PUT request
+System.requestTo('thisMachine', 'PUT', {
+    property: 'value'
+});
+
+// Make a PUT request, then do something with the response
+System.requestTo('thisMachine', 'PUT', {
+    property: 'value'
+}, function(response) {
+    System.log(response)
+});
+
+```
 
 ## More to come very very soon.
