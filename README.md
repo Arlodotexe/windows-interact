@@ -299,9 +299,9 @@ System.process.getWindowTitle('notepad', function(output) {
         System.log(bool);
     });
 ```
----
-### `System.cmd()`
 
+### `System.cmd()`
+---
 Run a command in Command Prompt.
 
 Instead of simply printing errors and output, errors that occur will use `System.error()` and the output will use `System.log()`
@@ -333,7 +333,7 @@ System.cmd('tasklist', function(output){
 ```
 
 ### `System.PowerShell()`
-
+---
 Run a PowerShell command
 
 Instead of simply printing errors and output, errors that occur will use System.error() and the output will use System.log()
