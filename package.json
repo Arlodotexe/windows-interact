@@ -1,0 +1,24 @@
+{
+  "name": "windows-interact",
+  "version": "1.0.0",
+  "description": "NPM Library of various tools for interacting with Windows ",
+  "main": "windows-interact.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Arlodotexe/windows-interact.git"
+  },
+  "author": "Arlodotexe",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Arlodotexe/windows-interact/issues"
+  },
+  "homepage": "https://github.com/Arlodotexe/windows-interact#readme",
+  "dependencies": {
+    "requestify": "^0.2.5",
+    "say": "^0.14.0",
+    "robotjs": "^0.5.1"
+  }
+}
