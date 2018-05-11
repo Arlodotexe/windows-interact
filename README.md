@@ -258,5 +258,36 @@ System.process.getWindowTitle('notepad', function(output) {
     });
 ```
 
+## `System.cmd()`
+
+Run a command in Command Prompt.
+
+Instead of simply printing errors and output, errors that occur will use `System.error()` and the output will use `System.log()`
+
+```javascript
+System.cmd('dir');
+
+// Run a command, then do something with the output
+System.cmd('tasklist', function(output) {
+    doSomething(output);
+});
+
+// Run a command, then do something with the output and any possible errors
+System.cmd('tasklist', function(output, errors){
+    doSomething(output)
+    if(errors) doSomethingElse(errors)
+});
+
+// Run a command, but supress any errors that occur (Don't print them to console or log)
+System.cmd('tasklist', function(output){
+    doSomething();
+}, {suppressErrors: true});
+
+// Run a command, but supress any errors that occur (Don't print them to console or log)
+
+System.cmd('tasklist', function(output){
+    doSomething();
+}, {noLog: true});
+```
 
 ## More to come very very soon.
