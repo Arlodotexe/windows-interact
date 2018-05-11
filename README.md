@@ -3,7 +3,7 @@ This library is a collection of tools for interacting with and automating Window
 
 This started out as a personal project to help automate some IoT stuff and automate Windows, and as such there may be some functionality that would only make sense in such a use case (such as `System.error`'s `receivingDevice` parameter). I plan on leaving this type of functionality unless enough people ask otherwise.
 
-# NOTICE
+## NOTICE
 ---
 
 This is incomplete documentation. I originally intended for this module to remain private and for personal use. I changed my mind, and since I worked on it for two months, I have 2 months worth of code to document. 
@@ -19,7 +19,7 @@ Windows-Interact also relies moderately on [nircmd](http://nircmd.nirsoft.net/),
 # Documentation
 ---
 
-## `System.set.preferences`
+### `System.set.preferences`
 
 Set Global user preferences for Windows Interact
 
@@ -38,7 +38,7 @@ System.set.preferences({
 });
 ```
 
-## `System.log()`
+### `System.log()`
 --- 
 `System.log` is a powerful alternative to `console.log`. It will push the output of the log to the console and record each entry in a .txt file.
 
@@ -60,7 +60,7 @@ System.log.speak('Testing');
 ```
 
 
-## `System.error()`
+### `System.error()`
 ---
 `System.error` is a powerful alternative to `console.error`. It will push the output of the log to the console (in red!) and record each entry in a .txt file.
 
@@ -83,7 +83,7 @@ System.error('Logged information');
 System.error('Error changing temp', 'Thermostat'); // Output: ERROR @ Thermostat: Error changing temp
 ```
 
-## `System.speak()`
+#### `System.speak()`
 ---
 Speak text asynchronously. Similar to my [async-sayjs](https://github.com/Arlodotexe/async-sayjs) package (Yep, that started here), but with some benefits and enhanments.
 
@@ -110,7 +110,7 @@ System.speak.log('Lorem ipsum dolor sit amet');
 
 // Stop anything currently being spoken (Queued text will continue after that)
 System.speak.stop(callback);
-````
+```
 
 ---
 
@@ -131,7 +131,7 @@ To get started, you need to register your apps. You will need the absolute path 
 
 NOTICE: The registered name must be the same as the executable.
 
-## Register a new application
+### Register a new application
 
 ```javascript
 System.appManager.register({
@@ -159,31 +159,31 @@ System.appManager.register({
 });
 ```
 
-## Retrieve registered applications
+### Retrieve registered applications
 
 ```javascript
 System.appManager.registeredApplications
 ```
 
-## Launch a registered application
+### Launch a registered application
 
 ```javascript
 System.appManager.launch('notepad');
 ```
 
-## Kill a registered application
+### Kill a registered application
 
 ```javascript
 System.appManager.kill('notepad');
 ```
 
-## Hide a registered application
+### Hide a registered application
 
 ```javascript
 System.appManager.hide('notepad');
 ```
 
-## Switch to a registered application
+### Switch to a registered application
 
 ```javascript
 System.appManager.switchTo('notepad');
@@ -196,7 +196,7 @@ System.appManager.switchTo('notepad');
 `System.process` is very similar to `appManager`, but can be used for unregistered apps. Use sparcely and avoid loops, this is not as efficient as `appManager`.
 
 
-## Get PID of a running process
+### Get PID of a running process
 
 Returns an array of PIDs associated with a running process. If no process is found, false is returned. The data is piped into a callback.
 
@@ -206,13 +206,13 @@ System.process.getPid('notepad', function(output) {
 });
 ```
 
-## Kill a running app
+### Kill a running app
 
 ```javascript
 System.process.kill('notepad', callback);
 ```
 
-## Run a callback when a process is killed
+### Run a callback when a process is killed
 App must already be running, if not, it will wait until it has started and then tell powershell to wait until the app is done before continuing.
 
 ```javascript
@@ -221,7 +221,7 @@ System.process.onKill('notepad', function() {
 });
 ```
 
-## Run a callback when a process is spawned
+### Run a callback when a process is spawned
 
 Honestly this probably doesn't even work. This is on the todo list to fix, so just don't use it.
 
@@ -231,7 +231,7 @@ System.process.onLaunch('notepad', function() {
 });
 ```
 
-## Get Window Title of running application
+### Get Window Title of running application
 
 ```javascript
 System.process.getWindowTitle('notepad', function(output) {
@@ -239,7 +239,7 @@ System.process.getWindowTitle('notepad', function(output) {
 });
 ```
 
-## Check if a process is running
+### Check if a process is running
 
 ```javascript
     System.process.isRunning('notepad', function(bool) {
@@ -248,4 +248,4 @@ System.process.getWindowTitle('notepad', function(output) {
 ```
 
 
-# More to come very very soon.
+## More to come very very soon.
