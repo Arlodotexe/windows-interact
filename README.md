@@ -299,8 +299,8 @@ System.process.getWindowTitle('notepad', function(output) {
         System.log(bool);
     });
 ```
-
-## `System.cmd()`
+---
+### `System.cmd()`
 
 Run a command in Command Prompt.
 
@@ -332,9 +332,11 @@ System.cmd('tasklist', function(output){
 }, {noLog: true});
 ```
 
-## `System.PowerShell()`
+### `System.PowerShell()`
 
 Run a PowerShell command
+
+Instead of simply printing errors and output, errors that occur will use System.error() and the output will use System.log()
 
 This is playing with real power. See [here](https://docs.microsoft.com/en-us/powershell/module/?view=powershell-6) and [here](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/?view=powershell-6) for resources on what you can do with PowerShell to automate and interact with Windows, beyond what Windows interact provides
 
