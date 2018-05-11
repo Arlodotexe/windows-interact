@@ -1,0 +1,450 @@
+const robot = require('robotjs');
+const exec = require('child_process').exec;
+const fs = require('fs');
+const util = require('util');
+const say = require('say');
+const requestify = require('requestify');
+
+function replaceAll(str, find, replace) {
+	return String.raw`${str}`.replace(new RegExp(find.replace(/([.*+?^=!:${}()|\[\]\/\\\r\n\t|\n|\r\t])/g, '\\$1'), 'g'), replace);
+}
+
+function isUrl(url) {
+	return /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)/.test(url);
+}
+
+String.prototype.replaceAll = function(t, e, n) {
+	let r = "" + this, g = "", l = r, s = 0, h = -1
+	for (n && (t = t.toLowerCase(), l = r.toLowerCase()); (h = l.indexOf(t)) > -1;)g += r.substring(s, s + h) + e, l = l.substring(h + t.length, l.length), s += h + t.length;
+	return l.length > 0 && (g += r.substring(r.length - l.length, r.length)), g;
+};
+
+function toStandardTime(militaryTime) {
+	militaryTime = militaryTime.split(':');
+	if (militaryTime[0].charAt(0) && militaryTime[0].charAt(1) > 2) {
+		return (militaryTime[0] - 12) + ':' + militaryTime[1] + ':' + militaryTime[2] + ' PM';
+	} else {
+		return militaryTime.join(':') + ' AM';
+	}
+}
+
+
+let split = {
+	first: function(t) {
+		let n = Math.floor(t.length / 2), r = t.lastIndexOf(" ", n), f = t.indexOf(" ", n + 1);
+		return n = -1 == r || -1 != f && n - r >= f - n ? f : r, t.substr(0, n);
+	}, last: function(t) {
+		let n = Math.floor(t.length / 2), r = t.lastIndexOf(" ", n), f = t.indexOf(" ", n + 1);
+		return n = -1 == r || -1 != f && n - r >= f - n ? f : r, t.substr(n + 1);
+	}
+};
+
+let prefs = {
+	masterKey: 'AREALLYLONGSTRINGWITHLOTSOFLETTERSANDNUMBERS',
+	logOutputFile: 'log.txt'
+};
+
+const authCode = {
+	parse: function(receivedCode) {
+		//This was originally designed for keeping just anyone from using Cortana or Alexa to do serious stuff. 
+		//`receivedCode` should be a word that starts with the Nth letter of the alphabet, where N is the current first digit of the current seconds.
+		//Alernatively, you can specify a master key with `System.set.preferences()`
+		const s = parseInt(new Date().getSeconds().toString().charAt(0));
+		let alph = 'abcdefghij'.split('');
+		if (alph.indexOf(receivedCode.toLowerCase().charAt(0)) === s || receivedCode == System.prefs.masterKey) return true; else return false;
+	},
+	isValid: function(code) {
+		if (code === undefined) {
+			System.log.speak('Error. No authorization code provided. Terminating session');
+			return false;
+		} else if (code && authCode.parse(code)) {
+			if (code === System.prefs.masterKey) System.log('Master key authorized');
+			else System.log.speak('Code ' + code + ' authorized');
+			return true;
+		} else if (!authCode.parse(code)) {
+			System.log.speak('Invalid code: "' + code + '". Terminating session');
+			return false;
+		}
+	}
+};
+
+function speak() {
+	let speechQ = [];
+	let fn = function(phrase, TTSVoice, speed, callback) {
+		if (System.currentLocation == 'entered') {
+			System.requestTo('stringifyTTS', 'POST', {
+				say: phrase
+			});
+		} else {
+			if (!TTSVoice) TTSVoice = System.prefs.defaultTTSVoice;
+			speaking = {
+				now: null
+			};
+			function trySpeech() {
+				speechQ.push(phrase);
+				if (speaking.now === false || speechQ.length == 1) {
+					speaking.now = true;
+					say.speak(speechQ.slice(-1)[0], TTSVoice, speed, (err) => {
+						speaking.now = false;
+						speechQ.pop();
+						if (callback) callback();
+					});
+				} else {
+					setTimeout(() => {
+						trySpeech();
+					}, 250);
+				}
+			}
+			trySpeech();
+		}
+	};
+	fn.now = function(phrase, TTSVoice) {
+		if (!TTSVoice) TTSVoice = System.prefs.defaultTTSVoice;
+		say.speak(phrase, TTSVoice);
+	};
+	fn.stop = function(callback) {
+		say.stop(() => {
+			if (callback) callback();
+		});
+	};
+	fn.log = function(phrase, voice, speed) {
+		System.log('(Spoken): ' + phrase);
+		System.speak(phrase, voice, speed);
+	};
+	return fn;
+}
+
+function log() {
+	let fn = function(param) {
+		fs.createWriteStream(System.prefs.logOutputFile, { flags: 'a' }).write(((System.prefs.showTimeInLog) ? toStandardTime(new Date().toLocaleTimeString()) + ': ' : '') + util.format.apply(null, arguments) + '\n');
+		process.stdout.write(((System.prefs.showTimeInLog) ? toStandardTime(new Date().toLocaleTimeString()) + ': ' : '') + util.format.apply(null, arguments) + '\n');
+	};
+	fn.error = function(arg, receivingDevice) {
+		if (arg != '' && arg != undefined && arg != null) {
+			if (!receivingDevice) System.log('\nERROR ' + arg);
+			if (receivingDevice) System.log('\nERROR @' + receivingDevice + ': ' + arg);
+			if (System.prefs.defaultSpokenErrorMessage && !receivingDevice) System.speak(System.prefs.defaultSpokenErrorMessage);
+		}
+	};
+	fn.speak = function(phrase) {
+		System.speak(phrase);
+		System.log('(Spoken): ' + phrase);
+	};
+	return fn;
+}
+
+//--The-big-one-------------------
+const System = {
+	authCode: authCode,
+	prefs: prefs,
+	currentLocation: function(place) {
+		System.log('Set location to ' + place);
+		if (!place) return place;
+	},
+	path: function(pathUrl) {
+		pathUrl = replaceAll(pathUrl.raw[0], '\\', '\\\\');
+		if (pathUrl.includes('.exe') && !pathUrl.includes('"')) pathUrl = '"' + pathUrl + '"';
+		return pathUrl;
+	},
+	log: log(),
+	requestTo: function(deviceName, method, formData, callback) {
+		if (!isUrl(deviceName)) deviceName = System.prefs.httpUrls[deviceName];
+		if (typeof formData == 'function') {
+			requestify[method.toLowerCase()](deviceName)
+				.then(function(response) {
+					System.log('Sent ' + method + ' request to ' + deviceName);
+					formData(response.body);
+				});
+		} else if (typeof method == 'function' || method == undefined) {
+			requestify.get(deviceName)
+				.then(function(response) {
+					System.log('Sent GET request to ' + deviceName);
+					if (method) method(response.body);
+				});
+		} else {
+			requestify[method.toLowerCase()](deviceName, formData)
+				.then(function(response) {
+					System.log('Sent ' + method + ' request to ' + deviceName);
+					if (callback) callback(response.body);
+				});
+		}
+	},
+	speak: speak(),
+	error: function(loggedMessage, receivingDevice) {
+		if (loggedMessage != '' && loggedMessage) {
+			if (!receivingDevice) System.log('\x1b[31m%s\x1b[0m', '\nERROR: ' + loggedMessage);
+			if (receivingDevice) System.log('\x1b[31m%s\x1b[0m', '\nERROR @' + receivingDevice + ': ' + loggedMessage);
+			if (System.prefs.defaultSpokenErrorMessage && !receivingDevice) System.speak(System.prefs.defaultSpokenErrorMessage);
+		}
+	},
+	cmd: function(command, callback, options) {
+		exec('cmd /c ' + command, function(error, stdout, stderr) {
+			if (typeof callback == 'object' && options == undefined) {
+				options = callback;
+				callback = undefined;
+			}
+
+			if (stderr && !(options && options.suppressErrors)) System.error(stderr);
+			if (callback) callback(stdout, stderr);
+			if (stdout && !(options && options.noLog)) return console.log(stdout);
+
+		});
+	},
+	PowerShell: function(command, callback, options) {
+		try {
+			command = replaceAll(command, '"', '\'');
+			System.cmd('PowerShell.exe -command "& {' + command + '}";', (stdout, stderr) => {
+				if (callback) callback(stdout, stderr);
+			}, options);
+		} catch (err) {
+			System.error(err);
+		}
+	},
+	notify: function(title, message) {
+		System.cmd('nircmd trayballoon "' + ((!message) ? '' : title) + '" "' + ((message) ? message : title) + '" "c:\\"');
+	},
+	//TODO: For confirm and alert, make them return promises instead to avoid callback hell
+	confirm: function(title, message, callback) {
+		System.PowerShell('$wshell = New-Object -ComObject Wscript.Shell;$wshell.Popup("' + message + '",0,"' + title + '",0x1)', function(stdout) {
+			callback((stdout.trim() == '1') ? true : false);
+		}, { noLog: true });
+	},
+	alert: function(title, message, callback) {
+		System.cmd('nircmd infobox "' + ((message) ? message : title) + '" "' + ((!message) ? 'Node' : message) + '"', () => {
+			callback();
+		});
+	},
+	appManager: {
+		registeredApps: {},
+		register: function(obj) {
+			let apps = [];
+			let registrationComplete = false;
+
+			Object.entries(obj).forEach(([appName, props]) => {
+				if (appName == undefined) System.error('Name not defined for registered app. You need to define a name and path to the application.');
+				else if (props.path == undefined && appName) System.error('Path not defined for registered app: ' + appName);
+
+				props.id = Object.keys(System.appManager.registeredApps).length + 1;
+				System.appManager.registeredApps[appName] = props;
+				let appPath = System.appManager.registeredApps[appName].path;
+				let processName = appPath.substr(appPath.lastIndexOf(`\\\\`));
+				processName = replaceAll(processName, '\\\\', '');
+				processName = replaceAll(processName, '"', '');
+				System.appManager.registeredApps[appName].processName = processName;
+
+				apps.push(replaceAll(processName, '.exe', ''));
+			});
+
+			System.appManager.appWatcher = function() {
+				System.PowerShell('get-process "' + apps.join('", "') + '" | select ProcessName, MainWindowTitle', stdout => {
+					for (var i = 0; i < apps.length; i++) {
+						let appName = apps[i];
+						if (stdout.includes(appName)) {
+							System.appManager.registeredApps[appName].isRunning = true;
+							setTimeout(() => {
+								System.appManager.registeredApps[appName].wasRunning = true;
+							}, 2500);
+						} else {
+							System.appManager.registeredApps[appName].isRunning = false;
+							setTimeout(() => {
+								System.appManager.registeredApps[appName].wasRunning = false;
+							}, 2500);
+						}
+
+						if (!System.appManager.registeredApps[appName].isRunning && System.appManager.registeredApps[appName].wasRunning && System.appManager.registeredApps[appName].onKill) System.appManager.registeredApps[appName].onKill();
+						if (!registrationComplete) registrationComplete = true;
+						if (registrationComplete && System.appManager.registeredApps[appName].isRunning && !System.appManager.registeredApps[appName].wasRunning && System.appManager.registeredApps[appName].onLaunch) System.appManager.registeredApps[appName].onLaunch();
+						
+						windowTitle = stdout.substr(stdout.lastIndexOf('\n' + appName));
+						windowTitle = windowTitle.substring(0, windowTitle.indexOf('\r'));
+						windowTitle = replaceAll(windowTitle, appName, '').trim();
+						if(windowTitle == '') windowTitle = null;
+						System.appManager.registeredApps[appName].windowTitle = windowTitle;
+					}
+				}, { suppressErrors: true, noLog: true });
+
+				setTimeout(() => {
+					System.appManager.appWatcher();
+				}, 5000);
+			};
+			System.appManager.appWatcher();
+
+		},
+		launch: function(appName) {
+			if (System.appManager.registeredApps[appName].onLaunch) System.appManager.registeredApps[appName].onLaunch();
+			System.cmd('nircmd execmd ' + System.appManager.registeredApps[appName].path);
+		},
+		kill: function(appName) {
+			if (System.appManager.registeredApps[appName].onKill) System.appManager.registeredApps[appName].onKill();
+			System.process.kill(System.appManager.registeredApps[appName].processName);
+		},
+		hide: function(appName) {
+			System.cmd('nircmd win hide process "' + processName + '"');
+		},
+		switchTo: function(appName) {
+			let windowTitle = System.appManager.registeredApps[appName].windowTitle;
+			let processName = System.appManager.registeredApps[appName].processName;
+			if (windowTitle !== undefined) {
+				System.PowerShell('$myshell = New-Object -com "Wscript.Shell"; $myshell.AppActivate("' + windowTitle + '")', (stdout) => {
+					if (stdout.includes('False')) {
+						System.log('Using process name as fallback. This may not be as accurate');
+						System.cmd('nircmd win activate process "' + processName + '"');
+					}
+				}, { noLog: true });
+			} else {
+				System.error('Could not find Window title "' + windowTitle + '" or process of requested app "' + appName + '". The app may not be running.');
+				System.log(System.appManager.registeredApps[appName]);
+			}
+		}
+	},
+	process: {
+		getPid: function(processName, callback) {
+			System.PowerShell('get-process -ProcessName "' + replaceAll(processName, '.exe', '') + '" | Format-Table id', (stdout, stderr) => {
+				stdout = replaceAll(stdout, 'Id', '');
+				stdout = replaceAll(stdout, '--', '');
+				stdout = replaceAll(stdout, '\r', '');
+				stdout = stdout.trim();
+				stdout = stdout.split('\n');
+				stdout = stdout.filter(String);
+				callback((!stdout.length ? false : stdout));
+			}, { noLog: true, suppressErrors: true });
+		},
+		kill: function(processName) {
+			if (processName != '' && processName != undefined && processName != null) System.cmd('taskkill /F /IM ' + processName);
+		},
+		onKill: function(appName, callback, options) {
+			//App must already be running, if not, it will wait until it has started and then listen via powershell for an exit event
+			System.PowerShell('Wait-Process -Name ' + appName, function(stdout, stderr) {
+				if (stderr) {
+					setTimeout(() => {
+						System.process.onKill(appName, callback);
+					}, 3000);
+				}
+				else {
+					callback();
+				}
+			}, { noLog: true, suppressErrors: true });
+		},
+		onLaunch: function(appName, callback) {
+			System.process.isRunning(appName).then((bool) => {
+				if (!bool) {
+					setTimeout(() => {
+						System.process.onLaunch(appName, callback);
+					}, 3000);
+				}
+				else if (bool) callback();
+			});
+		},
+		getWindowTitle: function(processName, callback) {
+			System.PowerShell('get-process ' + replaceAll(processName, '.exe', '') + ' | select MainWindowTitle', function(stdout) {
+				output = '' + stdout;
+				output = replaceAll(output, 'MainWindowTitle', '');
+				output = replaceAll(output, '---------------', '');
+				output = output.trim();
+				if (output == '') output = false;
+				callback(output);
+			}, { noLog: true, suppressErrors: true });
+		},
+		isRunning: function(processName) {
+			return new Promise(function(resolve, reject) {
+				try {
+					System.PowerShell('get-process ' + processName + ' | select ProcessName', (stdout) => {
+						if (stdout.includes(processName)) resolve(true);
+						else resolve(false);
+					});
+				} catch (error) {
+					System.error(error);
+					reject(false);
+				}
+			});
+		}
+	},
+	set: {
+		volume: function(vol) {
+			System.cmd('nircmd setsysvolume ' + Math.floor(vol * 665.35));
+		},
+		preferences: function(object) {
+			System.prefs = object;
+		},
+		defaultSoundDevice: function(device) {
+			System.cmd("nircmd setdefaultsounddevice \"" + device + "\"");
+		},
+		location: function(string) {
+			System.log('Set location to ' + string);
+			System.currentLocation = string;
+		}
+	},
+	power: {
+		shutdown: function(delay) {
+			System.cmd('shutdown.exe /s /t ' + ((delay) ? delay : 0));
+		},
+		restart: function(delay) {
+			System.cmd('shutdown.exe /r /t ' + ((delay) ? delay : 0));
+		},
+		lock: function(delay) {
+			setTimeout(() => {
+				System.cmd('rundll32.exe user32.dll,LockWorkStation');
+			}, ((delay) ? delay : 0));
+		},
+		sleep: function(delay) {
+			setTimeout(() => {
+				System.cmd('nircmd standby');
+			}, ((delay) ? delay : 0));
+		},
+		screenSaver: function(delay) {
+			setTimeout(() => {
+				System.cmd('nircmd screensaver');
+			}, ((delay) ? delay : 0));
+		}
+	},
+	interact: {
+		minimizeWindow: function() {
+			setTimeout(() => {
+				robot.keyTap('down', 'command');
+			}, 1000);
+		},
+		showDesktop: function() {
+			System.PowerShell('(New-Object -ComObject shell.application).toggleDesktop()');
+		},
+		pauseMedia: function() {
+			robot.keyTap('audio_play');
+			System.log('Media played/paused');
+		},
+		screenshot: function(path, region) {
+			if (path == undefined || path == '*clipboard*') path = '*clipboard*';
+			else path = '"' + path + '"';
+			if (region == undefined || region == 'full') System.cmd('nircmd savescreenshotfull ' + path);
+			else if (region == 'window') System.cmd('nircmd savescreenshotwin ' + path);
+		},
+		Cortana: {
+			genericCommand: function(command) {
+				robot.keyTap('command');
+				setTimeout(() => {
+					robot.typeString(command);
+					setTimeout(() => { robot.keyTap('enter'); }, 500);
+				}, 500);
+			},
+			openApp: function(appName) {
+				robot.keyTap('command');
+				setTimeout(() => {
+					robot.typeString('Open ' + appName);
+					robot.keyTap('enter');
+				}, 500);
+			},
+			playSong: function(songName, service) {
+				System.interact.Cortana('Play ' + songName + ' on ' + service);
+				System.interact.minimizeWindow();
+			},
+			playPlaylist: function(playlist, service) {
+				System.interact.Cortana.genericCommand('Play my ' + playlist + ' playlist on ' + service);
+			},
+			startListening: function() {
+				// Make sure you have "Let Cortana listen for my commands when I press the Windows Logo + C" in the Setting app
+				robot.keyTap('C', 'command');
+				System.log('Cortana listening mode invoked');
+			}
+		}
+	}
+}
+
+module.exports = System;
