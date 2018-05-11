@@ -290,4 +290,37 @@ System.cmd('tasklist', function(output){
 }, {noLog: true});
 ```
 
+## `System.PowerShell()`
+
+Run a PowerShell command
+
+This is playing with real power. See [here](https://docs.microsoft.com/en-us/powershell/module/?view=powershell-6) and [here](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/?view=powershell-6) for resources on what you can do with PowerShell to automate and interact with Windows, beyond what Windows interact provides
+
+```javascript
+System.PowerShell('ls');
+
+// Run a command, then do something with the output
+System.PowerShell('Move-Item -Path C:\test.txt -Destination E:\Temp\tst.txt', function(output) {
+    doSomething(output);
+});
+
+// Run a command, then do something with the output and any possible errors
+System.PowerShell('Move-Item -Path C:\Temp -Destination C:\Logs', function(output, errors){
+    doSomething(output)
+    if(errors) doSomethingElse(errors)
+});
+
+// Run a command, but supress any errors that occur (Don't print them to console or log)
+System.PowerShell('Move-Item -Path .\*.txt -Destination C:\Logs', function(output){
+    doSomething();
+}, {suppressErrors: true});
+
+// Run a command, but do not log the output and supress any errors that occur (Don't print them to console or log)
+
+System.PowerShell('Restart-Service -Name Audiosrv', function(output){
+    doSomething();
+}, {supressErorrs: true, noLog: true});
+```
+
+
 ## More to come very very soon.
