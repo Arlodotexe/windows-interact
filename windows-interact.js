@@ -71,32 +71,26 @@ const authCode = {
 function speak() {
 	let speechQ = [];
 	let fn = function(phrase, TTSVoice, speed, callback) {
-		if (System.currentLocation == 'entered') {
-			System.requestTo('stringifyTTS', 'POST', {
-				say: phrase
-			});
-		} else {
-			if (!TTSVoice) TTSVoice = System.prefs.defaultTTSVoice;
-			speaking = {
-				now: null
-			};
-			function trySpeech() {
-				speechQ.push(phrase);
-				if (speaking.now === false || speechQ.length == 1) {
-					speaking.now = true;
-					say.speak(speechQ.slice(-1)[0], TTSVoice, speed, (err) => {
-						speaking.now = false;
-						speechQ.pop();
-						if (callback) callback();
-					});
-				} else {
-					setTimeout(() => {
-						trySpeech();
-					}, 250);
-				}
+		if (!TTSVoice) TTSVoice = System.prefs.defaultTTSVoice;
+		speaking = {
+			now: null
+		};
+		function trySpeech() {
+			speechQ.push(phrase);
+			if (speaking.now === false || speechQ.length == 1) {
+				speaking.now = true;
+				say.speak(speechQ.slice(-1)[0], TTSVoice, speed, (err) => {
+					speaking.now = false;
+					speechQ.pop();
+					if (callback) callback(err);
+				});
+			} else {
+				setTimeout(() => {
+					trySpeech();
+				}, 250);
 			}
-			trySpeech();
 		}
+		trySpeech();
 	};
 	fn.now = function(phrase, TTSVoice) {
 		if (!TTSVoice) TTSVoice = System.prefs.defaultTTSVoice;
@@ -126,8 +120,8 @@ function log() {
 			if (System.prefs.defaultSpokenErrorMessage && !receivingDevice) System.speak(System.prefs.defaultSpokenErrorMessage);
 		}
 	};
-	fn.speak = function(phrase) {
-		System.speak(phrase);
+	fn.speak = function(phrase, voice, speed) {
+		System.speak(phrase, voice, speed);
 		System.log('(Spoken): ' + phrase);
 	};
 	return fn;
@@ -137,10 +131,6 @@ function log() {
 const System = {
 	authCode: authCode,
 	prefs: prefs,
-	currentLocation: function(place) {
-		System.log('Set location to ' + place);
-		if (!place) return place;
-	},
 	path: function(pathUrl) {
 		pathUrl = replaceAll(pathUrl.raw[0], '\\', '\\\\');
 		if (pathUrl.includes('.exe') && !pathUrl.includes('"')) pathUrl = '"' + pathUrl + '"';
@@ -243,29 +233,29 @@ const System = {
 							System.appManager.registeredApps[appName].isRunning = true;
 							setTimeout(() => {
 								System.appManager.registeredApps[appName].wasRunning = true;
-							}, 2500);
+							}, (prefs.appManagerRefreshInterval ? prefs.appManagerRefreshInterval / 2 : 2500));
 						} else {
 							System.appManager.registeredApps[appName].isRunning = false;
 							setTimeout(() => {
 								System.appManager.registeredApps[appName].wasRunning = false;
-							}, 2500);
+							}, (prefs.appManagerRefreshInterval ? prefs.appManagerRefreshInterval / 2 : 2500));
 						}
 
 						if (!System.appManager.registeredApps[appName].isRunning && System.appManager.registeredApps[appName].wasRunning && System.appManager.registeredApps[appName].onKill) System.appManager.registeredApps[appName].onKill();
 						if (!registrationComplete) registrationComplete = true;
 						if (registrationComplete && System.appManager.registeredApps[appName].isRunning && !System.appManager.registeredApps[appName].wasRunning && System.appManager.registeredApps[appName].onLaunch) System.appManager.registeredApps[appName].onLaunch();
-						
+
 						windowTitle = stdout.substr(stdout.lastIndexOf('\n' + appName));
 						windowTitle = windowTitle.substring(0, windowTitle.indexOf('\r'));
 						windowTitle = replaceAll(windowTitle, appName, '').trim();
-						if(windowTitle == '') windowTitle = null;
+						if (windowTitle == '') windowTitle = null;
 						System.appManager.registeredApps[appName].windowTitle = windowTitle;
 					}
 				}, { suppressErrors: true, noLog: true });
 
 				setTimeout(() => {
 					System.appManager.appWatcher();
-				}, 5000);
+				}, (prefs.appManagerRefreshInterval ? prefs.appManagerRefreshInterval : 5000));
 			};
 			System.appManager.appWatcher();
 
@@ -312,7 +302,7 @@ const System = {
 		kill: function(processName) {
 			if (processName != '' && processName != undefined && processName != null) System.cmd('taskkill /F /IM ' + processName);
 		},
-		onKill: function(appName, callback, options) {
+		onKill: function(appName, callback) {
 			//App must already be running, if not, it will wait until it has started and then listen via powershell for an exit event
 			System.PowerShell('Wait-Process -Name ' + appName, function(stdout, stderr) {
 				if (stderr) {
@@ -326,7 +316,7 @@ const System = {
 			}, { noLog: true, suppressErrors: true });
 		},
 		onLaunch: function(appName, callback) {
-			System.process.isRunning(appName).then((bool) => {
+			System.process.isRunning(appName, function(bool) {
 				if (!bool) {
 					setTimeout(() => {
 						System.process.onLaunch(appName, callback);
@@ -345,18 +335,16 @@ const System = {
 				callback(output);
 			}, { noLog: true, suppressErrors: true });
 		},
-		isRunning: function(processName) {
-			return new Promise(function(resolve, reject) {
-				try {
-					System.PowerShell('get-process ' + processName + ' | select ProcessName', (stdout) => {
-						if (stdout.includes(processName)) resolve(true);
-						else resolve(false);
-					});
-				} catch (error) {
-					System.error(error);
-					reject(false);
-				}
-			});
+		isRunning: function(processName, callback) {
+			try {
+				System.PowerShell('get-process ' + processName + ' | select ProcessName', (stdout) => {
+					if (stdout.includes(processName)) callback(true);
+					else callback(false);
+				});
+			} catch (error) {
+				System.error(error);
+				callback(false);
+			}
 		}
 	},
 	set: {
