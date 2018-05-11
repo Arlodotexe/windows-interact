@@ -25,22 +25,29 @@ Set Global user preferences for Windows Interact
 
 ```javascript
 System.set.preferences({ 
-	masterKey: 'MASTERKEY', // Set master key (For System.authCode)
-	logOutputFile: System.path`C:\Users\User\node-server\log.txt`, // File to save log and error history (For System.log)
-	showTimeInLog: true, // Show or hide timestamp in log (For System.log & System.error)
-	defaultTTSVoice: 'Microsoft David Desktop', // Default text to speech voice to use (For System.speak)
-    defaultSpokenErrorMessage: 'Something is wrong with your node server. Details are in the log', // Default message to speak when an error occurs (For System.error)
-    appManagerRefreshInterval: 2500, // Inverval at which the app manager gets the status of registered apps. Leaving unset defaults the interval to 5000
-	httpUrls: { // Store URLs for quick access when using System.requestTo
-		thisMachine: 'http://127.0.0.1:80/',
-		thermostat: 'http://localhost:8084/'
-	}
+    // Set master key (For System.authCode)
+    masterKey: 'MASTERKEY', 
+    // File to save log and error history (For System.log)
+    logOutputFile: System.path`C:\Users\User\node-server\log.txt`,
+    // Show or hide timestamp in log (For System.log & System.error)
+    showTimeInLog: true,
+    // Default text to speech voice to use (For System.speak)
+    defaultTTSVoice: 'Microsoft David Desktop',
+    // Default message to speak when an error occurs (For System.error)
+    defaultSpokenErrorMessage: 'Something is wrong with your node server. Details are in the log', 
+    // Inverval at which the app manager gets the status of registered apps. Leaving unset defaults the interval to 5000
+    appManagerRefreshInterval: 2500,
+    // Store URLs for quick access when using System.requestTo
+    httpUrls: { 
+        thisMachine: 'http://127.0.0.1:80/',
+        thermostat: 'http://localhost:8084/'
+    }
 });
 ```
 
 ### `System.log()`
 --- 
-`System.log` is a powerful alternative to `console.log`. It will push the output of the log to the console and record each entry in a .txt file.
+An alternative to `console.log`. It will push the output of the log to the console and record each entry in a .txt file.
 
 You can set the default log file location with `System.set.preferences`, like so:
 
@@ -62,9 +69,7 @@ System.log.speak('Testing');
 
 ### `System.error()`
 ---
-`System.error` is a powerful alternative to `console.error`. It will push the output of the log to the console (in red!) and record each entry in a .txt file.
-
-`System.error` can also be used to log errors from other devices. The second parameter will prepend `ERROR @ {device name}` to the log file.
+An alternative to `console.error`. It will push the output of the log to the console (in red!) and record each entry in a .txt file. It can also be used to log errors from other devices. The second parameter will prepend `ERROR @ {device name}` to the log file.
 
 You can set the default log file location with `System.set.preferences`, like so:
 
@@ -83,7 +88,9 @@ System.error('Logged information');
 System.error('Error changing temp', 'Thermostat'); // Output: ERROR @ Thermostat: Error changing temp
 ```
 
-#### `System.speak()`
+### 
+
+### `System.speak()`
 ---
 Speak text asynchronously. Similar to my [async-sayjs](https://github.com/Arlodotexe/async-sayjs) package (Yep, that started here), but with some benefits and enhanments.
 
@@ -127,7 +134,7 @@ The App Manager is possibly the biggest part of Windows Interact. It allows you 
 - Hide an app
 - Switch to an app
 
-To get started, you need to register your apps. You will need the absolute path of the executable at the minimum. To properly format a system path on Windows, it is recommended that you use ```System.path`C:\absolute\path` ```
+To get started, you need to register your apps. You will need the absolute path of the executable at the minimum. To easily format a Windows path for use in Javascript, it is recommended that you use ```System.path`C:\absolute\path` ```
 
 NOTICE: The registered name must be the same as the executable.
 
