@@ -18,9 +18,28 @@ Windows-Interact also relies moderately on [nircmd](http://nircmd.nirsoft.net/),
 
 # Documentation
 ---
+## `System.set`
+---
+Used to set various thing within Windows, as well as set preferences for windows-interact
+
+### `System.set.volume()`
+---
+Set the volume of the current audio device (99% accurate)
+
+```javascript
+System.set.volume('50');
+```
+
+### `System.set.defaultSoundDevice()`
+---
+Set the default playback device in Windows
+
+```javascript
+System.set.defaultSoundDevice('Headset Earphone');
+```
 
 ### `System.set.preferences`
-
+---
 Set Global user preferences for Windows Interact
 
 ```javascript
@@ -75,7 +94,7 @@ You can set the default log file location with `System.set.preferences`, like so
 
 ```javascript
 System.set.preferences({
-	logOutputFile: System.path`C:\Users\User\node-server\log.txt`
+    logOutputFile: System.path`C:\Users\User\node-server\log.txt`
 });
 ```
 
@@ -88,8 +107,25 @@ System.error('Logged information');
 System.error('Error changing temp', 'Thermostat'); // Output: ERROR @ Thermostat: Error changing temp
 ```
 
-### `System.path`
-Return a properly formatted Windows path for use in Javascript. This allows you to simply copy and paste a path from the File Explorer without having to alter character-escaping (`\`) slashes
+### `System.notify()`
+---
+
+Show a toast notification in Windows 10 (Or tray balloon on older versions of windows)
+
+If you need something more advanced than basic notifications, I'd recommend using [node-notifier](https://github.com/mikaelbr/node-notifier)
+
+```javascript
+// Show toast notification
+System.notify('Title', 'Message');
+
+// Show single line toast notification
+System.notify('Message'); 
+```
+
+### `System.path`` `
+---
+Return a properly formatted Windows path for use in Javascript. This allows you to simply copy and paste a path from the File Explorer without having to worry about character-escaping (`\`) slashes
+
 ```javascript
 System.path`C:\WINDOWS\system32\notepad.exe`;
 ```
@@ -98,6 +134,15 @@ System.path`C:\WINDOWS\system32\notepad.exe`;
 ---
 Speak text asynchronously. Similar to my [async-sayjs](https://github.com/Arlodotexe/async-sayjs) package (Yep, that started here), but with some benefits and enhanments.
 
+You can set the default text to speech voice with `System.set.preferences`, like so:
+
+```javascript
+System.set.preferences({
+	defaultTTSVoice: 'Microsoft Eva Mobile'
+});
+```
+
+Usage:
 ```javascript
 // Speak something asynchronously (wait for each request to finish before moving on)
 System.speak('The quick brown fox');
@@ -310,12 +355,12 @@ System.PowerShell('Move-Item -Path C:\Temp -Destination C:\Logs', function(outpu
     if(errors) doSomethingElse(errors)
 });
 
-// Run a command, but supress any errors that occur (Don't print them to console or log)
+// Run a command, but supocurrpress any errors that occurr (Don't print them to console or log)
 System.PowerShell('Move-Item -Path .\*.txt -Destination C:\Logs', function(output){
     doSomething();
 }, {suppressErrors: true});
 
-// Run a command, but do not log the output and supress any errors that occur (Don't print them to console or log)
+// Run a command, but do not log the output and supress any errors that occurr (Don't print them to console or log)
 
 System.PowerShell('Restart-Service -Name Audiosrv', function(output){
     doSomething();
