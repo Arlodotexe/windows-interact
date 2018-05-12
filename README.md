@@ -325,7 +325,7 @@ System.cmd('tasklist', function(output){
     doSomething();
 }, {suppressErrors: true});
 
-// Run a command, but supress any errors that occur (Don't print them to console or log)
+// Run a command, but don't print to log
 
 System.cmd('tasklist', function(output){
     doSomething();
@@ -354,7 +354,7 @@ System.PowerShell('Move-Item -Path C:\Temp -Destination C:\Logs', function(outpu
     if(errors) doSomethingElse(errors)
 });
 
-// Run a command, but supocurrpress any errors that occurr (Don't print them to console or log)
+// Run a command, but suppress any errors that occurr (Don't print them to console or log)
 System.PowerShell('Move-Item -Path .\*.txt -Destination C:\Logs', function(output){
     doSomething();
 }, {suppressErrors: true});
@@ -430,4 +430,27 @@ System.requestTo('thisMachine', 'PUT', {
 
 ```
 
+### `System.confirm()`
+
+An alternative to the browsers's `confirm()`. Unlike the browser, it will not stop execution of code and wait for the user. Therefore, it requires a callback to do something with the user's choice (this will be changed to a promise in the future)
+
+```javascript
+System.confirm('Title', 'Message?', function(bool) {
+    /// 'bool' returns true if the user clicks 'OK', or false if they click 'Cancel'
+    doSomething();
+});
+```
+
+### `System.alert()`
+
+An alternative to the browsers's `alert()`. Unlike the browser, it will not stop execution of code and wait for the user. It will require a callback if you wish to run code only _after_ the user has clicked 'Ok' (this will be changed to a promise in the future)
+
+```javascript
+// Show an alert box with title and message
+System.alert('Title', 'Message!', function() {
+    doSomething();
+});
+
+System.alert('Simple message'); 
+```
 ## More to come very very soon.
