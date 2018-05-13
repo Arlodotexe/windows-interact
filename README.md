@@ -7,11 +7,15 @@ This started out as a personal project to help automate some IoT stuff and autom
 
 # Installation 
 --- 
-Windows-interact (Subject to name change) is yet available on any package manager. For now, you can install by cloning the repository into your `node_modules` folder and requiring it like so:
 
-`const System = require('./node_modules/windows-interact/windows-interact.js');`
+Install the [npm](https://www.npmjs.com/package/windows-interact) package by running `npm install windows-interact` in your project folder
 
-Windows-Interact also relies moderately on [nircmd](http://nircmd.nirsoft.net/), so if you start having troubles, try installing it to your machine. 
+Then, in your js file, `require` the package.
+```javascript 
+const System = require('windows-interact.js');
+```
+
+Windows-Interact also relies moderately on [nircmd](http://nircmd.nirsoft.net/). This is included in the package but untested on another machine, so if you start having troubles, try installing it to your machine. 
 
 # Documentation
 ---
