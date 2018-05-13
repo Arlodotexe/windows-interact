@@ -196,12 +196,12 @@ const System = {
 	//TODO: For confirm and alert, make them return promises instead to avoid callback hell
 	confirm: function(title, message, callback) {
 		System.PowerShell('$wshell = New-Object -ComObject Wscript.Shell;$wshell.Popup("' + message + '",0,"' + title + '",0x1)', function(stdout) {
-			callback((stdout.trim() == '1') ? true : false);
+			if(callback) callback((stdout.trim() == '1') ? true : false);
 		}, { noLog: true });
 	},
 	alert: function(title, message, callback) {
 		System.cmd('nircmd infobox "' + ((message) ? message : title) + '" "' + ((!message) ? 'Node' : message) + '"', () => {
-			callback();
+			if(callback) callback();
 		});
 	},
 	appManager: {
@@ -398,10 +398,12 @@ const System = {
 			robot.keyTap('audio_play');
 			System.log('Media played/paused');
 		},
-		screenshot: function(path, region) {
-			if (path == undefined || path == '*clipboard*') path = '*clipboard*';
-			else path = '"' + path + '"';
-			if (region == undefined || region == 'full') System.cmd('nircmd savescreenshotfull ' + path);
+		screenshot: function(region, path) {			
+			if(path == undefined) {
+				path = '*clipboard*';
+			} else path = '"' + path + '"';
+
+			if (region == 'full') System.cmd('nircmd savescreenshotfull ' + path);
 			else if (region == 'window') System.cmd('nircmd savescreenshotwin ' + path);
 		},
 		Cortana: {
@@ -427,9 +429,7 @@ const System = {
 				System.interact.Cortana.genericCommand('Play my ' + playlist + ' playlist on ' + service);
 			},
 			startListening: function() {
-				// Make sure you have "Let Cortana listen for my commands when I press the Windows Logo + C" in the Setting app
 				robot.keyTap('C', 'command');
-				System.log('Cortana listening mode invoked');
 			}
 		}
 	}
