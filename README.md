@@ -453,4 +453,43 @@ System.alert('Title', 'Message!', function() {
 
 System.alert('Simple message'); 
 ```
+
+## `System.power()`
+---
+
+### Shutdown the PC
+
+```javascript
+// If no delay is provided, it will shutdown immediately
+System.power.shutdown(delay);
+```
+
+### Restart the PC
+
+```javascript
+// If no delay is provided, it will restart immediately
+System.power.restart(delay);
+```
+
+### Lock the PC
+
+```javascript
+// If no delay is provided, it will lock immediately
+System.power.lock(delay);
+```
+
+### Put the PC to sleep
+
+```javascript
+// If no delay is provided, it will go to sleep immediately
+System.power.sleep(delay);
+```
+
+### Start the screensaver
+
+```javascript
+// If no delay is provided, it will start the screensaver immediately
+System.power.screenSaver(delay);
+```
+
 ## More to come very very soon.
