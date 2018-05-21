@@ -40,29 +40,34 @@ let split = {
 };
 
 let prefs = {
-	masterKey: 'AREALLYLONGSTRINGWITHLOTSOFLETTERSANDNUMBERS',
-	logOutputFile: 'log.txt'
+	masterKey: 'AREALLYLONGSTRINGWITHLOTSOFLETTERSANDNUMBERS'
 };
 
-const authCode = {
-	parse: function(receivedCode) {
-		//This was originally designed for keeping just anyone from using Cortana or Alexa to do serious stuff. 
-		//`receivedCode` should be a word that starts with the Nth letter of the alphabet, where N is the current first digit of the current seconds.
-		//Alernatively, you can specify a master key with `System.set.preferences()`
+const parseAuthCode = function(receivedCode) {
+	if (receivedCode == System.prefs.masterKey) return true;
+	if (typeof System.prefs.authCodeParse !== 'function' && typeof System.prefs.authCodeParse == undefined) {
+		System.error('Type of "authCodeParse" is not a function');
+	}
+	if (typeof System.prefs.authCodeParse == 'function') {
+		return System.prefs.authCodeParse(receivedCode);
+	} else {
 		const s = parseInt(new Date().getSeconds().toString().charAt(0));
 		let alph = 'abcdefghij'.split('');
-		if (alph.indexOf(receivedCode.toLowerCase().charAt(0)) === s || receivedCode == System.prefs.masterKey) return true; else return false;
-	},
+		if (alph.indexOf(receivedCode.toLowerCase().charAt(0)) === s) return true; else return false;
+	}
+}
+
+const authCode = {
 	isValid: function(code) {
 		if (code === undefined) {
-			System.log.speak('Error. No authorization code provided. Terminating session');
+			System.error('No code provided');
 			return false;
-		} else if (code && authCode.parse(code)) {
+		} else if (code && parseAuthCode(code)) {
 			if (code === System.prefs.masterKey) System.log('Master key authorized');
-			else System.log.speak('Code ' + code + ' authorized');
+			else System.log('Code "' + code + '" authorized');
 			return true;
-		} else if (!authCode.parse(code)) {
-			System.log.speak('Invalid code: "' + code + '". Terminating session');
+		} else if (!parseAuthCode(code)) {
+			System.log('Invalid code: "' + code + '".');
 			return false;
 		}
 	}
@@ -110,7 +115,7 @@ function speak() {
 
 function log() {
 	let fn = function(param) {
-		fs.createWriteStream(System.prefs.logOutputFile, { flags: 'a' }).write(((System.prefs.showTimeInLog) ? toStandardTime(new Date().toLocaleTimeString()) + ': ' : '') + util.format.apply(null, arguments) + '\n');
+		if (System.prefs.logOutputFile) fs.createWriteStream(System.prefs.logOutputFile, { flags: 'a' }).write(((System.prefs.showTimeInLog) ? toStandardTime(new Date().toLocaleTimeString()) + ': ' : '') + util.format.apply(null, arguments) + '\n');
 		process.stdout.write(((System.prefs.showTimeInLog) ? toStandardTime(new Date().toLocaleTimeString()) + ': ' : '') + util.format.apply(null, arguments) + '\n');
 	};
 	fn.error = function(arg, receivingDevice) {
@@ -129,11 +134,10 @@ function log() {
 
 //--The-big-one-------------------
 const System = {
-	authCode: authCode,
 	prefs: prefs,
+	authCode: authCode,
 	path: function(pathUrl) {
 		pathUrl = replaceAll(pathUrl.raw[0], '\\', '\\\\');
-		if (pathUrl.includes('.exe') && !pathUrl.includes('"')) pathUrl = '"' + pathUrl + '"';
 		return pathUrl;
 	},
 	log: log(),
@@ -161,8 +165,8 @@ const System = {
 	},
 	speak: speak(),
 	error: function(loggedMessage, receivingDevice) {
-		if (loggedMessage != '' && loggedMessage) {
-			if (!receivingDevice) System.log('\x1b[31m%s\x1b[0m', '\nERROR: ' + loggedMessage);
+		if (loggedMessage !== '' && loggedMessage) {
+			if (!receivingDevice) System.log('\x1b[31m%s\x1b[0m', '\n' + (loggedMessage.includes('ERROR: ')) ? '' : 'ERROR: ' + loggedMessage);
 			if (receivingDevice) System.log('\x1b[31m%s\x1b[0m', '\nERROR @' + receivingDevice + ': ' + loggedMessage);
 			if (System.prefs.defaultSpokenErrorMessage && !receivingDevice) System.speak(System.prefs.defaultSpokenErrorMessage);
 		}
@@ -191,18 +195,19 @@ const System = {
 		}
 	},
 	notify: function(title, message) {
+		if(title==undefined) System.error('Cannot send notification. No message was given');
 		System.cmd('nircmd trayballoon "' + ((!message) ? '' : title) + '" "' + ((message) ? message : title) + '" "c:\\"');
 	},
 	//TODO: For confirm and alert, make them return promises instead to avoid callback hell
 	confirm: function(title, message, callback) {
-		System.PowerShell('$wshell = New-Object -ComObject Wscript.Shell;$wshell.Popup("' + message + '",0,"' + title + '",0x1)', function(stdout) {
-			if(callback) callback((stdout.trim() == '1') ? true : false);
+		System.PowerShell('$wshell = New-Object -ComObject Wscript.Shell;$wshell.Popup("' + (typeof message == 'function' || !message)?title:message + '",0,"' + (typeof message == 'function' || !message)?'Node':title + '",0x1)', function(stdout) {
+			if (callback) callback((stdout.trim() == '1') ? true : false);
 		}, { noLog: true });
 	},
 	alert: function(title, message, callback) {
 		System.cmd('nircmd infobox "' + ((message) ? message : title) + '" "' + ((!message) ? 'Node' : message) + '"', () => {
-			if(callback) callback();
-		});
+			if (callback) callback();
+		}, {noLog: true});
 	},
 	appManager: {
 		registeredApps: {},
@@ -216,7 +221,13 @@ const System = {
 
 				props.id = Object.keys(System.appManager.registeredApps).length + 1;
 				System.appManager.registeredApps[appName] = props;
+
+				//Handle and parse app path
 				let appPath = System.appManager.registeredApps[appName].path;
+				if(!(appPath.slice(-1) == '"' && appPath.charAt(0) == '"')) appPath = '"' + appPath + '"';
+				System.appManager.registeredApps[appName].path = appPath;
+
+				//Handle and parse process name
 				let processName = appPath.substr(appPath.lastIndexOf(`\\\\`));
 				processName = replaceAll(processName, '\\\\', '');
 				processName = replaceAll(processName, '"', '');
@@ -233,12 +244,12 @@ const System = {
 							System.appManager.registeredApps[appName].isRunning = true;
 							setTimeout(() => {
 								System.appManager.registeredApps[appName].wasRunning = true;
-							}, (prefs.appManagerRefreshInterval ? prefs.appManagerRefreshInterval / 2 : 2500));
+							}, (System.prefs.appManagerRefreshInterval ? System.prefs.appManagerRefreshInterval / 2 : 2500));
 						} else {
 							System.appManager.registeredApps[appName].isRunning = false;
 							setTimeout(() => {
 								System.appManager.registeredApps[appName].wasRunning = false;
-							}, (prefs.appManagerRefreshInterval ? prefs.appManagerRefreshInterval / 2 : 2500));
+							}, (System.prefs.appManagerRefreshInterval ? System.prefs.appManagerRefreshInterval / 2 : 2500));
 						}
 
 						if (!System.appManager.registeredApps[appName].isRunning && System.appManager.registeredApps[appName].wasRunning && System.appManager.registeredApps[appName].onKill) System.appManager.registeredApps[appName].onKill();
@@ -255,17 +266,19 @@ const System = {
 
 				setTimeout(() => {
 					System.appManager.appWatcher();
-				}, (prefs.appManagerRefreshInterval ? prefs.appManagerRefreshInterval : 5000));
+				}, (System.prefs.appManagerRefreshInterval ? System.prefs.appManagerRefreshInterval : 5000));
 			};
 			System.appManager.appWatcher();
 
 		},
 		launch: function(appName) {
 			if (System.appManager.registeredApps[appName].onLaunch) System.appManager.registeredApps[appName].onLaunch();
+			else System.error('Unable to launch requested application. The requested app is either not registered or misspelled');
 			System.cmd('nircmd execmd ' + System.appManager.registeredApps[appName].path);
 		},
 		kill: function(appName) {
 			if (System.appManager.registeredApps[appName].onKill) System.appManager.registeredApps[appName].onKill();
+			else System.error('Unable to kill requested application. The requested app is either not registered or misspelled');
 			System.process.kill(System.appManager.registeredApps[appName].processName);
 		},
 		hide: function(appName) {
@@ -283,7 +296,6 @@ const System = {
 				}, { noLog: true });
 			} else {
 				System.error('Could not find Window title "' + windowTitle + '" or process of requested app "' + appName + '". The app may not be running.');
-				System.log(System.appManager.registeredApps[appName]);
 			}
 		}
 	},
@@ -351,16 +363,16 @@ const System = {
 		volume: function(vol) {
 			System.cmd('nircmd setsysvolume ' + Math.floor(vol * 665.35));
 		},
-		preferences: function(object) {
-			System.prefs = object;
-		},
 		defaultSoundDevice: function(device) {
 			System.cmd("nircmd setdefaultsounddevice \"" + device + "\"");
 		},
 		location: function(string) {
 			System.log('Set location to ' + string);
 			System.currentLocation = string;
-		}
+		},
+		preferences: function(object) {
+			System.prefs = object;
+		},
 	},
 	power: {
 		shutdown: function(delay) {
@@ -398,8 +410,8 @@ const System = {
 			robot.keyTap('audio_play');
 			System.log('Media played/paused');
 		},
-		screenshot: function(region, path) {			
-			if(path == undefined) {
+		screenshot: function(region, path) {
+			if (path == undefined) {
 				path = '*clipboard*';
 			} else path = '"' + path + '"';
 

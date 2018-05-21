@@ -431,6 +431,42 @@ System.requestTo('thisMachine', 'PUT', {
 
 ```
 
+## `System.authCode`
+
+Used to quickly authenticate a user
+
+This was originally designed for keeping just anyone from using Cortana or Alexa to do serious stuff like shutting down or restarting.
+By default, it will return as valid when the code starts with the Nth letter of a zero indexed alphabet, where N is the first digit of the current Second of your PC's System time. For example, if it the time is 5:15:08, '0' is parsed and the receivedCode should start with A. 
+
+You can set a custom parsing function, as well as a master key that will always be accepted.
+
+```javascript
+System.set.preferences({
+    // Set a master key
+    masterKey: 'AREALLYLONGSTRINGWITHLOTSOFCOMPLICATEDCHARACTERS',
+    authCodeParse: function(receivedCode) {
+    // Should return true or false if the receivedCode meets your criteria
+    /**   Example start **/
+        if (receivedCode > 5) {
+            System.alert('Correct code: ' + receivedCode)
+            return true;
+        }
+        else {
+            System.alert('Incorrect code: ' + receivedCode)
+            return false;
+        }
+    }
+    /**   Example end **/
+});
+```
+
+
+```javascript
+if(System.authCode.isValid('6')) {
+    console.log('It\'s valid');
+}
+```
+
 ### `System.confirm()`
 
 An alternative to the browsers's `confirm()`. Unlike the browser, it will not stop execution of code and wait for the user. Therefore, it requires a callback to do something with the user's choice (this will be changed to a promise in the future)
