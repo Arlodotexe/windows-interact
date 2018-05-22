@@ -114,9 +114,10 @@ function speak() {
 }
 
 function log() {
-	let fn = function(param) {
-		if (System.prefs.logOutputFile) fs.createWriteStream(System.prefs.logOutputFile, { flags: 'a' }).write(((System.prefs.showTimeInLog) ? toStandardTime(new Date().toLocaleTimeString()) + ': ' : '') + util.format.apply(null, arguments) + '\n');
-		process.stdout.write(((System.prefs.showTimeInLog) ? toStandardTime(new Date().toLocaleTimeString()) + ': ' : '') + util.format.apply(null, arguments) + '\n');
+	let fn = function(param, receivingDevice) {
+		if (System.prefs.logOutputFile) fs.createWriteStream(System.prefs.logOutputFile, { flags: 'a' }).write(((System.prefs.showTimeInLog) ? toStandardTime(new Date().toLocaleTimeString()) + (!receivingDevice?': ':'') : '') + (receivingDevice?' Log @ ' + receivingDevice + ': ':'') + util.format.apply(null, arguments) + '\n');
+		process.stdout.write(((System.prefs.showTimeInLog) ? toStandardTime(new Date().toLocaleTimeString()) + (!receivingDevice?': ':'') : '') + (receivingDevice?' Log @ ' + receivingDevice + ': ':'') + util.format.apply(null, arguments) + '\n');
+		
 	};
 	fn.error = function(arg, receivingDevice) {
 		if (arg != '' && arg != undefined && arg != null) {
