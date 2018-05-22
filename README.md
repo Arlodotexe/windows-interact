@@ -345,18 +345,18 @@ This is playing with real power. See [here](https://docs.microsoft.com/en-us/pow
 System.PowerShell('ls');
 
 // Run a command, then do something with the output
-System.PowerShell('Move-Item -Path C:\test.txt -Destination E:\Temp\tst.txt', function(output) {
+System.PowerShell('Move-Item -Path C:\\test.txt -Destination E:\\Temp\\tst.txt', function(output) {
     doSomething(output);
 });
 
 // Run a command, then do something with the output and any possible errors
-System.PowerShell('Move-Item -Path C:\Temp -Destination C:\Logs', function(output, errors){
+System.PowerShell('Move-Item -Path C:\\Temp -Destination C:\\Logs', function(output, errors){
     doSomething(output)
     if(errors) doSomethingElse(errors)
 });
 
 // Run a command, but suppress any errors that occurr (Don't print them to console or log)
-System.PowerShell('Move-Item -Path .\*.txt -Destination C:\Logs', function(output){
+System.PowerShell('Move-Item -Path .\\*.txt -Destination C:\\Logs', function(output){
     doSomething();
 }, {suppressErrors: true});
 
@@ -364,7 +364,7 @@ System.PowerShell('Move-Item -Path .\*.txt -Destination C:\Logs', function(outpu
 
 System.PowerShell('Restart-Service -Name Audiosrv', function(output){
     doSomething();
-}, {supressErorrs: true, noLog: true});
+}, {suppressErrors: true, noLog: true});
 ```
 
 ### `System.requestTo()`

@@ -138,6 +138,7 @@ const System = {
 	authCode: authCode,
 	path: function(pathUrl) {
 		pathUrl = replaceAll(pathUrl.raw[0], '\\', '\\\\');
+		if(pathUrl.slice(-1) == '"' && pathUrl.charAt(0) == '"') pathUrl = replaceAll(pathUrl, '"', '');
 		return pathUrl;
 	},
 	log: log(),
