@@ -66,7 +66,7 @@ System.set.preferences({
 
 ### `System.log()`
 --- 
-An alternative to `console.log`. It will push the output of the log to the console and record each entry in a .txt file.
+An alternative to `console.log`. It will push the output of the log to the console and record each entry in a .txt file. It can also be used to record the from other devices. The second parameter will prepend `Log @ {device name}` to the log file.
 
 You can set the default log file location with `System.set.preferences`, like so:
 
