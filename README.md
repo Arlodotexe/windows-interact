@@ -1,6 +1,8 @@
 # windows-interact
 This library is a collection of tools for interacting with and automating Windows. It is designed to simplify and enhance existing tools while providing access to powerful new features. 
 
+Completely open to new features. Submit an issue labeled "Feature request" if there is something you'd like to see implemented!
+
 ---
 
 This started out as a personal project to help automate some IoT stuff and automate Windows, and as such there may be some functionality that would only make sense in such a use case (such as `System.error`'s `receivingDevice` parameter). I plan on leaving this type of functionality unless enough people ask otherwise.
