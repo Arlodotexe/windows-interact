@@ -5,8 +5,6 @@ Completely open to new features. Submit an issue labeled "Feature request" if th
 
 ---
 
-This started out as a personal project to help automate some IoT stuff and automate Windows, and as such there may be some functionality that would only make sense in such a use case (such as `System.error`'s `receivingDevice` parameter). I plan on leaving this type of functionality unless enough people ask otherwise.
-
 # Installation 
 --- 
 
@@ -107,7 +105,7 @@ System.log.speak('Testing');
 
 ### `System.error()`
 ---
-An alternative to `console.error`. It will push the output of the log to the console (in red!) and record each entry in a .txt file. It can also be used to log errors from other devices. The second parameter will prepend `ERROR @ {device name}` to the log file.
+An alternative to `console.error`. It will push the output of the log to the console (in red!) and record each entry in a .txt file. It can also be used to log errors from other devices.
 
 You can set the default log file location with `System.set.preferences`, like so:
 
@@ -121,9 +119,6 @@ Usage:
 ```javascript
 // Log an error to the console and default .txt file (if set)
 System.error('Logged information');
-
-// Log an error to the console and default .txt file (if set), but prepend 2nd parameter as ERROR @ {deviceName}
-System.error('Error changing temp', 'Thermostat'); // Output: ERROR @ Thermostat: Error changing temp
 ```
 
 ### `System.notify()`
