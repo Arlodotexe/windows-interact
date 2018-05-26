@@ -76,7 +76,7 @@ const authCode = {
 function speak() {
 	let speechQ = [];
 	let fn = function(phrase, TTSVoice, speed, callback) {
-		if (!TTSVoice) TTSVoice = System.prefs.defaultTTSVoice;
+		if (!TTSVoice) TTSVoice = System.prefs.TTSVoice;
 		speaking = {
 			now: null
 		};
@@ -98,7 +98,7 @@ function speak() {
 		trySpeech();
 	};
 	fn.now = function(phrase, TTSVoice) {
-		if (!TTSVoice) TTSVoice = System.prefs.defaultTTSVoice;
+		if (!TTSVoice) TTSVoice = System.prefs.TTSVoice;
 		say.speak(phrase, TTSVoice);
 	};
 	fn.stop = function(callback) {
@@ -115,15 +115,14 @@ function speak() {
 
 function log() {
 	let fn = function(param, receivingDevice) {
-		if (System.prefs.logOutputFile) fs.createWriteStream(System.prefs.logOutputFile, { flags: 'a' }).write(((System.prefs.showTimeInLog) ? toStandardTime(new Date().toLocaleTimeString()) + (!receivingDevice?': ':'') : '') + (receivingDevice?' Log @ ' + receivingDevice + ': ':'') + util.format.apply(null, arguments) + '\n');
-		process.stdout.write(((System.prefs.showTimeInLog) ? toStandardTime(new Date().toLocaleTimeString()) + (!receivingDevice?': ':'') : '') + (receivingDevice?' Log @ ' + receivingDevice + ': ':'') + util.format.apply(null, arguments) + '\n');
-		
+		if (System.prefs.log.outputFile) fs.createWriteStream(System.prefs.log.outputFile, { flags: 'a' }).write(((System.prefs.log.showTime) ? toStandardTime(new Date().toLocaleTimeString()) + (!receivingDevice?': ':'') : '') + (receivingDevice?' @ ' + receivingDevice + ': ':'') + util.format.apply(null, arguments) + '\n');
+		process.stdout.write(((System.prefs.log.showTime) ? toStandardTime(new Date().toLocaleTimeString()) + (!receivingDevice?': ':'') : '') + (receivingDevice?' @ ' + receivingDevice + ': ':'') + util.format.apply(null, arguments) + '\n');
 	};
 	fn.error = function(arg, receivingDevice) {
 		if (arg != '' && arg != undefined && arg != null) {
 			if (!receivingDevice) System.log('\nERROR ' + arg);
 			if (receivingDevice) System.log('\nERROR @' + receivingDevice + ': ' + arg);
-			if (System.prefs.defaultSpokenErrorMessage && !receivingDevice) System.speak(System.prefs.defaultSpokenErrorMessage);
+			if (System.prefs.spokenErrorMessage && !receivingDevice) System.speak(System.prefs.spokenErrorMessage);
 		}
 	};
 	fn.speak = function(phrase, voice, speed) {
@@ -148,19 +147,19 @@ const System = {
 		if (typeof formData == 'function') {
 			requestify[method.toLowerCase()](deviceName)
 				.then(function(response) {
-					System.log('Sent ' + method + ' request to ' + deviceName);
+					if(System.prefs.verbose.requestTo) System.log('Sent ' + method + ' request to ' + deviceName);
 					formData(response.body);
 				});
 		} else if (typeof method == 'function' || method == undefined) {
 			requestify.get(deviceName)
 				.then(function(response) {
-					System.log('Sent GET request to ' + deviceName);
-					if (method) method(response.body);
+					if(System.prefs.verbose.requestTo) System.log('Sent GET request to ' + deviceName);
+					if(method) method(response.body);
 				});
 		} else {
 			requestify[method.toLowerCase()](deviceName, formData)
 				.then(function(response) {
-					System.log('Sent ' + method + ' request to ' + deviceName);
+					if(System.prefs.verbose.requestTo) System.log('Sent ' + method + ' request to ' + deviceName);
 					if (callback) callback(response.body);
 				});
 		}
@@ -170,7 +169,7 @@ const System = {
 		if (loggedMessage !== '' && loggedMessage) {
 			if (!receivingDevice) System.log('\x1b[31m%s\x1b[0m', '\n' + (loggedMessage.includes('ERROR: ')) ? '' : 'ERROR: ' + loggedMessage);
 			if (receivingDevice) System.log('\x1b[31m%s\x1b[0m', '\nERROR @' + receivingDevice + ': ' + loggedMessage);
-			if (System.prefs.defaultSpokenErrorMessage && !receivingDevice) System.speak(System.prefs.defaultSpokenErrorMessage);
+			if (System.prefs.spokenErrorMessage && !receivingDevice) System.speak(System.prefs.spokenErrorMessage);
 		}
 	},
 	cmd: function(command, callback, options) {
@@ -397,6 +396,19 @@ const System = {
 			setTimeout(() => {
 				System.cmd('nircmd screensaver');
 			}, ((delay) ? delay : 0));
+		}
+	},
+	window: {
+		minimize: function(processName) {
+			if(processName !== undefined) {
+				System.process.getPid(processName, (result)=> {
+					for(let _ in result) {
+						System.cmd('nircmd win min process ' + result[_]);
+					}
+				});
+			} else {
+				System.cmd('nircmd win min active');
+			}
 		}
 	},
 	interact: {

@@ -23,7 +23,7 @@ Windows-Interact also relies moderately on [nircmd](http://nircmd.nirsoft.net/).
 ---
 ## `System.set`
 ---
-Used to set various thing within Windows, as well as set preferences for windows-interact
+Used to set various things within Windows, as well as set preferences for windows-interact
 
 #### Set the volume of the current audio device
 ---
@@ -45,17 +45,25 @@ System.set.defaultSoundDevice('Headset Earphone');
 ```javascript
 System.set.preferences({ 
     // Set master key (For System.authCode)
-    masterKey: 'MASTERKEY', 
-    // File to save log and error history (For System.log)
-    logOutputFile: System.path`C:\Users\User\node-server\log.txt`,
-    // Show or hide timestamp in log (For System.log & System.error)
-    showTimeInLog: true,
+    masterKey: 'MASTERKEY',
     // Default text to speech voice to use (For System.speak)
-    defaultTTSVoice: 'Microsoft David Desktop',
+    TTSVoice: 'Microsoft David Desktop',
     // Default message to speak when an error occurs (For System.error)
-    defaultSpokenErrorMessage: 'Something is wrong with your node server. Details are in the log', 
+    spokenErrorMessage: 'Something is wrong with your node server. Details are in the log', 
     // Inverval at which the app manager gets the status of registered apps. Leaving unset defaults the interval to 5000
     appManagerRefreshInterval: 2500,
+    // Log options
+    log: {
+        // File to save log and error history (For System.log)
+        outputFile: System.path`C:\Users\User\node-server\log.txt`,
+        // Show or hide timestamp in log (For System.log & System.error)
+        showTime: true,
+        // Control verbosity of parts of windows-interact
+        verbose: {
+            // Show preformatted log when requests are made
+            requestTo: true
+        }
+    }
     // Store URLs for quick access when using System.requestTo
     httpUrls: { 
         thisMachine: 'http://127.0.0.1:80/',
@@ -65,7 +73,7 @@ System.set.preferences({
 ```
 
 ### `System.log()`
---- 
+---
 An alternative to `console.log`. It will push the output of the log to the console and record each entry in a .txt file. It can also be used to record the from other devices. The second parameter will prepend `Log @ {device name}` to the log file.
 
 You can set the default log file location with `System.set.preferences`, like so:
@@ -138,7 +146,7 @@ You can set the default text to speech voice with `System.set.preferences`, like
 
 ```javascript
 System.set.preferences({
-	defaultTTSVoice: 'Microsoft Eva Mobile'
+	TTSVoice: 'Microsoft Eva Mobile'
 });
 ```
 
