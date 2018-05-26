@@ -166,7 +166,7 @@ const System = {
 	speak: speak(),
 	error: function(loggedMessage) {
 		if (loggedMessage !== '' && loggedMessage) {
-			System.log('\x1b[31m%s\x1b[0m', '\nERROR: ' + loggedMessage);
+			System.log('\x1b[31m%s\x1b[0m', 'ERROR: ' + loggedMessage);
 			if (System.prefs.spokenErrorMessage) System.speak(System.prefs.spokenErrorMessage);
 		}
 	},
