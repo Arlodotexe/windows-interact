@@ -114,13 +114,85 @@ function speak() {
 }
 
 function log() {
-	let fn = function(param) {
+	function now(param) {
 		if (System.prefs.log && System.prefs.log.outputFile) fs.createWriteStream(System.prefs.log.outputFile, { flags: 'a' }).write(((System.prefs.log && System.prefs.log.showTime) ? toStandardTime(new Date().toLocaleTimeString()) + ': ' : '') + util.format.apply(null, arguments) + '\n');
 		process.stdout.write(((System.prefs.log && System.prefs.log.showTime) ? toStandardTime(new Date().toLocaleTimeString()) + ': ' : '') + util.format.apply(null, arguments) + '\n');
+	}
+	let fn = function(param, colours) {
+		let colour = '';
+		if (colours && colours.colour) {
+			colour = colours.colour.toLowerCase();
+			switch (colour) {
+				case 'red':
+					colour = '\x1b[31m';
+					break;
+				case 'green':
+					colour = '\x1b[32m';
+					break;
+				case 'yellow':
+					colour = '\x1b[33m';
+					break;
+				case 'blue':
+					colour = '\x1b[34m';
+				case 'magenta':
+					colour = '\x1b[35m';
+					break;
+				case 'cyan':
+					colour = '\x1b[36m';
+					break;
+				case 'white':
+					colour = '\x1b[37m';
+					break;
+				case 'black':
+					colour = '\x1b[30m';
+					break;
+				default:
+					System.error('Log: Could not find the colour ' + colour + '. See documentation for a complete list of colours');
+			}
+		}
+		if (colours && colours.background) {
+			if (colours.background) {
+				let background = colours.background.toLowerCase();
+				switch (background) {
+					case 'red':
+						background = '\x1b[41m';
+						break;
+					case 'green':
+						background = '\x1b[42m';
+						break;
+					case 'yellow':
+						background = '\x1b[43m';
+						break;
+					case 'blue':
+						background = '\x1b[44m';
+					case 'magenta':
+						background = '\x1b[45m';
+						break;
+					case 'cyan':
+						background = '\x1b[46m';
+						break;
+					case 'white':
+						background = '\x1b[47m';
+						break;
+					case 'black':
+						background = '\x1b[40m';
+						break;
+					default:
+						System.error('Log: Could not find the background colour ' + background + '. See documentation for a complete list of background colours');
+				}
+				colour = colour + background;
+			}
+		}
+		if (!colours) {
+			now(param);
+		} else {
+			colour = colour + '%s\x1b[0m';
+			now(colour, param);
+		}
 	};
-	fn.speak = function(phrase, voice, speed) {
+	fn.speak = function(phrase, voice, speed, options) {
 		System.speak(phrase, voice, speed);
-		System.log('(Spoken): ' + phrase);
+		System.log('(Spoken): ' + phrase, options);
 	};
 	return fn;
 }
@@ -160,7 +232,7 @@ const System = {
 	speak: speak(),
 	error: function(loggedMessage, options) {
 		if (loggedMessage !== '' && loggedMessage) {
-			System.log('\x1b[31m%s\x1b[0m', 'ERROR: ' + loggedMessage);
+			System.log('ERROR: ' + loggedMessage, { colour: 'red', background: 'black' });
 			if (System.prefs.spokenErrorMessage && !(options && options.silent)) System.speak(System.prefs.spokenErrorMessage);
 		}
 	},

@@ -83,7 +83,17 @@ System.set.preferences({
 
 ### `System.log()`
 ---
-An alternative to `console.log`. It will push the output of the log to the console and record each entry in a .txt file.
+An alternative to `console.log`. It will push the output of the log to the console and record each entry in a .txt file, and provide styling options for the text
+
+Available colours for background and text are:
+
+- Red
+- Green
+- Yellow
+- Blue
+- Magenta
+- Cyan
+- Black
 
 You can set the default log file location with `System.set.preferences`, like so:
 
@@ -105,11 +115,20 @@ System.set.preferences({
 
 Usage:
 ```javascript
+System.log(message, {background: 'colour', colour: 'colour'});
+
 // Log information to the console and .txt file
 System.log('Logged information');
 
+// Log information to the console and .txt file, with colored background and text
+System.log('Logged information', {background: 'colour', colour: 'colour'})
+
+System.log.speak(phrase, voice, speed, options);
 // Log information to the console and .txt file, and also System.speak() it
-System.log.speak('Testing');
+System.log.speak('Testing'); 
+
+// Log information to the console and .txt file, System.speak() it with a specific voice, at half speed, with a black background and a blue text colour
+System.log.speak('Testing', 'Microsoft David Desktop', 0.5, {background: 'black', colour: 'blue'})
 ```
 
 
