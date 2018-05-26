@@ -46,6 +46,17 @@ System.set.defaultSoundDevice('Headset Earphone');
 System.set.preferences({ 
     // Set master key (For System.authCode)
     masterKey: 'MASTERKEY',
+    authCodeParse: function(receivedCode) {
+    // Should return true or false if the receivedCode meets your criteria
+        if (receivedCode > 5) {
+            System.alert('Correct code: ' + receivedCode)
+            return true;
+        }
+        else {
+            System.alert('Incorrect code: ' + receivedCode)
+            return false;
+        }
+    },
     // Default text to speech voice to use (For System.speak)
     TTSVoice: 'Microsoft David Desktop',
     // Default message to speak when an error occurs (For System.error)
