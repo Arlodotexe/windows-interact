@@ -15,7 +15,7 @@ System.set.preferences({
 });
 
 setTimeout(() => {
-    System.window.minimize();
+    System.window.minimize()
     setTimeout(() => {
         System.window.maximize('Code');
     }, 2000);
