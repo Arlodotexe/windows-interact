@@ -114,15 +114,14 @@ function speak() {
 }
 
 function log() {
-	let fn = function(param, receivingDevice) {
-		if (System.prefs.log && System.prefs.log.outputFile) fs.createWriteStream(System.prefs.log.outputFile, { flags: 'a' }).write(((System.prefs.log.showTime) ? toStandardTime(new Date().toLocaleTimeString()) + (!receivingDevice ? ': ' : '') : '') + (receivingDevice ? ' @ ' + receivingDevice + ': ' : '') + util.format.apply(null, arguments) + '\n');
-		process.stdout.write(((System.prefs.log && System.prefs.log.showTime) ? toStandardTime(new Date().toLocaleTimeString()) + (!receivingDevice ? ': ' : '') : '') + (receivingDevice ? ' @ ' + receivingDevice + ': ' : '') + util.format.apply(null, arguments) + '\n');
+	let fn = function(param) {
+		if (System.prefs.log && System.prefs.log.outputFile) fs.createWriteStream(System.prefs.log.outputFile, { flags: 'a' }).write((System.prefs.log.showTime) ? toStandardTime(new Date().toLocaleTimeString()) + ': ':'' + util.format.apply(null, arguments) + '\n');
+		process.stdout.write((System.prefs.log && System.prefs.log.showTime) ? toStandardTime(new Date().toLocaleTimeString()) + ': ':'' + util.format.apply(null, arguments) + '\n');
 	};
-	fn.error = function(arg, receivingDevice) {
+	fn.error = function(arg) {
 		if (arg != '' && arg != undefined && arg != null) {
-			if (!receivingDevice) System.log('\nERROR ' + arg);
-			if (receivingDevice) System.log('\nERROR @' + receivingDevice + ': ' + arg);
-			if (System.prefs.spokenErrorMessage && !receivingDevice) System.speak(System.prefs.spokenErrorMessage);
+			System.log('\nERROR ' + arg);
+			if (System.prefs.spokenErrorMessage) System.speak(System.prefs.spokenErrorMessage);
 		}
 	};
 	fn.speak = function(phrase, voice, speed) {
@@ -165,11 +164,10 @@ const System = {
 		}
 	},
 	speak: speak(),
-	error: function(loggedMessage, receivingDevice) {
+	error: function(loggedMessage) {
 		if (loggedMessage !== '' && loggedMessage) {
-			if (!receivingDevice) System.log('\x1b[31m%s\x1b[0m', '\n' + (loggedMessage.includes('ERROR: ')) ? '' : 'ERROR: ' + loggedMessage);
-			if (receivingDevice) System.log('\x1b[31m%s\x1b[0m', '\nERROR @' + receivingDevice + ': ' + loggedMessage);
-			if (System.prefs.spokenErrorMessage && !receivingDevice) System.speak(System.prefs.spokenErrorMessage);
+			System.log('\x1b[31m%s\x1b[0m', '\nERROR: ' + loggedMessage);
+			if (System.prefs.spokenErrorMessage) System.speak(System.prefs.spokenErrorMessage);
 		}
 	},
 	cmd: function(command, callback, options) {
