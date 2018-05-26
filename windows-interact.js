@@ -115,8 +115,8 @@ function speak() {
 
 function log() {
 	let fn = function(param, receivingDevice) {
-		if (System.prefs.log.outputFile) fs.createWriteStream(System.prefs.log.outputFile, { flags: 'a' }).write(((System.prefs.log.showTime) ? toStandardTime(new Date().toLocaleTimeString()) + (!receivingDevice ? ': ' : '') : '') + (receivingDevice ? ' @ ' + receivingDevice + ': ' : '') + util.format.apply(null, arguments) + '\n');
-		process.stdout.write(((System.prefs.log.showTime) ? toStandardTime(new Date().toLocaleTimeString()) + (!receivingDevice ? ': ' : '') : '') + (receivingDevice ? ' @ ' + receivingDevice + ': ' : '') + util.format.apply(null, arguments) + '\n');
+		if (System.prefs.log && System.prefs.log.outputFile) fs.createWriteStream(System.prefs.log.outputFile, { flags: 'a' }).write(((System.prefs.log.showTime) ? toStandardTime(new Date().toLocaleTimeString()) + (!receivingDevice ? ': ' : '') : '') + (receivingDevice ? ' @ ' + receivingDevice + ': ' : '') + util.format.apply(null, arguments) + '\n');
+		process.stdout.write(((System.prefs.log && System.prefs.log.showTime) ? toStandardTime(new Date().toLocaleTimeString()) + (!receivingDevice ? ': ' : '') : '') + (receivingDevice ? ' @ ' + receivingDevice + ': ' : '') + util.format.apply(null, arguments) + '\n');
 	};
 	fn.error = function(arg, receivingDevice) {
 		if (arg != '' && arg != undefined && arg != null) {
@@ -413,6 +413,16 @@ const System = {
 				System.cmd('nircmd win max process ' + processName);
 			} else {
 				System.cmd('nircmd win max foreground');
+			}
+		},
+		resize: function(width, height, processName) {
+			if(parseInt(width) !== NaN) System.error('System.window.resize(): Invalid or no width or height was specified');
+			if(parseInt(height) !== NaN) System.error('System.window.resize(): Invalid or no height was specified');
+
+			if(processName !== undefined && parseInt(height) !== NaN && parseInt(height) !== NaN) {
+				System.cmd('nircmd win setsize process ' + processName + ' x y ' + width + ' ' + height, {suppressErrors: true, noLog: true});
+			} else {
+				System.cmd('nircmd win setsize foreground x y ' + width + ' ' + height, {supressErrors: true, noLog: true});
 			}
 		}
 	},
