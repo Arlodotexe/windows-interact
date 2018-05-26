@@ -83,13 +83,23 @@ System.set.preferences({
 
 ### `System.log()`
 ---
-An alternative to `console.log`. It will push the output of the log to the console and record each entry in a .txt file. It can also be used to record the from other devices. The second parameter will prepend `Log @ {device name}` to the log file.
+An alternative to `console.log`. It will push the output of the log to the console and record each entry in a .txt file.
 
 You can set the default log file location with `System.set.preferences`, like so:
 
 ```javascript
 System.set.preferences({
-	logOutputFile: System.path`C:\Users\User\node-server\log.txt`
+    log: {
+    // File to save log and error history (For System.log)
+    outputFile: System.path`C:\Users\User\node-server\log.txt`,
+    // Show or hide timestamp in log (For System.log & System.error)
+    showTime: true,
+    // Control verbosity of parts of windows-interact
+    verbose: {
+        // Show preformatted log when requests are made
+        requestTo: true
+      }
+    }
 });
 ```
 
@@ -105,20 +115,26 @@ System.log.speak('Testing');
 
 ### `System.error()`
 ---
-An alternative to `console.error`. It will push the output of the log to the console (in red!) and record each entry in a .txt file. It can also be used to log errors from other devices.
+An alternative to `console.error`. It will push the output of the log to the console (in red!) and record each entry in a .txt file
 
-You can set the default log file location with `System.set.preferences`, like so:
+You can set some default options with `System.set.preferences`, like so:
 
 ```javascript
 System.set.preferences({
-    logOutputFile: System.path`C:\Users\User\node-server\log.txt`
+    // Record each entry in an external file
+    logOutputFile: System.path`C:\Users\User\node-server\log.txt`,
+    // Message to System.speak() whenever System.error is called
+    spokenErrorMessage: 'Something is wrong with your node server. Details are in the log'
 });
 ```
 
 Usage:
 ```javascript
 // Log an error to the console and default .txt file (if set)
-System.error('Logged information');
+System.error('Error information');
+
+// Log an error to the console, but don't speak the set spokenErrorMessage
+System.error('Error information', {silent: true});
 ```
 
 ### `System.notify()`
