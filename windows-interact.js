@@ -432,6 +432,18 @@ const System = {
 			} else {
 				System.cmd('nircmd win setsize foreground x y ' + width + ' ' + height, { supressErrors: true, noLog: true });
 			}
+		},
+		move: function(x, y, processName) {
+			if (isNaN(x)) System.error('Cannot resize: Invalid or no height was specified');
+			if (isNaN(y)) System.error('Cannot resize: Invalid or no width was specified');
+
+			if (processName !== undefined && isNaN(x) === false && isNaN(y) === false) {
+				if (!processName.includes('.exe')) processName = processName + '.exe';
+				System.window.restore(processName);
+				System.cmd('nircmd win move process ' + processName + ' ' + x + ' ' + y, { suppressErrors: true, noLog: true });
+			} else {
+				System.cmd('nircmd win setsize foreground x y ' + width + ' ' + height, { supressErrors: true, noLog: true });
+			}
 		}
 	},
 	interact: {
