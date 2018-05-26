@@ -387,9 +387,6 @@ const System = {
 		}
 	},
 	window: {
-		showDesktop: function() {
-			System.PowerShell('(New-Object -ComObject shell.application).toggleDesktop()');
-		},
 		minimize: function(processName) {
 			if (processName !== undefined) {
 				if (!processName.includes('.exe')) processName = processName + '.exe';
@@ -439,6 +436,9 @@ const System = {
 			}
 		}
 	},
+	showDesktop: function() {
+		System.PowerShell('(New-Object -ComObject shell.application).toggleDesktop()');
+	},
 	screenshot: function(region, path) {
 		if (path == undefined) {
 			path = '*clipboard*';
@@ -476,7 +476,7 @@ const System = {
 	pauseMedia: function() {
 		robot.keyTap('audio_play');
 		System.log('Media played/paused');
-	},
+	}
 }
 
 module.exports = System;

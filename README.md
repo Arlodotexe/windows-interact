@@ -307,6 +307,72 @@ System.process.getWindowTitle('notepad', function(output) {
     });
 ```
 
+## `System.window`
+
+Control a Window's state
+
+#### Minimize a window
+
+If no processName is specified, it will minimize the current window in the foreground.
+
+```javascript
+// Minimize a window by process name. Don't sweat it if you forget the .exe, it'll correct it.
+System.window.minimize('firefox.exe');
+
+// Minimize the current window
+System.window.minimize();
+```
+
+#### Maximize a window
+
+If no processName is specified, it will maximize the current window in the foreground.
+
+```javascript
+// Maximize a window by process name. Don't sweat it if you forget the .exe, it'll correct it.
+System.window.maximize('firefox.exe');
+
+// Maximize the current window
+System.window.maximize();
+```
+
+#### Restore a window to a windowed state
+If no processName is specified, it will restore the current window in the foreground.
+
+```javascript
+// Restore a window by process name. Don't sweat it if you forget the .exe, it'll correct it.
+System.window.restore('firefox.exe');
+
+// Restore the current window
+System.window.restore();
+```
+
+#### Resize a window
+If no processName is specified, it will resize the current window in the foreground.
+
+```javascript
+System.window.resize(width, height, processName);
+
+// Resize a window by process name. Don't sweat it if you forget the .exe, it'll correct it.
+System.window.resize('800', '600', 'firefox.exe');
+
+// Resize the current window
+System.window.resize(960, 1080);
+```
+
+#### Move a window
+- X and Y are relative to the current window position. 
+- If no processName is specified, it will move the current window in the foreground.
+
+```javascript
+System.window.move(x, y, processName);
+
+// Move a window by process name. Don't sweat it if you forget the .exe, it'll correct it.
+System.window.move('-50', '0', 'firefox.exe');
+
+// Move the current window
+System.window.move(0, 50);
+```
+
 ### `System.cmd()`
 ---
 Run a command in Command Prompt.
