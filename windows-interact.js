@@ -170,11 +170,9 @@ const System = {
 				options = callback;
 				callback = undefined;
 			}
-
 			if (stderr && !(options && options.suppressErrors)) System.error(stderr);
 			if (callback) callback(stdout, stderr);
 			if (stdout && !(options && options.noLog)) return console.log(stdout);
-
 		});
 	},
 	PowerShell: function(command, callback, options) {
@@ -311,7 +309,7 @@ const System = {
 			}, { noLog: true, suppressErrors: true });
 		},
 		kill: function(processName) {
-			if (processName != '' && processName != undefined && processName != null) System.cmd('taskkill /F /IM ' + processName);
+			if (processName != '' && processName != undefined && processName != null) System.cmd('taskkill /F /IM "' + processName + '"');
 		},
 		onKill: function(appName, callback) {
 			//App must already be running, if not, it will wait until it has started and then listen via powershell for an exit event
@@ -327,7 +325,7 @@ const System = {
 			}, { noLog: true, suppressErrors: true });
 		},
 		getWindowTitle: function(processName, callback) {
-			System.PowerShell('get-process ' + replaceAll(processName, '.exe', '') + ' | select MainWindowTitle', function(stdout) {
+			System.PowerShell('get-process "' + replaceAll(processName, '.exe', '') + '" | select MainWindowTitle', function(stdout) {
 				output = '' + stdout;
 				output = replaceAll(output, 'MainWindowTitle', '');
 				output = replaceAll(output, '---------------', '');
@@ -338,7 +336,7 @@ const System = {
 		},
 		isRunning: function(processName, callback) {
 			try {
-				System.PowerShell('get-process ' + processName + ' | select ProcessName', (stdout) => {
+				System.PowerShell('get-process "' + processName + '" | select ProcessName', (stdout) => {
 					if (stdout.includes(processName)) callback(true);
 					else callback(false);
 				});
@@ -390,7 +388,7 @@ const System = {
 		minimize: function(processName) {
 			if (processName !== undefined) {
 				if (!processName.includes('.exe')) processName = processName + '.exe';
-				System.cmd('nircmd win min process ' + processName);
+				System.cmd('nircmd win min process "' + processName + '"');
 			} else {
 				System.cmd('nircmd win min foreground');
 			}
@@ -398,7 +396,7 @@ const System = {
 		maximize: function(processName) {
 			if (processName !== undefined) {
 				if (!processName.includes('.exe')) processName = processName + '.exe';
-				System.cmd('nircmd win max process ' + processName);
+				System.cmd('nircmd win max process "' + processName + '"');
 			} else {
 				System.cmd('nircmd win max foreground');
 			}
@@ -406,7 +404,7 @@ const System = {
 		restore: function(processName) {
 			if (processName !== undefined) {
 				if (!processName.includes('.exe')) processName = processName + '.exe';
-				System.cmd('nircmd win normal process ' + processName);
+				System.cmd('nircmd win normal process "' + processName + '"');
 			} else {
 				System.cmd('nircmd win normal foreground');
 			}
@@ -418,7 +416,7 @@ const System = {
 			if (processName !== undefined && isNaN(height) === false && isNaN(width) === false) {
 				if (!processName.includes('.exe')) processName = processName + '.exe';
 				System.window.restore(processName);
-				System.cmd('nircmd win setsize process ' + processName + ' x y ' + width + ' ' + height, { suppressErrors: true, noLog: true });
+				System.cmd('nircmd win setsize process "' + processName + '" x y ' + width + ' ' + height, { suppressErrors: true, noLog: true });
 			} else {
 				System.cmd('nircmd win setsize foreground x y ' + width + ' ' + height, { supressErrors: true, noLog: true });
 			}
@@ -430,7 +428,7 @@ const System = {
 			if (processName !== undefined && isNaN(x) === false && isNaN(y) === false) {
 				if (!processName.includes('.exe')) processName = processName + '.exe';
 				System.window.restore(processName);
-				System.cmd('nircmd win move process ' + processName + ' ' + x + ' ' + y, { suppressErrors: true, noLog: true });
+				System.cmd('nircmd win move process "' + processName + '" ' + x + ' ' + y, { suppressErrors: true, noLog: true });
 			} else {
 				System.cmd('nircmd win setsize foreground x y ' + width + ' ' + height, { supressErrors: true, noLog: true });
 			}
