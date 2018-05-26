@@ -412,11 +412,6 @@ const System = {
 		}
 	},
 	interact: {
-		minimizeWindow: function() {
-			setTimeout(() => {
-				robot.keyTap('down', 'command');
-			}, 1000);
-		},
 		showDesktop: function() {
 			System.PowerShell('(New-Object -ComObject shell.application).toggleDesktop()');
 		},
