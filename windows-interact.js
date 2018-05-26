@@ -401,6 +401,7 @@ const System = {
 	window: {
 		minimize: function(processName) {
 			if(processName !== undefined) {
+				if(!processName.includes('.exe')) processName = processName + '.exe';
 				System.process.getPid(processName, (result)=> {
 					for(let _ in result) {
 						System.cmd('nircmd win min process ' + result[_]);
@@ -408,6 +409,18 @@ const System = {
 				});
 			} else {
 				System.cmd('nircmd win min active');
+			}
+		},
+		maximize: function(processName) {
+			if(processName !== undefined) {
+				if(!processName.includes('.exe')) processName = processName + '.exe';
+				System.process.getPid(processName, (result)=> {
+					for(let _ in result) {
+						System.cmd('nircmd win max process ' + result[_]);
+					}
+				});
+			} else {
+				System.cmd('nircmd win max active');
 			}
 		}
 	},
