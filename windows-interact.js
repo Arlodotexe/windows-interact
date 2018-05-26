@@ -21,7 +21,7 @@ String.prototype.replaceAll = function(t, e, n) {
 
 function toStandardTime(militaryTime) {
 	militaryTime = militaryTime.split(':');
-	if (militaryTime[0].charAt(0) && militaryTime[0].charAt(1) > 2) {
+	if (militaryTime[0].charAt(0) == 1 && militaryTime[0].charAt(1) > 2) {
 		return (militaryTime[0] - 12) + ':' + militaryTime[1] + ':' + militaryTime[2] + ' PM';
 	} else {
 		return militaryTime.join(':') + ' AM';
