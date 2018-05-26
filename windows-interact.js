@@ -387,6 +387,9 @@ const System = {
 		}
 	},
 	window: {
+		showDesktop: function() {
+			System.PowerShell('(New-Object -ComObject shell.application).toggleDesktop()');
+		},
 		minimize: function(processName) {
 			if (processName !== undefined) {
 				if (!processName.includes('.exe')) processName = processName + '.exe';
@@ -436,49 +439,44 @@ const System = {
 			}
 		}
 	},
-	interact: {
-		showDesktop: function() {
-			System.PowerShell('(New-Object -ComObject shell.application).toggleDesktop()');
-		},
-		pauseMedia: function() {
-			robot.keyTap('audio_play');
-			System.log('Media played/paused');
-		},
-		screenshot: function(region, path) {
-			if (path == undefined) {
-				path = '*clipboard*';
-			} else path = '"' + path + '"';
+	screenshot: function(region, path) {
+		if (path == undefined) {
+			path = '*clipboard*';
+		} else path = '"' + path + '"';
 
-			if (region == 'full') System.cmd('nircmd savescreenshotfull ' + path);
-			else if (region == 'window') System.cmd('nircmd savescreenshotwin ' + path);
+		if (region == 'full') System.cmd('nircmd savescreenshotfull ' + path);
+		else if (region == 'window') System.cmd('nircmd savescreenshotwin ' + path);
+	},
+	Cortana: {
+		genericCommand: function(command) {
+			robot.keyTap('command');
+			setTimeout(() => {
+				robot.typeString(command);
+				setTimeout(() => { robot.keyTap('enter'); }, 500);
+			}, 500);
 		},
-		Cortana: {
-			genericCommand: function(command) {
-				robot.keyTap('command');
-				setTimeout(() => {
-					robot.typeString(command);
-					setTimeout(() => { robot.keyTap('enter'); }, 500);
-				}, 500);
-			},
-			openApp: function(appName) {
-				robot.keyTap('command');
-				setTimeout(() => {
-					robot.typeString('Open ' + appName);
-					robot.keyTap('enter');
-				}, 500);
-			},
-			playSong: function(songName, service) {
-				System.interact.Cortana('Play ' + songName + ' on ' + service);
-				System.interact.minimizeWindow();
-			},
-			playPlaylist: function(playlist, service) {
-				System.interact.Cortana.genericCommand('Play my ' + playlist + ' playlist on ' + service);
-			},
-			startListening: function() {
-				robot.keyTap('C', 'command');
-			}
+		openApp: function(appName) {
+			robot.keyTap('command');
+			setTimeout(() => {
+				robot.typeString('Open ' + appName);
+				robot.keyTap('enter');
+			}, 500);
+		},
+		playSong: function(songName, service) {
+			System.interact.Cortana('Play ' + songName + ' on ' + service);
+			System.interact.minimizeWindow();
+		},
+		playPlaylist: function(playlist, service) {
+			System.interact.Cortana.genericCommand('Play my ' + playlist + ' playlist on ' + service);
+		},
+		startListening: function() {
+			robot.keyTap('C', 'command');
 		}
-	}
+	},
+	pauseMedia: function() {
+		robot.keyTap('audio_play');
+		System.log('Media played/paused');
+	},
 }
 
 module.exports = System;
