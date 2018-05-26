@@ -118,12 +118,6 @@ function log() {
 		if (System.prefs.log && System.prefs.log.outputFile) fs.createWriteStream(System.prefs.log.outputFile, { flags: 'a' }).write(((System.prefs.log && System.prefs.log.showTime) ? toStandardTime(new Date().toLocaleTimeString()) + ': ' : '') + util.format.apply(null, arguments) + '\n');
 		process.stdout.write(((System.prefs.log && System.prefs.log.showTime) ? toStandardTime(new Date().toLocaleTimeString()) + ': ' : '') + util.format.apply(null, arguments) + '\n');
 	};
-	fn.error = function(arg) {
-		if (arg != '' && arg != undefined && arg != null) {
-			System.log('\nERROR ' + arg);
-			if (System.prefs.spokenErrorMessage) System.speak(System.prefs.spokenErrorMessage);
-		}
-	};
 	fn.speak = function(phrase, voice, speed) {
 		System.speak(phrase, voice, speed);
 		System.log('(Spoken): ' + phrase);
