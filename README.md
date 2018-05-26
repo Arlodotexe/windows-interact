@@ -351,7 +351,7 @@ Control a Window's state
 If no processName is specified, it will minimize the current window in the foreground.
 
 ```javascript
-// Minimize a window by process name. Don't sweat it if you forget the .exe, it'll correct it.
+// Minimize a window by process name. The ".exe" is optional.
 System.window.minimize('firefox.exe');
 
 // Minimize the current window
@@ -363,7 +363,7 @@ System.window.minimize();
 If no processName is specified, it will maximize the current window in the foreground.
 
 ```javascript
-// Maximize a window by process name. Don't sweat it if you forget the .exe, it'll correct it.
+// Maximize a window by process name. The ".exe" is optional
 System.window.maximize('firefox.exe');
 
 // Maximize the current window
@@ -374,7 +374,7 @@ System.window.maximize();
 If no processName is specified, it will restore the current window in the foreground.
 
 ```javascript
-// Restore a window by process name. Don't sweat it if you forget the .exe, it'll correct it.
+// Restore a window by process name. The ".exe" is optional
 System.window.restore('firefox.exe');
 
 // Restore the current window
@@ -387,7 +387,7 @@ If no processName is specified, it will resize the current window in the foregro
 ```javascript
 System.window.resize(width, height, processName);
 
-// Resize a window by process name. Don't sweat it if you forget the .exe, it'll correct it.
+// Resize a window by process name. The ".exe" is optional
 System.window.resize('800', '600', 'firefox.exe');
 
 // Resize the current window
@@ -401,7 +401,7 @@ System.window.resize(960, 1080);
 ```javascript
 System.window.move(x, y, processName);
 
-// Move a window by process name. Don't sweat it if you forget the .exe, it'll correct it.
+// Move a window by process name. The ".exe" is optional
 System.window.move('-50', '0', 'firefox.exe');
 
 // Move the current window
