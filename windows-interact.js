@@ -271,14 +271,20 @@ const System = {
 
 		},
 		launch: function(appName) {
-			if (System.appManager.registeredApps[appName].onLaunch) System.appManager.registeredApps[appName].onLaunch();
-			else System.error('Unable to launch requested application. The requested app is either not registered or misspelled');
-			System.cmd('nircmd execmd ' + System.appManager.registeredApps[appName].path);
+			if (!System.appManager.registeredApps[appName]) {
+				System.error('Unable to launch requested application. The requested app is either not registered or misspelled');
+			} else {
+				System.cmd('nircmd execmd ' + System.appManager.registeredApps[appName].path);
+				if (System.appManager.registeredApps[appName].onLaunch) System.appManager.registeredApps[appName].onLaunch();
+			}
 		},
 		kill: function(appName) {
-			if (System.appManager.registeredApps[appName].onKill) System.appManager.registeredApps[appName].onKill();
-			else System.error('Unable to kill requested application. The requested app is either not registered or misspelled');
-			System.process.kill(System.appManager.registeredApps[appName].processName);
+			if (!System.appManager.registeredApps[appName]) {
+				System.error('Unable to kill requested application. The requested app is either not registered or misspelled');
+			} else {
+				System.process.kill(System.appManager.registeredApps[appName].processName);
+				if (System.appManager.registeredApps[appName].onKill) System.appManager.registeredApps[appName].onKill();
+			}
 		},
 		hide: function(appName) {
 			System.cmd('nircmd win hide process "' + processName + '"');
