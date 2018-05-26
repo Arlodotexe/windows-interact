@@ -181,7 +181,7 @@ System.path`C:\WINDOWS\system32\notepad.exe`;
 
 ### `System.speak()`
 ---
-Speak text asynchronously. Similar to my [async-sayjs](https://github.com/Arlodotexe/async-sayjs) package (Yep, that started here), but with some benefits and enhanments.
+Speak text asynchronously. Similar to my [async-sayjs](https://github.com/Arlodotexe/async-sayjs) package (Yep, that started here), but with some benefits and enhancments.
 
 You can set the default text to speech voice with `System.set.preferences`, like so:
 
@@ -412,8 +412,6 @@ System.window.move(0, 50);
 ---
 Run a command in Command Prompt.
 
-Instead of simply printing errors and output, errors that occur will use `System.error()` and the output will use `System.log()`
-
 ```javascript
 System.cmd('dir');
 
@@ -443,8 +441,6 @@ System.cmd('tasklist', function(output){
 ### `System.PowerShell()`
 ---
 Run a PowerShell command
-
-Instead of simply printing errors and output, errors that occur will use System.error() and the output will use System.log()
 
 This is playing with real power. See [here](https://docs.microsoft.com/en-us/powershell/module/?view=powershell-6) and [here](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/?view=powershell-6) for resources on what you can do with PowerShell to automate and interact with Windows, beyond what Windows interact provides
 
@@ -499,6 +495,8 @@ System.set.preferences({
 ```
 
 ```javascript
+System.requestTo(deviceName, method, formData, callback);
+
 // Make a POST request
 System.requestTo('http://httpbin.org/post/', 'POST', {
     property: 'value'
@@ -576,26 +574,54 @@ if(System.authCode.isValid('6')) {
 
 ### `System.confirm()`
 
-An alternative to the browsers's `confirm()`. Unlike the browser, it will not stop execution of code and wait for the user. Therefore, it requires a callback to do something with the user's choice (this will be changed to a promise in the future)
+An alternative to the browsers's `confirm()`. Unlike the browser, it will not stop execution of code and wait for the user. It will instead show multiple dialog boxes. To chain multiple alerts, you need to wrap them in an async function (see below).
 
 ```javascript
-System.confirm('Title', 'Message?', function(bool) {
-    /// 'bool' returns true if the user clicks 'OK', or false if they click 'Cancel'
-    doSomething();
-});
+System.confirm('Title', 'Question?');
+
+System.alert('Question'); 
+
+// Chain multiple alerts
+async function chain() {
+    if(await System.confirm('Message')) {
+        await System.alert('Message!');
+    }
+}
+chain();
+
+// Super simplified self-executing async function
+(async()=>{
+    if(await System.confirm('Message?')) {
+        await System.alert('Ok!');
+    } else {
+        await System.alert('Canceled...');
+    }
+})();
+
 ```
 
 ### `System.alert()`
 
-An alternative to the browsers's `alert()`. Unlike the browser, it will not stop execution of code and wait for the user. It will require a callback if you wish to run code only _after_ the user has clicked 'Ok' (this will be changed to a promise in the future)
+An alternative to the browsers's `alert()`. Unlike the browser, it will not stop execution of code and wait for the user. It will instead show multiple dialog boxes. To chain multiple alerts, you need to wrap them in an async function (see below).
 
 ```javascript
 // Show an alert box with title and message
-System.alert('Title', 'Message!', function() {
-    doSomething();
-});
+System.alert('Title', 'Message!'); 
 
 System.alert('Simple message'); 
+
+// Chain multiple alerts
+async function chain() {
+    await System.alert('Message');
+    await System.alert('More message');
+}
+chain();
+
+// Super simplified self-executing async function
+(async()=>{
+    await System.alert('Message');
+    await System.alert('More message');
+})();
 ```
 
 ## `System.power()`

@@ -261,16 +261,20 @@ const System = {
 		if (title == undefined) System.error('Cannot send notification. No message was given');
 		System.cmd('nircmd trayballoon "' + ((!message) ? '' : title) + '" "' + ((message) ? message : title) + '" "c:\\"');
 	},
-	//TODO: For confirm and alert, make them return promises instead to avoid callback hell
-	confirm: function(title, message, callback) {
-		System.PowerShell('$wshell = New-Object -ComObject Wscript.Shell;$wshell.Popup("' + (typeof message == 'function' || !message) ? title : message + '",0,"' + (typeof message == 'function' || !message) ? 'Node' : title + '",0x1)', function(stdout) {
-			if (callback) callback((stdout.trim() == '1') ? true : false);
-		}, { noLog: true });
+	confirm: function(title, message) {
+		return new Promise((resolve, reject) => {
+			System.PowerShell('$wshell = New-Object -ComObject Wscript.Shell;$wshell.Popup("' + ((message) ? message : title) + '",0,"' + ((!message) ? 'Node' : message) + '",0x1)', function(stdout) {
+				resolve((stdout.trim() == '1') ? true : false);
+			}, { noLog: true });
+		});
+
 	},
-	alert: function(title, message, callback) {
-		System.cmd('nircmd infobox "' + ((message) ? message : title) + '" "' + ((!message) ? 'Node' : message) + '"', () => {
-			if (callback) callback();
-		}, { noLog: true });
+	alert: function(title, message) {
+		return new Promise((resolve, reject) => {
+			System.cmd('nircmd infobox "' + ((message) ? message : title) + '" "' + ((!message) ? 'Node' : message) + '"', () => {
+				resolve();
+			}, { noLog: true });
+		});
 	},
 	appManager: {
 		registeredApps: {},
