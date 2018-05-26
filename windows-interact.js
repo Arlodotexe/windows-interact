@@ -115,8 +115,8 @@ function speak() {
 
 function log() {
 	let fn = function(param, receivingDevice) {
-		if (System.prefs.log.outputFile) fs.createWriteStream(System.prefs.log.outputFile, { flags: 'a' }).write(((System.prefs.log.showTime) ? toStandardTime(new Date().toLocaleTimeString()) + (!receivingDevice?': ':'') : '') + (receivingDevice?' @ ' + receivingDevice + ': ':'') + util.format.apply(null, arguments) + '\n');
-		process.stdout.write(((System.prefs.log.showTime) ? toStandardTime(new Date().toLocaleTimeString()) + (!receivingDevice?': ':'') : '') + (receivingDevice?' @ ' + receivingDevice + ': ':'') + util.format.apply(null, arguments) + '\n');
+		if (System.prefs.log.outputFile) fs.createWriteStream(System.prefs.log.outputFile, { flags: 'a' }).write(((System.prefs.log.showTime) ? toStandardTime(new Date().toLocaleTimeString()) + (!receivingDevice ? ': ' : '') : '') + (receivingDevice ? ' @ ' + receivingDevice + ': ' : '') + util.format.apply(null, arguments) + '\n');
+		process.stdout.write(((System.prefs.log.showTime) ? toStandardTime(new Date().toLocaleTimeString()) + (!receivingDevice ? ': ' : '') : '') + (receivingDevice ? ' @ ' + receivingDevice + ': ' : '') + util.format.apply(null, arguments) + '\n');
 	};
 	fn.error = function(arg, receivingDevice) {
 		if (arg != '' && arg != undefined && arg != null) {
@@ -138,7 +138,7 @@ const System = {
 	authCode: authCode,
 	path: function(pathUrl) {
 		pathUrl = replaceAll(pathUrl.raw[0], '\\', '\\\\');
-		if(pathUrl.slice(-1) == '"' && pathUrl.charAt(0) == '"') pathUrl = replaceAll(pathUrl, '"', '');
+		if (pathUrl.slice(-1) == '"' && pathUrl.charAt(0) == '"') pathUrl = replaceAll(pathUrl, '"', '');
 		return pathUrl;
 	},
 	log: log(),
@@ -147,19 +147,19 @@ const System = {
 		if (typeof formData == 'function') {
 			requestify[method.toLowerCase()](deviceName)
 				.then(function(response) {
-					if(System.prefs.verbose.requestTo) System.log('Sent ' + method + ' request to ' + deviceName);
+					if (System.prefs.verbose.requestTo) System.log('Sent ' + method + ' request to ' + deviceName);
 					formData(response.body);
 				});
 		} else if (typeof method == 'function' || method == undefined) {
 			requestify.get(deviceName)
 				.then(function(response) {
-					if(System.prefs.verbose.requestTo) System.log('Sent GET request to ' + deviceName);
-					if(method) method(response.body);
+					if (System.prefs.verbose.requestTo) System.log('Sent GET request to ' + deviceName);
+					if (method) method(response.body);
 				});
 		} else {
 			requestify[method.toLowerCase()](deviceName, formData)
 				.then(function(response) {
-					if(System.prefs.verbose.requestTo) System.log('Sent ' + method + ' request to ' + deviceName);
+					if (System.prefs.verbose.requestTo) System.log('Sent ' + method + ' request to ' + deviceName);
 					if (callback) callback(response.body);
 				});
 		}
@@ -196,19 +196,19 @@ const System = {
 		}
 	},
 	notify: function(title, message) {
-		if(title==undefined) System.error('Cannot send notification. No message was given');
+		if (title == undefined) System.error('Cannot send notification. No message was given');
 		System.cmd('nircmd trayballoon "' + ((!message) ? '' : title) + '" "' + ((message) ? message : title) + '" "c:\\"');
 	},
 	//TODO: For confirm and alert, make them return promises instead to avoid callback hell
 	confirm: function(title, message, callback) {
-		System.PowerShell('$wshell = New-Object -ComObject Wscript.Shell;$wshell.Popup("' + (typeof message == 'function' || !message)?title:message + '",0,"' + (typeof message == 'function' || !message)?'Node':title + '",0x1)', function(stdout) {
+		System.PowerShell('$wshell = New-Object -ComObject Wscript.Shell;$wshell.Popup("' + (typeof message == 'function' || !message) ? title : message + '",0,"' + (typeof message == 'function' || !message) ? 'Node' : title + '",0x1)', function(stdout) {
 			if (callback) callback((stdout.trim() == '1') ? true : false);
 		}, { noLog: true });
 	},
 	alert: function(title, message, callback) {
 		System.cmd('nircmd infobox "' + ((message) ? message : title) + '" "' + ((!message) ? 'Node' : message) + '"', () => {
 			if (callback) callback();
-		}, {noLog: true});
+		}, { noLog: true });
 	},
 	appManager: {
 		registeredApps: {},
@@ -225,7 +225,7 @@ const System = {
 
 				//Handle and parse app path
 				let appPath = System.appManager.registeredApps[appName].path;
-				if(!(appPath.slice(-1) == '"' && appPath.charAt(0) == '"')) appPath = '"' + appPath + '"';
+				if (!(appPath.slice(-1) == '"' && appPath.charAt(0) == '"')) appPath = '"' + appPath + '"';
 				System.appManager.registeredApps[appName].path = appPath;
 
 				//Handle and parse process name
@@ -400,27 +400,19 @@ const System = {
 	},
 	window: {
 		minimize: function(processName) {
-			if(processName !== undefined) {
-				if(!processName.includes('.exe')) processName = processName + '.exe';
-				System.process.getPid(processName, (result)=> {
-					for(let _ in result) {
-						System.cmd('nircmd win min process ' + result[_]);
-					}
-				});
+			if (processName !== undefined) {
+				if (!processName.includes('.exe')) processName = processName + '.exe';
+				System.cmd('nircmd win min process ' + processName);
 			} else {
-				System.cmd('nircmd win min active');
+				System.cmd('nircmd win min foreground');
 			}
 		},
 		maximize: function(processName) {
-			if(processName !== undefined) {
-				if(!processName.includes('.exe')) processName = processName + '.exe';
-				System.process.getPid(processName, (result)=> {
-					for(let _ in result) {
-						System.cmd('nircmd win max process ' + result[_]);
-					}
-				});
+			if (processName !== undefined) {
+				if (!processName.includes('.exe')) processName = processName + '.exe';
+				System.cmd('nircmd win max process ' + processName);
 			} else {
-				System.cmd('nircmd win max active');
+				System.cmd('nircmd win max foreground');
 			}
 		}
 	},

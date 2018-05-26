@@ -14,7 +14,9 @@ System.set.preferences({
     masterKey: 'I like lasagna'
 });
 
-
-System.confirm('I am groot?', (bool)=>{
-    if(bool) System.alert('I am groot!');
-});
+setTimeout(() => {
+    System.window.minimize();
+    setTimeout(() => {
+        System.window.maximize('Code');
+    }, 2000);
+}, 2000);
