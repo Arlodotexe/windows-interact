@@ -115,8 +115,8 @@ function speak() {
 
 function log() {
 	let fn = function(param) {
-		if (System.prefs.log && System.prefs.log.outputFile) fs.createWriteStream(System.prefs.log.outputFile, { flags: 'a' }).write((System.prefs.log.showTime) ? toStandardTime(new Date().toLocaleTimeString()) + ': ':'' + util.format.apply(null, arguments) + '\n');
-		process.stdout.write((System.prefs.log && System.prefs.log.showTime) ? toStandardTime(new Date().toLocaleTimeString()) + ': ':'' + util.format.apply(null, arguments) + '\n');
+		if (System.prefs.log && System.prefs.log.outputFile) fs.createWriteStream(System.prefs.log.outputFile, { flags: 'a' }).write((System.prefs.log.showTime) ? toStandardTime(new Date().toLocaleTimeString()) + ': ' : '' + util.format.apply(null, arguments) + '\n');
+		process.stdout.write((System.prefs.log && System.prefs.log.showTime) ? toStandardTime(new Date().toLocaleTimeString()) + ': ' : '' + util.format.apply(null, arguments) + '\n');
 	};
 	fn.error = function(arg) {
 		if (arg != '' && arg != undefined && arg != null) {
@@ -413,14 +413,24 @@ const System = {
 				System.cmd('nircmd win max foreground');
 			}
 		},
-		resize: function(width, height, processName) {
-			if(parseInt(width) !== NaN) System.error('System.window.resize(): Invalid or no width or height was specified');
-			if(parseInt(height) !== NaN) System.error('System.window.resize(): Invalid or no height was specified');
-
-			if(processName !== undefined && parseInt(height) !== NaN && parseInt(height) !== NaN) {
-				System.cmd('nircmd win setsize process ' + processName + ' x y ' + width + ' ' + height, {suppressErrors: true, noLog: true});
+		restore: function(processName) {
+			if (processName !== undefined) {
+				if (!processName.includes('.exe')) processName = processName + '.exe';
+				System.cmd('nircmd win normal process ' + processName);
 			} else {
-				System.cmd('nircmd win setsize foreground x y ' + width + ' ' + height, {supressErrors: true, noLog: true});
+				System.cmd('nircmd win normal foreground');
+			}
+		},
+		resize: function(width, height, processName) {
+			if (isNaN(height)) System.error('Cannot resize: Invalid or no height was specified');
+			if (isNaN(height)) System.error('Cannot resize: Invalid or no width was specified');
+
+			if (processName !== undefined && isNaN(height) === false && isNaN(width) === false) {
+				if (!processName.includes('.exe')) processName = processName + '.exe';
+				System.window.restore(processName);
+				System.cmd('nircmd win setsize process ' + processName + ' x y ' + width + ' ' + height, { suppressErrors: true, noLog: true });
+			} else {
+				System.cmd('nircmd win setsize foreground x y ' + width + ' ' + height, { supressErrors: true, noLog: true });
 			}
 		}
 	},
