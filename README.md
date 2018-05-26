@@ -291,16 +291,6 @@ System.process.onKill('notepad', function() {
 });
 ```
 
-#### Run a callback when a process is spawned
-
-Honestly this probably doesn't even work. This is on the todo list to fix, so just don't use it.
-
-```javascript
-System.process.onLaunch('notepad', function() {
-    System.log('notepad launched');
-});
-```
-
 #### Get Window Title of running application
 
 ```javascript

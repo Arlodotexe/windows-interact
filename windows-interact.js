@@ -326,16 +326,6 @@ const System = {
 				}
 			}, { noLog: true, suppressErrors: true });
 		},
-		onLaunch: function(appName, callback) {
-			System.process.isRunning(appName, function(bool) {
-				if (!bool) {
-					setTimeout(() => {
-						System.process.onLaunch(appName, callback);
-					}, 3000);
-				}
-				else if (bool) callback();
-			});
-		},
 		getWindowTitle: function(processName, callback) {
 			System.PowerShell('get-process ' + replaceAll(processName, '.exe', '') + ' | select MainWindowTitle', function(stdout) {
 				output = '' + stdout;
