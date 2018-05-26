@@ -600,87 +600,79 @@ System.power.sleep(delay);
 // If no delay is provided, it will start the screensaver immediately
 System.power.screenSaver(delay);
 ```
-
-## `System.interact`
 ---
-Used for actually interacting with the Windows UI
-
-### Minimize the current window
-
-```javascript
-System.interact.minimize();
-```
 
 ### Show the desktop
 
 ```javascript
-System.interact.showDesktop();
+System.showDesktop();
 ```
 
 ### Pause or resume media being played
 Same as pressing the pause button on keyboard.
 
 ```javascript
-System.interact.pauseMedia();
+System.pauseMedia();
 ```
+
 ### Take a screenshot
 
 ```javascript
 // Screenshot the entire screen and save to clipboard
-System.interact.screenshot();
-System.interact.screenshot('full');
+System.screenshot();
+System.screenshot('full');
 
 // Screenshot a region of the screen and save it to clipboard
-System.interact.screenshot('window');
+System.screenshot('window');
 
 // Screenshot the entire screen and save to file
-System.interact.screenshot('full', System.path`C:\Users\User\Pictures\Screenshots\screenshot.png`);
+System.screenshot('full', System.path`C:\Users\User\Pictures\Screenshots\screenshot.png`);
 
 // Screenshot the current window only and save to file
-System.interact.screenshot('window', System.path`C:\Users\User\Pictures\Screenshots\screenshot.png`);
+System.screenshot('window', System.path`C:\Users\User\Pictures\Screenshots\screenshot.png`);
 ```
 
-## `System.interact.Cortana`
+## `System.Cortana`
 
 Interact with Cortana
 
 ### Give Cortana a generic command
 
 ```javascript
-System.interact.Cortana.genericCommand('Hello!');
+System.Cortana.genericCommand('Hello!');
 ```
 
 ### Use Cortana to open an app
 
 ```javascript
-System.interact.Cortana.openApp('Microsoft Edge');
+System.Cortana.openApp('Microsoft Edge');
 ```
 
 ### Use Cortana to play a song
 
 ```javascript
-System.interact.Cortana.playSong(songName, service);
+System.Cortana.playSong(songName, service);
 
 // Play 'Carry on my wayward son' on Spotify
-System.interact.Cortana.playSong('Carry on my wayward son'. 'Spotify');
+System.Cortana.playSong('Carry on my wayward son'. 'Spotify');
 // Play 'Carry on my warward son' on Groove
-System.interact.Cortana.playSong('Carry on my wayward son'. 'Groove');
+System.Cortana.playSong('Carry on my wayward son'. 'Groove');
 ```
 
 ### Use Cortana to play a playlist
 
 ```javascript
-System.interact.Cortana.playSong(playlist, service);
+System.Cortana.playSong(playlist, service);
 
 // Play 'Carry on my wayward son' on Spotify
-System.interact.Cortana.playSong('Gaming'. 'Spotify');
+System.Cortana.playSong('Gaming'. 'Spotify');
 // Play 'Carry on my warward son' on Groove
-System.interact.Cortana.playSong('Oldies'. 'Groove');
+System.Cortana.playSong('Oldies'. 'Groove');
 ```
 
 ### Invoke Cortana's listening mode
 Make sure you have "Let Cortana listen for my commands when I press the Windows Logo + C" enabled in the Setting app
 
 ```javascript
-System.interact.Cortana.startListening();
+System.Cortana.startListening();
 ```
