@@ -1,7 +1,7 @@
 # windows-interact
 This library is a collection of tools for interacting with and automating Windows. It is designed to simplify and enhance existing tools while providing access to powerful new features. 
 
-Completely open to new features. Submit an issue labeled "Feature request" if there is something you'd like to see implemented!
+Completely open to new features. Submit an issue labeled "Feature request" or contact me on twitter @[Arlodottxt](https://twitter.com/Arlodottxt) with your input.
 
 ---
 
@@ -63,7 +63,7 @@ System.set.preferences({
     appManagerRefreshInterval: 2500,
     // Log options
     log: {
-        // File to save log and error history (For System.log)
+        // File to save log and error history
         outputFile: System.path`C:\Users\User\node-server\log.txt`,
         // Show or hide timestamp in log (For System.log & System.error)
         showTime: true,
@@ -140,10 +140,12 @@ You can set some default options with `System.set.preferences`, like so:
 
 ```javascript
 System.set.preferences({
-    // Record each entry in an external file
-    logOutputFile: System.path`C:\Users\User\node-server\log.txt`,
-    // Message to System.speak() whenever System.error is called
-    spokenErrorMessage: 'Something is wrong with your node server. Details are in the log'
+    log: {
+    // File to save log and error history (For System.log)
+    outputFile: System.path`C:\Users\User\node-server\log.txt`,
+    // Show or hide timestamp in log (For System.log & System.error)
+    showTime: true
+    }
 });
 ```
 
