@@ -717,9 +717,9 @@ System.Cortana.openApp('Microsoft Edge');
 System.Cortana.playSong(songName, service);
 
 // Play 'Carry on my wayward son' on Spotify
-System.Cortana.playSong('Carry on my wayward son'. 'Spotify');
+System.Cortana.playSong('Carry on my wayward son', 'Spotify');
 // Play 'Carry on my warward son' on Groove
-System.Cortana.playSong('Carry on my wayward son'. 'Groove');
+System.Cortana.playSong('Carry on my wayward son', 'Groove');
 ```
 
 ### Use Cortana to play a playlist
