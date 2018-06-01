@@ -115,8 +115,8 @@ function speak() {
 
 function log() {
 	function now(param) {
-		if (System.prefs.log && System.prefs.log.outputFile) fs.createWriteStream(System.prefs.log.outputFile, { flags: 'a' }).write(((System.prefs.log && System.prefs.log.showTime) ? toStandardTime(new Date().toLocaleTimeString()) + ': ' : '') + util.format.apply(null, arguments) + '\n');
-		process.stdout.write(((System.prefs.log && System.prefs.log.showTime) ? toStandardTime(new Date().toLocaleTimeString()) + ': ' : '') + util.format.apply(null, arguments) + '\n');
+		if (System.prefs.log && System.prefs.log.outputFile) fs.createWriteStream(System.prefs.log.outputFile, { flags: 'a' }).write(((System.prefs.log && System.prefs.log.showTime) ? new Date().toLocaleTimeString() + ': ' : '') + util.format.apply(null, arguments) + '\n');
+		process.stdout.write(((System.prefs.log && System.prefs.log.showTime) ? new Date().toLocaleTimeString() + ': ' : '') + util.format.apply(null, arguments) + '\n');
 	}
 	let fn = function(param, colours) {
 		let colour = '';
