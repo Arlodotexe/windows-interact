@@ -434,7 +434,11 @@ const System = {
 			System.currentLocation = string;
 		},
 		preferences: function(object) {
-			System.prefs = object;
+			for (var property in object) {
+				if (object.hasOwnProperty(property)) {
+					System.prefs[property] = object[property];
+				}
+			}
 		},
 	},
 	power: {
