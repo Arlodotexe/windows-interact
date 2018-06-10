@@ -4,6 +4,7 @@ const fs = require('fs');
 const util = require('util');
 const say = require('say');
 const requestify = require('requestify');
+//const typeChecking = require('./tests/type-checking');
 
 function replaceAll(str, find, replace) {
 	return String.raw`${str}`.replace(new RegExp(find.replace(/([.*+?^=!:${}()|\[\]\/\\\r\n\t|\n|\r\t])/g, '\\$1'), 'g'), replace);
@@ -118,7 +119,8 @@ function log() {
 		if (System.prefs.log && System.prefs.log.outputFile) fs.createWriteStream(System.prefs.log.outputFile, { flags: 'a' }).write(((System.prefs.log && System.prefs.log.showTime) ? new Date().toLocaleTimeString() + ': ' : '') + util.format.apply(null, arguments) + '\n');
 		process.stdout.write(((System.prefs.log && System.prefs.log.showTime) ? new Date().toLocaleTimeString() + ': ' : '') + util.format.apply(null, arguments) + '\n');
 	}
-	let fn = function(param, colours) {
+	let fn = function(message, colours) {
+		//typeChecking.log(message, colours);
 		let colour = '';
 		if (colours && colours.colour) {
 			colour = colours.colour.toLowerCase();
@@ -184,13 +186,14 @@ function log() {
 			}
 		}
 		if (!colours) {
-			now(param);
+			now(message);
 		} else {
 			colour = colour + '%s\x1b[0m';
-			now(colour, param);
+			now(colour, message);
 		}
 	};
 	fn.speak = function(phrase, voice, speed, options) {
+		//typeChecking.log.speak(phrase, voice, speed, options);
 		System.speak(phrase, voice, speed);
 		System.log('(Spoken): ' + phrase, options);
 	};
@@ -232,7 +235,7 @@ const System = {
 	speak: speak(),
 	error: function(loggedMessage, options) {
 		if (loggedMessage !== '' && loggedMessage) {
-			System.log('ERROR: ' + loggedMessage, { colour: 'red', background: 'black' });
+			throw new Error('\x1b[31m\x1b[40m'+ loggedMessage + '\x1b[0m');
 			if (System.prefs.spokenErrorMessage && !(options && options.silent)) System.speak(System.prefs.spokenErrorMessage);
 		}
 	},
@@ -434,6 +437,7 @@ const System = {
 			System.currentLocation = string;
 		},
 		preferences: function(object) {
+			//typeChecking.set.preferences(object);
 			for (var property in object) {
 				if (object.hasOwnProperty(property)) {
 					System.prefs[property] = object[property];
