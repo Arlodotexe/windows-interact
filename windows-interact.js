@@ -115,15 +115,22 @@ function speak() {
 }
 
 function log() {
-	function now(param) {
-		if (System.prefs.log && System.prefs.log.outputFile) fs.createWriteStream(System.prefs.log.outputFile, { flags: 'a' }).write(((System.prefs.log && System.prefs.log.showTime) ? new Date().toLocaleTimeString() + ': ' : '') + util.format.apply(null, arguments) + '\n');
-		process.stdout.write(((System.prefs.log && System.prefs.log.showTime) ? new Date().toLocaleTimeString() + ': ' : '') + util.format.apply(null, arguments) + '\n');
+	function now(param, options) {
+		let dateString = '';
+		if (System.prefs.log && System.prefs.log.showTime) {
+			dateString = new Date().toLocaleTimeString().toString() + ': ';
+		}
+		if (options && !options.showTime) {
+			dateString = '';
+		}
+		if (System.prefs.log && System.prefs.log.outputFile) fs.createWriteStream(System.prefs.log.outputFile, { flags: 'a' }).write(dateString + param + '\n');
+		console.log(dateString + param);
 	}
-	let fn = function(message, colours) {
+	let fn = function(message, options) {
 		//typeChecking.log(message, colours);
 		let colour = '';
-		if (colours && colours.colour) {
-			colour = colours.colour.toLowerCase();
+		if (options && options.colour) {
+			colour = options.colour.toLowerCase();
 			switch (colour) {
 				case 'red':
 					colour = '\x1b[31m';
@@ -152,9 +159,9 @@ function log() {
 					System.error('Log: Could not find the colour ' + colour + '. See documentation for a complete list of colours');
 			}
 		}
-		if (colours && colours.background) {
-			if (colours.background) {
-				let background = colours.background.toLowerCase();
+		if (options && options.background) {
+			if (options.background) {
+				let background = options.background.toLowerCase();
 				switch (background) {
 					case 'red':
 						background = '\x1b[41m';
@@ -185,11 +192,11 @@ function log() {
 				colour = colour + background;
 			}
 		}
-		if (!colours) {
-			now(message);
+		if (!options) {
+			now(message, options);
 		} else {
-			colour = colour + '%s\x1b[0m';
-			now(colour, message);
+			colour = colour + message + '\x1b[0m';
+			now(colour, options);
 		}
 	};
 	fn.speak = function(phrase, voice, speed, options) {
@@ -235,7 +242,14 @@ const System = {
 	speak: speak(),
 	error: function(loggedMessage, options) {
 		if (loggedMessage !== '' && loggedMessage) {
-			throw new Error('\x1b[31m\x1b[40m'+ loggedMessage + '\x1b[0m');
+			let dateString = '';
+			if (System.prefs.log && System.prefs.log.showTime) {
+				dateString = new Date().toLocaleTimeString() + ': ';
+			}
+			if (options && options.showTime == false) {
+				dateString = '';
+			}
+			throw new Error(dateString + '\x1b[31m\x1b[40m' + loggedMessage + '\x1b[0m');
 			if (System.prefs.spokenErrorMessage && !(options && options.silent)) System.speak(System.prefs.spokenErrorMessage);
 		}
 	},
