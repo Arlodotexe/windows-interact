@@ -12,7 +12,7 @@ Install the [npm](https://www.npmjs.com/package/windows-interact) package by run
 
 Then, in your js file, `require` the package.
 ```javascript 
-const System = require('windows-interact.js');
+const System = require('windows-interact');
 ```
 
 Windows-Interact also relies moderately on [nircmd](http://nircmd.nirsoft.net/). This is included in the package but untested on another machine, so if you start having troubles, try installing it to your machine. 
