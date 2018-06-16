@@ -119,7 +119,7 @@ function log() {
 		if (System.prefs.log && System.prefs.log.showTime) {
 			dateString = new Date().toLocaleTimeString().toString() + ': ';
 		}
-		if (options && !options.showTime) {
+		if (options && options.showTime == false) {
 			dateString = '';
 		}
 		if (System.prefs.log && System.prefs.log.outputFile) fs.createWriteStream(System.prefs.log.outputFile, { flags: 'a' }).write(dateString + param + '\n');
@@ -247,7 +247,6 @@ const System = {
 			if (System.prefs.log.spokenErrorMessage && !(options && options.silent)) System.speak(System.prefs.log.spokenErrorMessage);
 			try { throw new Error(loggedMessage); }
 			catch (error) {
-				System.log(dateString);
 				System.log(error.stack, { colour: 'red', background: 'black' });
 			}
 		}
