@@ -23,20 +23,6 @@ Windows-Interact also relies moderately on [nircmd](http://nircmd.nirsoft.net/).
 ---
 Used to set various things within Windows, as well as set preferences for windows-interact
 
-#### Set the volume of the current audio device
----
-This 99% accurate due to the math required behind the scenes
-```javascript
-System.set.volume('50');
-```
-
-#### Set the default playback device in Windows
----
-
-```javascript
-System.set.defaultSoundDevice('Headset Earphone');
-```
-
 #### Set Global user preferences for Windows Interact
 ---
 
@@ -57,8 +43,6 @@ System.set.preferences({
     },
     // Default text to speech voice to use (For System.speak)
     TTSVoice: 'Microsoft David Desktop',
-    // Default message to speak when an error occurs (For System.error)
-    spokenErrorMessage: 'Something is wrong with your node server. Details are in the log', 
     // Inverval at which the app manager gets the status of registered apps. Leaving unset defaults the interval to 5000
     appManagerRefreshInterval: 2500,
     // Log options
@@ -67,6 +51,8 @@ System.set.preferences({
         outputFile: System.path`C:\Users\User\node-server\log.txt`,
         // Show or hide timestamp in log (For System.log & System.error)
         showTime: true,
+        // Default message to speak when an error occurs (For System.error)
+        spokenErrorMessage: 'Something is wrong with your node server. Details are in the log', 
         // Control verbosity of parts of windows-interact
         verbose: {
             // Show preformatted log when requests are made
@@ -79,6 +65,20 @@ System.set.preferences({
         thermostat: 'http://localhost:8084/'
     }
 });
+```
+
+#### Set the volume of the current audio device
+---
+This 99% accurate due to the math required behind the scenes
+```javascript
+System.set.volume('50');
+```
+
+#### Set the default playback device in Windows
+---
+
+```javascript
+System.set.defaultSoundDevice('Headset Earphone');
 ```
 
 ### `System.log()`
@@ -115,32 +115,34 @@ System.set.preferences({
 
 Usage:
 ```javascript
-System.log(message, {background: 'colour', colour: 'colour'});
+System.log(message, {backgroundColor: 'color', color: 'color'});
 
 // Log information to the console and .txt file
 System.log('Logged information');
 
 // Log information to the console and .txt file, with colored background and text
-System.log('Logged information', {background: 'colour', colour: 'colour'})
+System.log('Logged information', {background: 'color', color: 'color'})
 
 System.log.speak(phrase, voice, speed, options);
 // Log information to the console and .txt file, and also System.speak() it
 System.log.speak('Testing'); 
 
 // Log information to the console and .txt file, System.speak() it with a specific voice, at half speed, with a black background and a blue text colour
-System.log.speak('Testing', 'Microsoft David Desktop', 0.5, {background: 'black', colour: 'blue'})
+System.log.speak('Testing', 'Microsoft David Desktop', 0.5, {backgroundColor: 'black', colour: 'blue'})
 ```
 
 
 ### `System.error()`
 ---
-An alternative to `console.error`. It will push the output of the log to the console (in red!) and record each entry in a .txt file
+An alternative to `throw new Error()`. It will push the output of the log to the console (in a red colour) and record each entry in a .txt file
 
 You can set some default options with `System.set.preferences`, like so:
 
 ```javascript
 System.set.preferences({
     log: {
+    // Default message to speak when an error occurs
+    spokenErrorMessage: 'Something is wrong with your node server. Details are in the log', 
     // File to save log and error history (For System.log)
     outputFile: System.path`C:\Users\User\node-server\log.txt`,
     // Show or hide timestamp in log (For System.log & System.error)
