@@ -1,9 +1,9 @@
 const robot = require('robotjs');
 const exec = require('child_process').exec;
 const fs = require('fs');
-const util = require('util');
 const say = require('say');
 const requestify = require('requestify');
+let prefs = {};
 
 function replaceAll(str, find, replace) {
 	return String.raw`${str}`.replace(new RegExp(find.replace(/([.*+?^=!:${}()|\[\]\/\\\r\n\t|\n|\r\t])/g, '\\$1'), 'g'), replace);
@@ -17,30 +17,6 @@ String.prototype.replaceAll = function(t, e, n) {
 	let r = "" + this, g = "", l = r, s = 0, h = -1
 	for (n && (t = t.toLowerCase(), l = r.toLowerCase()); (h = l.indexOf(t)) > -1;)g += r.substring(s, s + h) + e, l = l.substring(h + t.length, l.length), s += h + t.length;
 	return l.length > 0 && (g += r.substring(r.length - l.length, r.length)), g;
-};
-
-function toStandardTime(militaryTime) {
-	militaryTime = militaryTime.split(':');
-	if (militaryTime[0].charAt(0) == 1 && militaryTime[0].charAt(1) > 2) {
-		return (militaryTime[0] - 12) + ':' + militaryTime[1] + ':' + militaryTime[2] + ' PM';
-	} else {
-		return militaryTime.join(':') + ' AM';
-	}
-}
-
-
-let split = {
-	first: function(t) {
-		let n = Math.floor(t.length / 2), r = t.lastIndexOf(" ", n), f = t.indexOf(" ", n + 1);
-		return n = -1 == r || -1 != f && n - r >= f - n ? f : r, t.substr(0, n);
-	}, last: function(t) {
-		let n = Math.floor(t.length / 2), r = t.lastIndexOf(" ", n), f = t.indexOf(" ", n + 1);
-		return n = -1 == r || -1 != f && n - r >= f - n ? f : r, t.substr(n + 1);
-	}
-};
-
-let prefs = {
-	masterKey: 'AREALLYLONGSTRINGWITHLOTSOFLETTERSANDNUMBERS'
 };
 
 const parseAuthCode = function(receivedCode) {
