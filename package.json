@@ -2,7 +2,7 @@
   "name": "windows-interact",
   "version": "1.1.2",
   "description": "NPM Library of various tools for interacting with and automating Windows ",
-  "main": "windows-interact.min.js",
+  "main": "windows-interact.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "minify": "node-minify --compressor babel-minify --input windows-interact.js --output windows-interact.min.js"
