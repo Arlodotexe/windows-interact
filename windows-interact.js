@@ -228,7 +228,7 @@ const System = {
 		}
 	},
 	cmd: function(command, callback, options) {
-		exec('cmd /c ' + command, function(error, stdout, stderr) {
+		exec('cmd /c "' + command + '"', function(error, stdout, stderr) {
 			if (typeof callback == 'object' && options == undefined) {
 				options = callback;
 				callback = undefined;
@@ -250,7 +250,7 @@ const System = {
 	},
 	notify: function(title, message) {
 		if (title == undefined) System.error('Cannot send notification. No message was given');
-		System.cmd(__dirname + '/node_modules/windows-interact/nircmd.exe trayballoon "' + ((!message) ? '' : title) + '" "' + ((message) ? message : title) + '" "c:\\"');
+		System.cmd(__dirname + '\\nircmd.exe trayballoon "' + ((!message) ? '' : title) + '" "' + ((message) ? message : title) + '" "c:\\"');
 	},
 	confirm: function(title, message) {
 		return new Promise((resolve, reject) => {
@@ -262,7 +262,7 @@ const System = {
 	},
 	alert: function(title, message) {
 		return new Promise((resolve, reject) => {
-			System.cmd(__dirname + '/node_modules/windows-interact/nircmd.exe infobox "' + ((message) ? message : title) + '" "' + ((!message) ? 'Node' : message) + '"', () => {
+			System.cmd(__dirname + '\\nircmd.exe infobox "' + ((message) ? message : title) + '" "' + ((!message) ? 'Node' : message) + '"', () => {
 				resolve();
 			}, { noLog: true });
 		});
@@ -333,7 +333,7 @@ const System = {
 			if (!System.appManager.registeredApps[appName]) {
 				System.error('Unable to launch requested application. The requested app is either not registered or misspelled');
 			} else {
-				System.cmd(__dirname + '/node_modules/windows-interact/nircmd.exe execmd ' + System.appManager.registeredApps[appName].path);
+				System.cmd(__dirname + '\\nircmd.exe execmd ' + System.appManager.registeredApps[appName].path);
 				if (System.appManager.registeredApps[appName].onLaunch) System.appManager.registeredApps[appName].onLaunch();
 			}
 		},
@@ -346,7 +346,7 @@ const System = {
 			}
 		},
 		hide: function(processName) {
-			System.cmd(__dirname + '/node_modules/windows-interact/nircmd.exe win hide process "' + processName + '"');
+			System.cmd(__dirname + '\\nircmd.exe win hide process "' + processName + '"');
 		},
 		switchTo: function(appName) {
 			let windowTitle = System.appManager.registeredApps[appName].windowTitle;
@@ -355,7 +355,7 @@ const System = {
 				System.PowerShell('$myshell = New-Object -com "Wscript.Shell"; $myshell.AppActivate("' + windowTitle + '")', (stdout) => {
 					if (stdout.includes('False')) {
 						System.log('Using process name as fallback. This may not be as accurate');
-						System.cmd(__dirname + '/node_modules/windows-interact/nircmd.exe win activate process "' + processName + '"');
+						System.cmd(__dirname + '\\nircmd.exe win activate process "' + processName + '"');
 					}
 				}, { noLog: true });
 			} else {
@@ -414,10 +414,10 @@ const System = {
 	},
 	set: {
 		volume: function(vol) {
-			System.cmd(__dirname + '/node_modules/windows-interact/nircmd.exe setsysvolume ' + Math.floor(vol * 665.35));
+			System.cmd(__dirname + '\\nircmd.exe setsysvolume ' + Math.floor(vol * 665.35));
 		},
 		defaultSoundDevice: function(device) {
-			System.cmd("nircmd setdefaultsounddevice \"" + device + "\"");
+			System.cmd(__dirname + '\\nircmd.exe setdefaultsounddevice "' + device + '"');
 		},
 		location: function(string) {
 			System.log('Set location to ' + string);
@@ -445,12 +445,12 @@ const System = {
 		},
 		sleep: function(delay) {
 			setTimeout(() => {
-				System.cmd(__dirname + '/node_modules/windows-interact/nircmd.exe standby');
+				System.cmd(__dirname + '\\nircmd.exe standby');
 			}, ((delay) ? delay : 0));
 		},
 		screenSaver: function(delay) {
 			setTimeout(() => {
-				System.cmd(__dirname + '/node_modules/windows-interact/nircmd.exe screensaver');
+				System.cmd(__dirname + '\\nircmd.exe screensaver');
 			}, ((delay) ? delay : 0));
 		}
 	},
@@ -458,25 +458,25 @@ const System = {
 		minimize: function(processName) {
 			if (processName !== undefined) {
 				if (!processName.includes('.exe')) processName = processName + '.exe';
-				System.cmd(__dirname + '/node_modules/windows-interact/nircmd.exe win min process "' + processName + '"');
+				System.cmd(__dirname + '\\nircmd.exe win min process "' + processName + '"');
 			} else {
-				System.cmd(__dirname + '/node_modules/windows-interact/nircmd.exe win min foreground');
+				System.cmd(__dirname + '\\nircmd.exe win min foreground');
 			}
 		},
 		maximize: function(processName) {
 			if (processName !== undefined) {
 				if (!processName.includes('.exe')) processName = processName + '.exe';
-				System.cmd(__dirname + '/node_modules/windows-interact/nircmd.exe win max process "' + processName + '"');
+				System.cmd(__dirname + '\\nircmd.exe win max process "' + processName + '"');
 			} else {
-				System.cmd(__dirname + '/node_modules/windows-interact/nircmd.exe win max foreground');
+				System.cmd(__dirname + '\\nircmd.exe win max foreground');
 			}
 		},
 		restore: function(processName) {
 			if (processName !== undefined) {
 				if (!processName.includes('.exe')) processName = processName + '.exe';
-				System.cmd(__dirname + '/node_modules/windows-interact/nircmd.exe win normal process "' + processName + '"');
+				System.cmd(__dirname + '\\nircmd.exe win normal process "' + processName + '"');
 			} else {
-				System.cmd(__dirname + '/node_modules/windows-interact/nircmd.exe win normal foreground');
+				System.cmd(__dirname + '\\nircmd.exe win normal foreground');
 			}
 		},
 		resize: function(width, height, processName) {
@@ -486,9 +486,9 @@ const System = {
 			if (processName !== undefined && isNaN(height) === false && isNaN(width) === false) {
 				if (!processName.includes('.exe')) processName = processName + '.exe';
 				System.window.restore(processName);
-				System.cmd(__dirname + '/node_modules/windows-interact/nircmd.exe win setsize process "' + processName + '" x y ' + width + ' ' + height, { suppressErrors: true, noLog: true });
+				System.cmd(__dirname + '\\nircmd.exe win setsize process "' + processName + '" x y ' + width + ' ' + height, { suppressErrors: true, noLog: true });
 			} else {
-				System.cmd(__dirname + '/node_modules/windows-interact/nircmd.exe win setsize foreground x y ' + width + ' ' + height, { supressErrors: true, noLog: true });
+				System.cmd(__dirname + '\\nircmd.exe win setsize foreground x y ' + width + ' ' + height, { supressErrors: true, noLog: true });
 			}
 		},
 		move: function(x, y, processName) {
@@ -498,9 +498,9 @@ const System = {
 			if (processName !== undefined && isNaN(x) === false && isNaN(y) === false) {
 				if (!processName.includes('.exe')) processName = processName + '.exe';
 				System.window.restore(processName);
-				System.cmd(__dirname + '/node_modules/windows-interact/nircmd.exe win move process "' + processName + '" ' + x + ' ' + y, { suppressErrors: true, noLog: true });
+				System.cmd(__dirname + '\\nircmd.exe win move process "' + processName + '" ' + x + ' ' + y, { suppressErrors: true, noLog: true });
 			} else {
-				System.cmd(__dirname + '/node_modules/windows-interact/nircmd.exe win setsize foreground x y ' + width + ' ' + height, { supressErrors: true, noLog: true });
+				System.cmd(__dirname + '\\nircmd.exe win setsize foreground x y ' + width + ' ' + height, { supressErrors: true, noLog: true });
 			}
 		}
 	},
@@ -512,8 +512,8 @@ const System = {
 			path = '*clipboard*';
 		} else path = '"' + path + '"';
 
-		if (region == 'full') System.cmd(__dirname + '/node_modules/windows-interact/nircmd.exe savescreenshotfull ' + path);
-		else if (region == 'window') System.cmd(__dirname + '/node_modules/windows-interact/nircmd.exe savescreenshotwin ' + path);
+		if (region == 'full') System.cmd(__dirname + '\\nircmd.exe savescreenshotfull ' + path);
+		else if (region == 'window') System.cmd(__dirname + '\\nircmd.exe savescreenshotwin ' + path);
 	},
 	Cortana: {
 		genericCommand: function(command) {
