@@ -127,8 +127,8 @@ function log() {
 	}
 	let fn = function(message, options) {
 		let colour = '';
-		if (options && options.colour) {
-			colour = options.colour.toLowerCase();
+		if (options && (options.colour || options.color)) {
+			colour = options.colour.toLowerCase() || options.color.toLowerCase();
 			switch (colour) {
 				case 'red':
 					colour = '\x1b[31m';
@@ -157,38 +157,36 @@ function log() {
 					System.error('Log: Could not find the colour ' + colour + '. See documentation for a complete list of colours');
 			}
 		}
-		if (options && options.background) {
-			if (options.background) {
-				let background = options.background.toLowerCase();
-				switch (background) {
-					case 'red':
-						background = '\x1b[41m';
-						break;
-					case 'green':
-						background = '\x1b[42m';
-						break;
-					case 'yellow':
-						background = '\x1b[43m';
-						break;
-					case 'blue':
-						background = '\x1b[44m';
-					case 'magenta':
-						background = '\x1b[45m';
-						break;
-					case 'cyan':
-						background = '\x1b[46m';
-						break;
-					case 'white':
-						background = '\x1b[47m';
-						break;
-					case 'black':
-						background = '\x1b[40m';
-						break;
-					default:
-						System.error('Log: Could not find the background colour ' + background + '. See documentation for a complete list of background colours');
-				}
-				colour = colour + background;
+		if (options && (options.background || options.backgroundColor)) {
+			let background = options.background.toLowerCase() || options.backgroundColor.toLowerCase();
+			switch (background) {
+				case 'red':
+					background = '\x1b[41m';
+					break;
+				case 'green':
+					background = '\x1b[42m';
+					break;
+				case 'yellow':
+					background = '\x1b[43m';
+					break;
+				case 'blue':
+					background = '\x1b[44m';
+				case 'magenta':
+					background = '\x1b[45m';
+					break;
+				case 'cyan':
+					background = '\x1b[46m';
+					break;
+				case 'white':
+					background = '\x1b[47m';
+					break;
+				case 'black':
+					background = '\x1b[40m';
+					break;
+				default:
+					System.error('Log: Could not find the background colour ' + background + '. See documentation for a complete list of background colours');
 			}
+			colour = colour + background;
 		}
 		if (!options) {
 			now(message, options);
@@ -246,8 +244,12 @@ const System = {
 			if (options && options.showTime == false) {
 				dateString = '';
 			}
-			throw new Error(dateString + '\x1b[31m\x1b[40m' + loggedMessage + '\x1b[0m');
-			if (System.prefs.spokenErrorMessage && !(options && options.silent)) System.speak(System.prefs.spokenErrorMessage);
+			if (System.prefs.log.spokenErrorMessage && !(options && options.silent)) System.speak(System.prefs.log.spokenErrorMessage);
+			try { throw new Error(loggedMessage); }
+			catch (error) {
+				System.log(dateString);
+				System.log(error.stack, { colour: 'red', background: 'black' });
+			}
 		}
 	},
 	cmd: function(command, callback, options) {
@@ -368,7 +370,7 @@ const System = {
 				if (System.appManager.registeredApps[appName].onKill) System.appManager.registeredApps[appName].onKill();
 			}
 		},
-		hide: function(appName) {
+		hide: function(processName) {
 			System.cmd(__dirname + '/node_modules/windows-interact/nircmd.exe win hide process "' + processName + '"');
 		},
 		switchTo: function(appName) {
