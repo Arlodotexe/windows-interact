@@ -4,7 +4,6 @@ const fs = require('fs');
 const util = require('util');
 const say = require('say');
 const requestify = require('requestify');
-//const typeChecking = require('./tests/type-checking');
 
 function replaceAll(str, find, replace) {
 	return String.raw`${str}`.replace(new RegExp(find.replace(/([.*+?^=!:${}()|\[\]\/\\\r\n\t|\n|\r\t])/g, '\\$1'), 'g'), replace);
@@ -127,7 +126,6 @@ function log() {
 		console.log(dateString + param);
 	}
 	let fn = function(message, options) {
-		//typeChecking.log(message, colours);
 		let colour = '';
 		if (options && options.colour) {
 			colour = options.colour.toLowerCase();
@@ -200,7 +198,6 @@ function log() {
 		}
 	};
 	fn.speak = function(phrase, voice, speed, options) {
-		//typeChecking.log.speak(phrase, voice, speed, options);
 		System.speak(phrase, voice, speed);
 		System.log('(Spoken): ' + phrase, options);
 	};
@@ -405,7 +402,6 @@ const System = {
 			if (processName != '' && processName != undefined && processName != null) System.cmd('taskkill /F /IM "' + processName + '"');
 		},
 		onKill: function(appName, callback) {
-			//App must already be running, if not, it will wait until it has started and then listen via powershell for an exit event
 			System.PowerShell('Wait-Process -Name ' + appName, function(stdout, stderr) {
 				if (stderr) {
 					setTimeout(() => {
@@ -451,7 +447,6 @@ const System = {
 			System.currentLocation = string;
 		},
 		preferences: function(object) {
-			//typeChecking.set.preferences(object);
 			for (var property in object) {
 				if (object.hasOwnProperty(property)) {
 					System.prefs[property] = object[property];
