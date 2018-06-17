@@ -531,11 +531,10 @@ const System = {
 			}, 500);
 		},
 		playSong: function(songName, service) {
-			System.interact.Cortana('Play ' + songName + ' on ' + service);
-			System.interact.minimizeWindow();
+			System.Cortana('Play ' + songName + ' on ' + service);
 		},
 		playPlaylist: function(playlist, service) {
-			System.interact.Cortana.genericCommand('Play my ' + playlist + ' playlist on ' + service);
+			System.Cortana.genericCommand('Play my ' + playlist + ' playlist on ' + service);
 		},
 		startListening: function() {
 			robot.keyTap('C', 'command');
