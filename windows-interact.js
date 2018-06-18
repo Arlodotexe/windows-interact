@@ -245,7 +245,7 @@ const System = {
 		}
 		try {
 			command = replaceAll(command, '"', '\'');
-			System.cmd(`powershell -command "`+ command +`"`, (stdout, stderr) => {
+			System.cmd(`powershell -command "` + command + `"`, (stdout, stderr) => {
 				if (callback) callback(stdout, stderr);
 			}, options);
 		} catch (err) {
@@ -256,28 +256,30 @@ const System = {
 		if (title == undefined) System.error('Cannot send notification. No message was given');
 		System.cmd(__dirname + '\\nircmd.exe trayballoon "' + ((!message) ? '' : title) + '" "' + ((message) ? message : title) + '" "c:\\"');
 	},
-	confirm: function(title, message) {
+	confirm: function(message, title) {
 		return new Promise(resolve => {
-			System.PowerShell('$wshell = New-Object -ComObject Wscript.Shell;$wshell.Popup("' + ((message) ? message : title) + '",0,"' + ((!message) ? 'Node' : message) + '",0x1)', function(stdout) {
+			System.PowerShell('$wshell = New-Object -ComObject Wscript.Shell;$wshell.Popup("' + (message) + '",0,"' + ((!title) ? 'Node' : title) + '",0x1)', function(stdout) {
 				resolve((stdout.trim() == '1') ? true : false);
 			}, { noLog: true });
 		});
 
 	},
-	alert: function(title, message) {
+	alert: function(message, title) {
 		return new Promise(resolve => {
-			System.cmd(__dirname + '\\nircmd.exe infobox "' + ((message) ? message : title) + '" "' + ((!message) ? 'Node' : message) + '"', () => {
-				resolve();
-			}, { noLog: true });
+			if (message && message.trim() !== '') {
+				System.cmd(__dirname + '\\nircmd.exe infobox "' + (message) + '" "' + ((!title) ? 'Node' : title) + '"', () => {
+					resolve();
+				}, { noLog: true });
+			}
 		});
 	},
 	prompt: function(message, title, placeholder) {
-        return new Promise(resolve => {
-            System.PowerShell(`Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.Interaction]::InputBox('`+ message +`' , '` + ((title)?title:`NodeJS`) + `' , '` + ((placeholder)?placeholder:``) +`')`, (response) => {
-                resolve(response)
-            }, {noLog: true});
-        });
-    },
+		return new Promise(resolve => {
+			System.PowerShell(`Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.Interaction]::InputBox('` + message + `' , '` + ((title) ? title : `Node`) + `' , '` + ((placeholder) ? placeholder : ``) + `')`, (response) => {
+				resolve(response)
+			}, { noLog: true });
+		});
+	},
 	appManager: {
 		registeredApps: {},
 		register: function(obj) {
@@ -331,13 +333,13 @@ const System = {
 						if (windowTitle == '') windowTitle = null;
 						System.appManager.registeredApps[appName].windowTitle = windowTitle;
 					}
-				}, {noLog: true, suppressErrors: true});
+				}, { noLog: true, suppressErrors: true });
 
 				setTimeout(() => {
 					System.appManager.appWatcher();
 				}, (System.prefs.appManagerRefreshInterval ? System.prefs.appManagerRefreshInterval : 3000));
 
-				
+
 			};
 			System.appManager.appWatcher();
 

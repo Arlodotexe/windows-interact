@@ -5,16 +5,16 @@ This library is a collection of tools for interacting with and automating Window
 With `windows-interact`, NodeJS gains the following functionality:
 
 - [Control over audio devices](https://github.com/Arlodotexe/windows-interact#set-the-volume-of-the-current-audio-device)
-- [Shutdown, Restart, Lock, Sleep, or start Screen Saver](https://github.com/Arlodotexe/windows-interact#systempower)
-- [Send Toast notifications or Tray Balloons](https://github.com/Arlodotexe/windows-interact#systemnotify)
+- [Shutdown, Restart, Lock, Sleep, or start Screen Saver](https://github.com/Arlodotexe/windows-interact#winpower)
+- [Send Toast notifications or Tray Balloons](https://github.com/Arlodotexe/windows-interact#winnotify)
 - [Take screenshots](https://github.com/Arlodotexe/windows-interact#take-a-screenshot)
-- [Asynchronous Text to speech](https://github.com/Arlodotexe/windows-interact#systemspeak)
-- [Manipulate windows](https://github.com/Arlodotexe/windows-interact#systemwindow) (Maximize, Minimize, etc.)
-- [Manage processes](https://github.com/Arlodotexe/windows-interact#systemprocess)
-- Mixin replacements for the browser's [alert()](https://github.com/Arlodotexe/windows-interact#systemconfirm) and [confirm()](https://github.com/Arlodotexe/windows-interact#systemconfirm)
-- Enhance [console.log](https://github.com/Arlodotexe/windows-interact#systemlog) and [Error throwing](https://github.com/Arlodotexe/windows-interact#systemerror)
-- Different functions for running [PowerShell](https://github.com/Arlodotexe/windows-interact#systempowershell) or [CMD](https://github.com/Arlodotexe/windows-interact#systemcmd) commands
-- [Manage a list of registered apps](https://github.com/Arlodotexe/windows-interact#systemappmanager). Run code on Launch and Exit. Kill, hide, switch to, control Window, get Window Title, and check if running.
+- [Asynchronous Text to speech](https://github.com/Arlodotexe/windows-interact#winspeak)
+- [Manipulate windows](https://github.com/Arlodotexe/windows-interact#winwindow) (Maximize, Minimize, etc.)
+- [Manage a list of registered apps](https://github.com/Arlodotexe/windows-interact#winappmanager) (with lots of extra features)
+- [Manage processes](https://github.com/Arlodotexe/windows-interact#winprocess)
+- Mixin replacements for the browser's [alert()](https://github.com/Arlodotexe/windows-interact#winconfirm) and [confirm()](https://github.com/Arlodotexe/windows-interact#winconfirm)
+- Enhance [console.log](https://github.com/Arlodotexe/windows-interact#winlog) and [Error throwing](https://github.com/Arlodotexe/windows-interact#winerror)
+- Different functions for running [PowerShell](https://github.com/Arlodotexe/windows-interact#winpowershell) or [CMD](https://github.com/Arlodotexe/windows-interact#wincmd) commands
 
 Completely open to new features. Submit an issue labeled "Feature request" or contact me on twitter @[Arlodottxt](https://twitter.com/Arlodottxt) with your input.
 
@@ -28,14 +28,14 @@ Install the [npm](https://www.npmjs.com/package/windows-interact) package by run
 
 Then, in your js file, `require` the package.
 ```javascript 
-const System = require('windows-interact');
+const Win = require('windows-interact');
 ```
 
 Windows-Interact also relies moderately on [nircmd](http://nircmd.nirsoft.net/). This is included in the package but untested on another machine, so if you start having troubles, try installing it to your machine. 
 
 # Documentation
 ---
-## `System.set`
+## `Win.set`
 ---
 Used to set various things within Windows, as well as set preferences for windows-interact
 
@@ -43,31 +43,31 @@ Used to set various things within Windows, as well as set preferences for window
 ---
 
 ```javascript
-System.set.preferences({ 
-    // Set master key (For System.authCode)
+Win.set.preferences({ 
+    // Set master key (For Win.authCode)
     masterKey: 'MASTERKEY',
     authCodeParse: function(receivedCode) {
     // Should return true or false if the receivedCode meets your criteria
         if (receivedCode > 5) {
-            System.alert('Correct code: ' + receivedCode)
+            Win.alert('Correct code: ' + receivedCode)
             return true;
         }
         else {
-            System.alert('Incorrect code: ' + receivedCode)
+            Win.alert('Incorrect code: ' + receivedCode)
             return false;
         }
     },
-    // Default text to speech voice to use (For System.speak)
+    // Default text to speech voice to use (For Win.speak)
     TTSVoice: 'Microsoft David Desktop',
     // Inverval at which the app manager gets the status of registered apps. Leaving unset defaults the interval to 5000
     appManagerRefreshInterval: 2500,
     // Log options
     log: {
         // File to save log and error history
-        outputFile: System.path`C:\Users\User\node-server\log.txt`,
-        // Show or hide timestamp in log (For System.log & System.error)
+        outputFile: Win.path`C:\Users\User\node-server\log.txt`,
+        // Show or hide timestamp in log (For Win.log & Win.error)
         showTime: true,
-        // Default message to speak when an error occurs (For System.error)
+        // Default message to speak when an error occurs (For Win.error)
         spokenErrorMessage: 'Something is wrong with your node server. Details are in the log', 
         // Control verbosity of parts of windows-interact
         verbose: {
@@ -75,7 +75,7 @@ System.set.preferences({
             requestTo: true
         }
     }
-    // Store URLs for quick access when using System.requestTo
+    // Store URLs for quick access when using Win.requestTo
     httpUrls: { 
         thisMachine: 'http://127.0.0.1:80/',
         thermostat: 'http://localhost:8084/'
@@ -87,17 +87,17 @@ System.set.preferences({
 ---
 This 99% accurate due to the math required behind the scenes
 ```javascript
-System.set.volume('50');
+Win.set.volume('50');
 ```
 
 #### Set the default playback device in Windows
 ---
 
 ```javascript
-System.set.defaultSoundDevice('Headset Earphone');
+Win.set.defaultSoundDevice('Headset Earphone');
 ```
 
-### `System.log()`
+### `Win.log()`
 ---
 An alternative to `console.log`. It will push the output of the log to the console and record each entry in a .txt file, and provide styling options for the text
 
@@ -111,14 +111,14 @@ Available colours for background and text are:
 - Cyan
 - Black
 
-You can set the default log file location with `System.set.preferences`, like so:
+You can set the default log file location with `Win.set.preferences`, like so:
 
 ```javascript
-System.set.preferences({
+Win.set.preferences({
     log: {
-    // File to save log and error history (For System.log)
-    outputFile: System.path`C:\Users\User\node-server\log.txt`,
-    // Show or hide timestamp in log (For System.log & System.error)
+    // File to save log and error history (For Win.log)
+    outputFile: Win.path`C:\Users\User\node-server\log.txt`,
+    // Show or hide timestamp in log (For Win.log & Win.error)
     showTime: true,
     // Control verbosity of parts of windows-interact
     verbose: {
@@ -131,37 +131,37 @@ System.set.preferences({
 
 Usage:
 ```javascript
-System.log(message, {backgroundColor: 'color', color: 'color'});
+Win.log(message, {backgroundColor: 'color', color: 'color'});
 
 // Log information to the console and .txt file
-System.log('Logged information');
+Win.log('Logged information');
 
 // Log information to the console and .txt file, with colored background and text
-System.log('Logged information', {background: 'color', color: 'color'})
+Win.log('Logged information', {background: 'color', color: 'color'})
 
-System.log.speak(phrase, voice, speed, options);
-// Log information to the console and .txt file, and also System.speak() it
-System.log.speak('Testing'); 
+Win.log.speak(phrase, voice, speed, options);
+// Log information to the console and .txt file, and also Win.speak() it
+Win.log.speak('Testing'); 
 
-// Log information to the console and .txt file, System.speak() it with a specific voice, at half speed, with a black background and a blue text colour
-System.log.speak('Testing', 'Microsoft David Desktop', 0.5, {backgroundColor: 'black', colour: 'blue'})
+// Log information to the console and .txt file, Win.speak() it with a specific voice, at half speed, with a black background and a blue text colour
+Win.log.speak('Testing', 'Microsoft David Desktop', 0.5, {backgroundColor: 'black', colour: 'blue'})
 ```
 
 
-### `System.error()`
+### `Win.error()`
 ---
 An alternative to `throw new Error()`. It will push the output of the log to the console (in a red colour) and record each entry in a .txt file
 
-You can set some default options with `System.set.preferences`, like so:
+You can set some default options with `Win.set.preferences`, like so:
 
 ```javascript
-System.set.preferences({
+Win.set.preferences({
     log: {
     // Default message to speak when an error occurs
     spokenErrorMessage: 'Something is wrong with your node server. Details are in the log', 
-    // File to save log and error history (For System.log)
-    outputFile: System.path`C:\Users\User\node-server\log.txt`,
-    // Show or hide timestamp in log (For System.log & System.error)
+    // File to save log and error history (For Win.log)
+    outputFile: Win.path`C:\Users\User\node-server\log.txt`,
+    // Show or hide timestamp in log (For Win.log & Win.error)
     showTime: true
     }
 });
@@ -170,13 +170,13 @@ System.set.preferences({
 Usage:
 ```javascript
 // Log an error to the console and default .txt file (if set)
-System.error('Error information');
+Win.error('Error information');
 
 // Log an error to the console, but don't speak the set spokenErrorMessage
-System.error('Error information', {silent: true});
+Win.error('Error information', {silent: true});
 ```
 
-### `System.notify()`
+### `Win.notify()`
 ---
 
 Show a toast notification in Windows 10 (Or tray balloon on older versions of windows)
@@ -185,28 +185,28 @@ If you need something more advanced than basic notifications, I'd recommend usin
 
 ```javascript
 // Show toast notification
-System.notify('Title', 'Message');
+Win.notify('Title', 'Message');
 
 // Show single line toast notification
-System.notify('Message'); 
+Win.notify('Message'); 
 ```
 
-### `System.path`` `
+### `Win.path`` `
 ---
 Return a properly formatted Windows path for use in Javascript. This allows you to simply copy and paste a path from the File Explorer without having to worry about character-escaping (`\`) slashes
 
 ```javascript
-System.path`C:\WINDOWS\system32\notepad.exe`;
+Win.path`C:\WINDOWS\system32\notepad.exe`;
 ```
 
-### `System.speak()`
+### `Win.speak()`
 ---
 Speak text asynchronously. Similar to my [async-sayjs](https://github.com/Arlodotexe/async-sayjs) package (Yep, that started here), but with some benefits and enhancments.
 
-You can set the default text to speech voice with `System.set.preferences`, like so:
+You can set the default text to speech voice with `Win.set.preferences`, like so:
 
 ```javascript
-System.set.preferences({
+Win.set.preferences({
 	TTSVoice: 'Microsoft Eva Mobile'
 });
 ```
@@ -214,32 +214,32 @@ System.set.preferences({
 Usage:
 ```javascript
 // Speak something asynchronously (wait for each request to finish before moving on)
-System.speak('The quick brown fox');
+Win.speak('The quick brown fox');
 
 // Speak something synchronously (Say it right now, even if something is already being said)
-System.speak.now('Jumped over the lazy dog');
+Win.speak.now('Jumped over the lazy dog');
 
 // Supply a string as the second parameter to change the TTS voice
-System.speak('As it ran through the woods', 'Microsoft David Desktop');
+Win.speak('As it ran through the woods', 'Microsoft David Desktop');
 
 // Speak something, but slowly
-System.speak('Lorem ipsum dolor sit amet', 'Microsoft Zira Desktop', 0.5);
+Win.speak('Lorem ipsum dolor sit amet', 'Microsoft Zira Desktop', 0.5);
 
 // Speak something, then fire a callback
-System.speak('Lorem ipsum dolor sit amet', 'Microsoft David Desktop', 0.5, (err) => {
+Win.speak('Lorem ipsum dolor sit amet', 'Microsoft David Desktop', 0.5, (err) => {
     console.log('Done');
 });
 
-// Speak something and System.log() it (Same as System.log.speak(''))
-System.speak.log('Lorem ipsum dolor sit amet');
+// Speak something and Win.log() it (Same as Win.log.speak(''))
+Win.speak.log('Lorem ipsum dolor sit amet');
 
 // Stop anything currently being spoken (Queued text will continue after that)
-System.speak.stop(callback);
+Win.speak.stop(callback);
 ```
 
 ---
 
-## `System.appManager`
+## `Win.appManager`
 ---
 
 The App Manager is possibly the biggest part of Windows Interact. It allows you to:
@@ -252,33 +252,33 @@ The App Manager is possibly the biggest part of Windows Interact. It allows you 
 - Hide an app
 - Switch to an app
 
-To get started, you need to register your apps. You will need the absolute path of the executable at the minimum. To easily format a Windows path for use in Javascript, it is recommended that you use ```System.path`C:\absolute\path` ```
+To get started, you need to register your apps. You will need the absolute path of the executable at the minimum. To easily format a Windows path for use in Javascript, it is recommended that you use ```Win.path`C:\absolute\path` ```
 
 NOTICE: The registered name must be the same as the executable.
 
 #### Register a new application
 
 ```javascript
-System.appManager.register({
+Win.appManager.register({
     'notepad': {
-        path: System.path`C:\WINDOWS\system32\notepad.exe`
+        path: Win.path`C:\WINDOWS\system32\notepad.exe`
     },
     'Code': {
-       path: System.path`C:\Program Files\Microsoft VS Code\Code.exe`,
+       path: Win.path`C:\Program Files\Microsoft VS Code\Code.exe`,
        onLaunch: function() {
-           System.speak('VSCode was launched');
+           Win.speak('VSCode was launched');
        },
        onKill: function() {
-           System.speak('VSCode was killed');
+           Win.speak('VSCode was killed');
        }
     },
     'firefox': {
-        path: System.path`C:\Program Files\Mozilla Firefox\firefox.exe`,
+        path: Win.path`C:\Program Files\Mozilla Firefox\firefox.exe`,
         onKill: function() {
-            System.log('firefox killed');
+            Win.log('firefox killed');
         },
         onLaunch: function() {
-            System.log('firefox launch');
+            Win.log('firefox launch');
         }
     }
 });
@@ -287,38 +287,38 @@ System.appManager.register({
 #### Retrieve registered applications
 
 ```javascript
-System.appManager.registeredApplications
+Win.appManager.registeredApplications
 ```
 
 #### Launch a registered application
 
 ```javascript
-System.appManager.launch('notepad');
+Win.appManager.launch('notepad');
 ```
 
 #### Kill a registered application
 
 ```javascript
-System.appManager.kill('notepad');
+Win.appManager.kill('notepad');
 ```
 
 #### Hide a registered application
 
 ```javascript
-System.appManager.hide('notepad');
+Win.appManager.hide('notepad');
 ```
 
 #### Switch to a registered application
 
 ```javascript
-System.appManager.switchTo('notepad');
+Win.appManager.switchTo('notepad');
 ```
 
 
-## `System.process`
+## `Win.process`
 ---
 
-`System.process` is very similar to `appManager`, but can be used for unregistered apps. Use sparcely and avoid loops, this is not as efficient as `appManager`.
+`Win.process` is very similar to `appManager`, but can be used for unregistered apps. Use sparcely and avoid loops, this is not as efficient as `appManager`.
 
 
 #### Get PID of a running process
@@ -326,43 +326,43 @@ System.appManager.switchTo('notepad');
 Returns an array of PIDs associated with a running process. If no process is found, false is returned. The data is piped into a callback.
 
 ```javascript
-System.process.getPid('notepad', function(output) {
-    System.log(output);
+Win.process.getPid('notepad', function(output) {
+    Win.log(output);
 });
 ```
 
 #### Kill a running app
 
 ```javascript
-System.process.kill('notepad', callback);
+Win.process.kill('notepad', callback);
 ```
 
 #### Run a callback when a process is killed
 App must already be running, if not, it will wait until it has started and then tell powershell to wait until the app is done before continuing.
 
 ```javascript
-System.process.onKill('notepad', function() {
-    System.log('Notepad killed');
+Win.process.onKill('notepad', function() {
+    Win.log('Notepad killed');
 });
 ```
 
 #### Get Window Title of running application
 
 ```javascript
-System.process.getWindowTitle('notepad', function(output) {
-    System.log(output);
+Win.process.getWindowTitle('notepad', function(output) {
+    Win.log(output);
 });
 ```
 
 #### Check if a process is running
 
 ```javascript
-    System.process.isRunning('notepad', function(bool) {
-        System.log(bool);
+    Win.process.isRunning('notepad', function(bool) {
+        Win.log(bool);
     });
 ```
 
-## `System.window`
+## `Win.window`
 
 Control a Window's state
 
@@ -372,10 +372,10 @@ If no processName is specified, it will minimize the current window in the foreg
 
 ```javascript
 // Minimize a window by process name. The ".exe" is optional.
-System.window.minimize('firefox.exe');
+Win.window.minimize('firefox.exe');
 
 // Minimize the current window
-System.window.minimize();
+Win.window.minimize();
 ```
 
 #### Maximize a window
@@ -384,10 +384,10 @@ If no processName is specified, it will maximize the current window in the foreg
 
 ```javascript
 // Maximize a window by process name. The ".exe" is optional
-System.window.maximize('firefox.exe');
+Win.window.maximize('firefox.exe');
 
 // Maximize the current window
-System.window.maximize();
+Win.window.maximize();
 ```
 
 #### Restore a window to a windowed state
@@ -395,23 +395,23 @@ If no processName is specified, it will restore the current window in the foregr
 
 ```javascript
 // Restore a window by process name. The ".exe" is optional
-System.window.restore('firefox.exe');
+Win.window.restore('firefox.exe');
 
 // Restore the current window
-System.window.restore();
+Win.window.restore();
 ```
 
 #### Resize a window
 If no processName is specified, it will resize the current window in the foreground.
 
 ```javascript
-System.window.resize(width, height, processName);
+Win.window.resize(width, height, processName);
 
 // Resize a window by process name. The ".exe" is optional
-System.window.resize('800', '600', 'firefox.exe');
+Win.window.resize('800', '600', 'firefox.exe');
 
 // Resize the current window
-System.window.resize(960, 1080);
+Win.window.resize(960, 1080);
 ```
 
 #### Move a window
@@ -419,78 +419,78 @@ System.window.resize(960, 1080);
 - If no processName is specified, it will move the current window in the foreground.
 
 ```javascript
-System.window.move(x, y, processName);
+Win.window.move(x, y, processName);
 
 // Move a window by process name. The ".exe" is optional
-System.window.move('-50', '0', 'firefox.exe');
+Win.window.move('-50', '0', 'firefox.exe');
 
 // Move the current window
-System.window.move(0, 50);
+Win.window.move(0, 50);
 ```
 
-### `System.cmd()`
+### `Win.cmd()`
 ---
 Run a command in Command Prompt.
 
 ```javascript
-System.cmd('dir');
+Win.cmd('dir');
 
 // Run a command, then do something with the output
-System.cmd('tasklist', function(output) {
+Win.cmd('tasklist', function(output) {
     doSomething(output);
 });
 
 // Run a command, then do something with the output and any possible errors
-System.cmd('tasklist', function(output, errors){
+Win.cmd('tasklist', function(output, errors){
     doSomething(output)
     if(errors) doSomethingElse(errors)
 });
 
 // Run a command, but supress any errors that occur (Don't print them to console or log)
-System.cmd('tasklist', function(output){
+Win.cmd('tasklist', function(output){
     doSomething();
 }, {suppressErrors: true});
 
 // Run a command, but don't print to log
 
-System.cmd('tasklist', function(output){
+Win.cmd('tasklist', function(output){
     doSomething();
 }, {noLog: true});
 ```
 
-### `System.PowerShell()`
+### `Win.PowerShell()`
 ---
 Run a PowerShell command
 
 This is playing with real power. See [here](https://docs.microsoft.com/en-us/powershell/module/?view=powershell-6) and [here](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/?view=powershell-6) for resources on what you can do with PowerShell to automate and interact with Windows, beyond what Windows interact provides
 
 ```javascript
-System.PowerShell('ls');
+Win.PowerShell('ls');
 
 // Run a command, then do something with the output
-System.PowerShell('Move-Item -Path C:\\test.txt -Destination E:\\Temp\\tst.txt', function(output) {
+Win.PowerShell('Move-Item -Path C:\\test.txt -Destination E:\\Temp\\tst.txt', function(output) {
     doSomething(output);
 });
 
 // Run a command, then do something with the output and any possible errors
-System.PowerShell('Move-Item -Path C:\\Temp -Destination C:\\Logs', function(output, errors){
+Win.PowerShell('Move-Item -Path C:\\Temp -Destination C:\\Logs', function(output, errors){
     doSomething(output)
     if(errors) doSomethingElse(errors)
 });
 
 // Run a command, but suppress any errors that occurr (Don't print them to console or log)
-System.PowerShell('Move-Item -Path .\\*.txt -Destination C:\\Logs', function(output){
+Win.PowerShell('Move-Item -Path .\\*.txt -Destination C:\\Logs', function(output){
     doSomething();
 }, {suppressErrors: true});
 
 // Run a command, but do not log the output and supress any errors that occurr (Don't print them to console or log)
 
-System.PowerShell('Restart-Service -Name Audiosrv', function(output){
+Win.PowerShell('Restart-Service -Name Audiosrv', function(output){
     doSomething();
 }, {suppressErrors: true, noLog: true});
 ```
 
-### `System.requestTo()`
+### `Win.requestTo()`
 ---
 
 Make an HTTP request the easy way.
@@ -503,10 +503,10 @@ To simplify this feature and make using it more natural, there is some flexibili
 - If the third parameter is an object, it will send this as form data.
 - If the third parameter is a function, it execute it as a callback
 
-You can give friendly, reuseable names to URLs with `System.set.preferences`. These are used in place of a URL when sending a request.
+You can give friendly, reuseable names to URLs with `Win.set.preferences`. These are used in place of a URL when sending a request.
 
 ```javascript
-System.set.preferences({
+Win.set.preferences({
     httpUrls: { 
         thisMachine: 'http://127.0.0.1:80/',
         thermostat: 'http://localhost:8084/'
@@ -515,48 +515,48 @@ System.set.preferences({
 ```
 
 ```javascript
-System.requestTo(deviceName, method, formData, callback);
+Win.requestTo(deviceName, method, formData, callback);
 
 // Make a POST request
-System.requestTo('http://httpbin.org/post/', 'POST', {
+Win.requestTo('http://httpbin.org/post/', 'POST', {
     property: 'value'
 });
 
 // Make a POST request, then do something with the response
-System.requestTo('http://httpbin.org/post/', 'POST', {
+Win.requestTo('http://httpbin.org/post/', 'POST', {
     property: 'value'
 }, function(response) {
-    System.log(response);
+    Win.log(response);
 });
 
 // Make a GET request
-System.requestTo('http://httpbin.org/get/', 'GET', function(response) {
-    System.log(response)
+Win.requestTo('http://httpbin.org/get/', 'GET', function(response) {
+    Win.log(response)
 });
 
 // Make an assumed GET request
-System.requestTo('http://httpbin.org/get/', function(response) {
-    System.log(response)
+Win.requestTo('http://httpbin.org/get/', function(response) {
+    Win.log(response)
 });
 
 // Make an assumed GET request to a predefined URL, and do nothing else
-System.requestTo('thermostat');
+Win.requestTo('thermostat');
 
 // Make a PUT request
-System.requestTo('thisMachine', 'PUT', {
+Win.requestTo('thisMachine', 'PUT', {
     property: 'value'
 });
 
 // Make a PUT request, then do something with the response
-System.requestTo('thisMachine', 'PUT', {
+Win.requestTo('thisMachine', 'PUT', {
     property: 'value'
 }, function(response) {
-    System.log(response)
+    Win.log(response)
 });
 
 ```
 
-## `System.authCode`
+## `Win.authCode`
 
 Used to quickly authenticate a user
 
@@ -566,18 +566,18 @@ By default, it will return as valid when the code starts with the Nth letter of 
 You can set a custom parsing function, as well as a master key that will always be accepted.
 
 ```javascript
-System.set.preferences({
+Win.set.preferences({
     // Set a master key
     masterKey: 'AREALLYLONGSTRINGWITHLOTSOFCOMPLICATEDCHARACTERS',
     authCodeParse: function(receivedCode) {
     // Should return true or false if the receivedCode meets your criteria
     /**   Example start **/
         if (receivedCode > 5) {
-            System.alert('Correct code: ' + receivedCode)
+            Win.alert('Correct code: ' + receivedCode)
             return true;
         }
         else {
-            System.alert('Incorrect code: ' + receivedCode)
+            Win.alert('Incorrect code: ' + receivedCode)
             return false;
         }
     }
@@ -587,173 +587,200 @@ System.set.preferences({
 
 
 ```javascript
-if(System.authCode.isValid('6')) {
+if(Win.authCode.isValid('6')) {
     console.log('It\'s valid');
 }
 ```
 
-### `System.confirm()`
+### `Win.confirm()`
 
-An alternative to the browsers's `confirm()`. Unlike the browser, it will not stop execution of code and wait for the user. It will instead show multiple dialog boxes. To chain multiple alerts, you need to wrap them in an async function (see below).
-
-```javascript
-System.confirm('Title', 'Question?');
-
-System.alert('Question'); 
-
-// Chain multiple alerts
-async function chain() {
-    if(await System.confirm('Message')) {
-        await System.alert('Message!');
-    }
-}
-chain();
-
-// Super simplified self-executing async function
-(async()=>{
-    if(await System.confirm('Message?')) {
-        await System.alert('Ok!');
-    } else {
-        await System.alert('Canceled...');
-    }
-})();
-
-```
-
-### `System.alert()`
-
-An alternative to the browsers's `alert()`. Unlike the browser, it will not stop execution of code and wait for the user. It will instead show multiple dialog boxes. To chain multiple alerts, you need to wrap them in an async function (see below).
+An alternative to the browsers's `confirm()`. Unlike the browser, it will not stop execution of code and wait for the user. It will instead show multiple dialog boxes. To chain consecutive dialog boxes, you need to wrap them in an async function (see below).
 
 ```javascript
-// Show an alert box with title and message
-System.alert('Title', 'Message!'); 
+Win.confirm('Title', 'Question?');
 
-System.alert('Simple message'); 
+Win.alert('Question'); 
 
-// Chain multiple alerts
+// Chain consecutive alerts
 async function chain() {
-    await System.alert('Message');
-    await System.alert('More message');
+    if(await Win.confirm('Message')) {
+        await Win.alert('Message!');
+    }
 }
 chain();
 
 // Super simple self-executing async function
 (async()=>{
-    await System.alert('Message');
-    await System.alert('More message');
+    if(await Win.confirm('Message?')) {
+        await Win.alert('Ok!');
+    } else {
+        await Win.alert('Canceled...');
+    }
+})();
+
+```
+
+### `Win.alert()`
+
+An alternative to the browsers's `alert()`. Unlike the browser, it will not stop execution of code and wait for the user. It will instead show multiple dialog boxes. To chain consecutive alerts, you need to wrap them in an async function (see below).
+
+```javascript
+// Show an alert box with title and message
+Win.alert('Message', 'Title'); 
+
+Win.alert('Message'); 
+
+// Chain consecutive alerts
+async function chain() {
+    await Win.alert('Message');
+    await Win.alert('More message');
+}
+chain();
+
+// Super simple self-executing async function
+(async()=>{
+    await Win.alert('Message');
+    await Win.alert('More message');
 })();
 ```
 
-## `System.power()`
+### `Win.prompt()`
+
+An alternative to the browsers's `prompt()`. Unlike the browser, it will not stop execution of code and wait for the user. It will instead show multiple dialog boxes. To chain consecutive prompts, you need to wrap them in an async function (see below).
+
+```javascript
+Win.prompt('Message', 'Title', 'Placeholder');
+
+Win.prompt('Message'); 
+
+// Chain consecutive alerts
+async function chain() {
+    if(await Win.prompt('Please type bananas') == 'bananas') {
+        await Win.alert('Thank you for typing bananas');
+    }
+}
+chain();
+
+// Super simple self-executing async function
+(async()=>{
+    if(await Win.prompt('Do you like Pie?')) {
+        await Win.alert('Me too!');
+    }
+})();
+
+```
+
+
+## `Win.power()`
 ---
 
 ### Shutdown the PC
 
 ```javascript
 // If no delay is provided, it will shutdown immediately
-System.power.shutdown(delay);
+Win.power.shutdown(delay);
 ```
 
 ### Restart the PC
 
 ```javascript
 // If no delay is provided, it will restart immediately
-System.power.restart(delay);
+Win.power.restart(delay);
 ```
 
 ### Lock the PC
 
 ```javascript
 // If no delay is provided, it will lock immediately
-System.power.lock(delay);
+Win.power.lock(delay);
 ```
 
 ### Put the PC to sleep
 
 ```javascript
 // If no delay is provided, it will go to sleep immediately
-System.power.sleep(delay);
+Win.power.sleep(delay);
 ```
 
 ### Start the screensaver
 
 ```javascript
 // If no delay is provided, it will start the screensaver immediately
-System.power.screenSaver(delay);
+Win.power.screenSaver(delay);
 ```
 ---
 
 ### Show the desktop
 
 ```javascript
-System.showDesktop();
+Win.showDesktop();
 ```
 
 ### Pause or resume media being played
 Same as pressing the pause button on keyboard.
 
 ```javascript
-System.pauseMedia();
+Win.pauseMedia();
 ```
 
 ### Take a screenshot
 
 ```javascript
 // Screenshot the entire screen and save to clipboard
-System.screenshot();
-System.screenshot('full');
+Win.screenshot();
+Win.screenshot('full');
 
 // Screenshot a region of the screen and save it to clipboard
-System.screenshot('window');
+Win.screenshot('window');
 
 // Screenshot the entire screen and save to file
-System.screenshot('full', System.path`C:\Users\User\Pictures\Screenshots\screenshot.png`);
+Win.screenshot('full', Win.path`C:\Users\User\Pictures\Screenshots\screenshot.png`);
 
 // Screenshot the current window only and save to file
-System.screenshot('window', System.path`C:\Users\User\Pictures\Screenshots\screenshot.png`);
+Win.screenshot('window', Win.path`C:\Users\User\Pictures\Screenshots\screenshot.png`);
 ```
 
-## `System.Cortana`
+## `Win.Cortana`
 
 Interact with Cortana
 
 ### Give Cortana a generic command
 
 ```javascript
-System.Cortana.genericCommand('Hello!');
+Win.Cortana.genericCommand('Hello!');
 ```
 
 ### Use Cortana to open an app
 
 ```javascript
-System.Cortana.openApp('Microsoft Edge');
+Win.Cortana.openApp('Microsoft Edge');
 ```
 
 ### Use Cortana to play a song
 
 ```javascript
-System.Cortana.playSong(songName, service);
+Win.Cortana.playSong(songName, service);
 
 // Play 'Carry on my wayward son' on Spotify
-System.Cortana.playSong('Carry on my wayward son', 'Spotify');
+Win.Cortana.playSong('Carry on my wayward son', 'Spotify');
 // Play 'Carry on my warward son' on Groove
-System.Cortana.playSong('Carry on my wayward son', 'Groove');
+Win.Cortana.playSong('Carry on my wayward son', 'Groove');
 ```
 
 ### Use Cortana to play a playlist
 
 ```javascript
-System.Cortana.playSong(playlist, service);
+Win.Cortana.playSong(playlist, service);
 
 // Play 'Carry on my wayward son' on Spotify
-System.Cortana.playSong('Gaming'. 'Spotify');
+Win.Cortana.playSong('Gaming'. 'Spotify');
 // Play 'Carry on my warward son' on Groove
-System.Cortana.playSong('Oldies'. 'Groove');
+Win.Cortana.playSong('Oldies'. 'Groove');
 ```
 
 ### Invoke Cortana's listening mode
 Make sure you have "Let Cortana listen for my commands when I press the Windows Logo + C" enabled in the Setting app
 
 ```javascript
-System.Cortana.startListening();
+Win.Cortana.startListening();
 ```
