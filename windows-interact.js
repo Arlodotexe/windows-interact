@@ -244,7 +244,8 @@ const System = {
 			callback = undefined;
 		}
 		try {
-			System.cmd('powershell -command "'+ command +'"', (stdout, stderr) => {
+			command = replaceAll(command, '"', '\'');
+			System.cmd(`powershell -command "`+ command +`"`, (stdout, stderr) => {
 				if (callback) callback(stdout, stderr);
 			}, options);
 		} catch (err) {
@@ -256,7 +257,7 @@ const System = {
 		System.cmd(__dirname + '\\nircmd.exe trayballoon "' + ((!message) ? '' : title) + '" "' + ((message) ? message : title) + '" "c:\\"');
 	},
 	confirm: function(title, message) {
-		return new Promise((resolve, reject) => {
+		return new Promise(resolve => {
 			System.PowerShell('$wshell = New-Object -ComObject Wscript.Shell;$wshell.Popup("' + ((message) ? message : title) + '",0,"' + ((!message) ? 'Node' : message) + '",0x1)', function(stdout) {
 				resolve((stdout.trim() == '1') ? true : false);
 			}, { noLog: true });
@@ -264,12 +265,19 @@ const System = {
 
 	},
 	alert: function(title, message) {
-		return new Promise((resolve, reject) => {
+		return new Promise(resolve => {
 			System.cmd(__dirname + '\\nircmd.exe infobox "' + ((message) ? message : title) + '" "' + ((!message) ? 'Node' : message) + '"', () => {
 				resolve();
 			}, { noLog: true });
 		});
 	},
+	prompt: function(message, title, placeholder) {
+        return new Promise(resolve => {
+            System.PowerShell(`Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.Interaction]::InputBox('`+ message +`' , '` + ((title)?title:`NodeJS`) + `' , '` + ((placeholder)?placeholder:``) +`')`, (response) => {
+                resolve(response)
+            }, {noLog: true});
+        });
+    },
 	appManager: {
 		registeredApps: {},
 		register: function(obj) {
