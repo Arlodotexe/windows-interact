@@ -116,15 +116,15 @@ You can set the default log file location with `Win.set.preferences`, like so:
 ```javascript
 Win.set.preferences({
     log: {
-    // File to save log and error history (For Win.log)
-    outputFile: Win.path`C:\Users\User\node-server\log.txt`,
-    // Show or hide timestamp in log (For Win.log & Win.error)
-    showTime: true,
-    // Control verbosity of parts of windows-interact
-    verbose: {
-        // Show preformatted log when requests are made
-        requestTo: true
-      }
+        // File to save log and error history (For Win.log)
+        outputFile: Win.path`C:\Users\User\node-server\log.txt`,
+        // Show or hide timestamp in log (For Win.log & Win.error)
+        showTime: true,
+        // Control verbosity of parts of windows-interact
+        verbose: {
+            // Show preformatted log when requests are made
+            requestTo: true
+        }
     }
 });
 ```
@@ -150,19 +150,19 @@ Win.log.speak('Testing', 'Microsoft David Desktop', 0.5, {backgroundColor: 'blac
 
 ### `Win.error()`
 ---
-An alternative to `throw new Error()`. It will push the output of the log to the console (in a red colour) and record each entry in a .txt file
+An alternative to `throw new Error()` or `console.error`. It will push the output of the log to the console (in a red colour) with a stack trace, and record each entry in the specified log file
 
 You can set some default options with `Win.set.preferences`, like so:
 
 ```javascript
 Win.set.preferences({
     log: {
-    // Default message to speak when an error occurs
-    spokenErrorMessage: 'Something is wrong with your node server. Details are in the log', 
-    // File to save log and error history (For Win.log)
-    outputFile: Win.path`C:\Users\User\node-server\log.txt`,
-    // Show or hide timestamp in log (For Win.log & Win.error)
-    showTime: true
+        // Default message to speak when an error occurs
+        spokenErrorMessage: 'Something is wrong with your node server. Details are in the log', 
+        // File to save log and error history (For Win.log)
+        outputFile: Win.path`C:\Users\User\node-server\log.txt`,
+        // Show or hide timestamp in log (For Win.log & Win.error)
+        showTime: true
     }
 });
 ```
