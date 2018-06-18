@@ -1,12 +1,28 @@
 # windows-interact
-This library is a collection of tools for interacting with and automating Windows. It is designed to simplify and enhance existing tools while providing access to powerful new features. 
+
+This library is a collection of tools for interacting with and automating Windows. It is designed to simplify and enhance existing tools while providing access to powerful new features.
+
+With `windows-interact`, NodeJS gains the following functionality:
+
+- [Control over audio devices](https://github.com/Arlodotexe/windows-interact#set-the-volume-of-the-current-audio-device)
+- [Shutdown, Restart, Lock, Sleep, or start Screen Saver](https://github.com/Arlodotexe/windows-interact#systempower)
+- [Send Toast notifications or Tray Balloons](https://github.com/Arlodotexe/windows-interact#systemnotify)
+- [Take screenshots](https://github.com/Arlodotexe/windows-interact#take-a-screenshot)
+- [Asynchronous Text to speech](https://github.com/Arlodotexe/windows-interact#systemspeak)
+- [Manipulate windows](https://github.com/Arlodotexe/windows-interact#systemwindow) (Maximize, Minimize, etc.)
+- [Manage processes](https://github.com/Arlodotexe/windows-interact#systemprocess)
+- Mixin replacements for the browser's [alert()](https://github.com/Arlodotexe/windows-interact#systemconfirm) and [confirm()](https://github.com/Arlodotexe/windows-interact#systemconfirm)
+- Enhance [console.log](https://github.com/Arlodotexe/windows-interact#systemlog) and [Error throwing](https://github.com/Arlodotexe/windows-interact#systemerror)
+- Different functions for running [PowerShell](https://github.com/Arlodotexe/windows-interact#systempowershell) or [CMD](https://github.com/Arlodotexe/windows-interact#systemcmd) commands
+- [Manage a list of registered apps](https://github.com/Arlodotexe/windows-interact#systemappmanager). Run code on Launch and Exit. Kill, hide, switch to, control Window, get Window Title, and check if running.
 
 Completely open to new features. Submit an issue labeled "Feature request" or contact me on twitter @[Arlodottxt](https://twitter.com/Arlodottxt) with your input.
 
 ---
 
-# Installation 
---- 
+# Installation
+
+---
 
 Install the [npm](https://www.npmjs.com/package/windows-interact) package by running `npm install windows-interact` in your project folder
 
@@ -621,7 +637,7 @@ async function chain() {
 }
 chain();
 
-// Super simplified self-executing async function
+// Super simple self-executing async function
 (async()=>{
     await System.alert('Message');
     await System.alert('More message');
