@@ -220,7 +220,7 @@ const System = {
 			if (options && options.showTime == false) {
 				dateString = '';
 			}
-			if (System.prefs.log.spokenErrorMessage && !(options && options.silent)) System.speak(System.prefs.log.spokenErrorMessage);
+			if (System.prefs.log && System.prefs.log.spokenErrorMessage && !(options && options.silent)) System.speak(System.prefs.log.spokenErrorMessage);
 			try { throw new Error(loggedMessage); }
 			catch (error) {
 				System.log(error.stack, { colour: 'red', background: 'black' });
@@ -228,7 +228,7 @@ const System = {
 		}
 	},
 	cmd: function(command, callback, options) {
-		exec('cmd /c "' + command + '"', function(error, stdout, stderr) {
+		exec('cmd /c ' + command, function(error, stdout, stderr) {
 			if (typeof callback == 'object' && options == undefined) {
 				options = callback;
 				callback = undefined;
@@ -239,9 +239,12 @@ const System = {
 		});
 	},
 	PowerShell: function(command, callback, options) {
+		if (typeof callback == 'object' && options == undefined) {
+			options = callback;
+			callback = undefined;
+		}
 		try {
-			command = replaceAll(command, '"', '\'');
-			System.cmd('PowerShell.exe -command "& {' + command + '}";', (stdout, stderr) => {
+			System.cmd('powershell -command "'+ command +'"', (stdout, stderr) => {
 				if (callback) callback(stdout, stderr);
 			}, options);
 		} catch (err) {
@@ -320,11 +323,13 @@ const System = {
 						if (windowTitle == '') windowTitle = null;
 						System.appManager.registeredApps[appName].windowTitle = windowTitle;
 					}
-				}, { suppressErrors: true, noLog: true });
+				}, {noLog: true, suppressErrors: true});
 
 				setTimeout(() => {
 					System.appManager.appWatcher();
-				}, (System.prefs.appManagerRefreshInterval ? System.prefs.appManagerRefreshInterval : 5000));
+				}, (System.prefs.appManagerRefreshInterval ? System.prefs.appManagerRefreshInterval : 3000));
+
+				
 			};
 			System.appManager.appWatcher();
 
