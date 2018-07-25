@@ -639,6 +639,9 @@ const Win = {
 		if (region == 'full') Win.cmd(__dirname + '\\nircmd.exe savescreenshotfull ' + path);
 		else if (region == 'window') Win.cmd(__dirname + '\\nircmd.exe savescreenshotwin ' + path);
 	},
+	playAudio: function(path) {
+		Win.PowerShell("(New-Object Media.SoundPlayer '" + path + "').PlaySync();", null, {suppressErrors: true, noLog: true});
+	},
 	Cortana: {
 		genericCommand: function(command) {
 			robot.keyTap('command');
