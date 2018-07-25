@@ -5,7 +5,8 @@
   "main": "windows-interact.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "minify": "node-minify --compressor babel-minify --input windows-interact.js --output windows-interact.min.js"
+    "minify": "node-minify --compressor babel-minify --input windows-interact.js --output windows-interact.min.js",
+    "postinstall": "node postinstall.js"
   },
   "repository": {
     "type": "git",

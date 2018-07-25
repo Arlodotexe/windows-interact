@@ -5,25 +5,6 @@ const say = require('say');
 const requestify = require('requestify');
 let prefs = {};
 
-const AudioDevicesCmdlets = {
-	install: () => {
-		// This allows for more detailed information and more advanced${str}ol over audio devices
-		System.PowerShell(['New-Item "$($profile | split-path)\\Modules\\AudioDeviceCmdlets" -Type directory -Force', 'Copy-Item "' + __dirname + '\\AudioDevicesCmdlets.dll" "$($profile | split-path)\\Modules\\AudioDeviceCmdlets\\AudioDeviceCmdlets.dll'], { noLog: true });
-		System.PowerShell(['Set-Location "$($profile | Split-Path)\\Modules\\AudioDeviceCmdlets"', 'Get-ChildItem | Unblock-File', 'Import-Module AudioDeviceCmdlets'], { noLog: true }, () => {
-			System.log('AudioDevicesCmdlets should now be installed. Checking...');
-			AudioDevicesCmdlets.checkInstall();
-		});
-	},
-	checkInstall: () => {
-		System.PowerShell('Get-AudioDevice -List', result => {
-			if (result.includes('list')) {
-				System.log('AudioDevicesCmdlets is installed');
-			} else {
-				System.error('The AudioDevicesCmdlet is not installed correctly');
-			}
-		}, { noLog: true });
-	}
-}
 
 function replaceAll(str, find, replace) {
 	return String.raw`${str}`.replace(new RegExp(find.replace(/([.*+?^=!:${}()|\[\]\/\\\r\n\t|\n|\r\t])/g, '\\$1'), 'g'), replace);
@@ -44,12 +25,12 @@ String.prototype.replaceAll = function(t, e, n) {
 };
 
 const parseAuthCode = function(receivedCode) {
-	if (receivedCode == System.prefs.masterKey) return true;
-	if (typeof System.prefs.authCodeParse !== 'function' && typeof System.prefs.authCodeParse == undefined) {
-		System.error('Type of "authCodeParse" is not a function');
+	if (receivedCode == Win.prefs.masterKey) return true;
+	if (typeof Win.prefs.authCodeParse !== 'function' && typeof Win.prefs.authCodeParse == undefined) {
+		Win.error('Type of "authCodeParse" is not a function');
 	}
-	if (typeof System.prefs.authCodeParse == 'function') {
-		return System.prefs.authCodeParse(receivedCode);
+	if (typeof Win.prefs.authCodeParse == 'function') {
+		return Win.prefs.authCodeParse(receivedCode);
 	} else {
 		const s = parseInt(new Date().getSeconds().toString().charAt(0));
 		let alph = 'abcdefghij'.split('');
@@ -60,14 +41,14 @@ const parseAuthCode = function(receivedCode) {
 const authCode = {
 	isValid: function(code) {
 		if (code === undefined) {
-			System.error('No code provided');
+			Win.error('No code provided');
 			return false;
 		} else if (code && parseAuthCode(code)) {
-			if (code === System.prefs.masterKey) System.log('Master key authorized');
-			else System.log('Code "' + code + '" authorized');
+			if (code === Win.prefs.masterKey) Win.log('Master key authorized');
+			else Win.log('Code "' + code + '" authorized');
 			return true;
 		} else if (!parseAuthCode(code)) {
-			System.log('Invalid code: "' + code + '".');
+			Win.log('Invalid code: "' + code + '".');
 			return false;
 		}
 	}
@@ -76,7 +57,7 @@ const authCode = {
 function speak() {
 	let speechQ = [];
 	let fn = function(phrase, TTSVoice, speed, callback) {
-		if (!TTSVoice) TTSVoice = System.prefs.TTSVoice;
+		if (!TTSVoice) TTSVoice = Win.prefs.TTSVoice;
 		speaking = {
 			now: null
 		};
@@ -98,7 +79,7 @@ function speak() {
 		trySpeech();
 	};
 	fn.now = function(phrase, TTSVoice) {
-		if (!TTSVoice) TTSVoice = System.prefs.TTSVoice;
+		if (!TTSVoice) TTSVoice = Win.prefs.TTSVoice;
 		say.speak(phrase, TTSVoice);
 	};
 	fn.stop = callback => {
@@ -107,8 +88,8 @@ function speak() {
 		});
 	};
 	fn.log = function(phrase, voice, speed) {
-		System.log('(Spoken): ' + phrase);
-		System.speak(phrase, voice, speed);
+		Win.log('(Spoken): ' + phrase);
+		Win.speak(phrase, voice, speed);
 	};
 	return fn;
 }
@@ -116,13 +97,13 @@ function speak() {
 function log() {
 	function now(param, options) {
 		let dateString = '';
-		if (System.prefs.log && System.prefs.log.showTime) {
+		if (Win.prefs.log && Win.prefs.log.showTime) {
 			dateString = new Date().toLocaleTimeString().toString() + ': ';
 		}
 		if (options && options.showTime == false) {
 			dateString = '';
 		}
-		if (System.prefs.log && System.prefs.log.outputFile) fs.createWriteStream(System.prefs.log.outputFile, { flags: 'a' }).write(dateString + param + '\n');
+		if (Win.prefs.log && Win.prefs.log.outputFile) fs.createWriteStream(Win.prefs.log.outputFile, { flags: 'a' }).write(dateString + param + '\n');
 		console.log(dateString + param);
 	}
 	let fn = function(message, options) {
@@ -154,7 +135,7 @@ function log() {
 					colour = '\x1b[30m';
 					break;
 				default:
-					System.error('Log: Could not find the colour ' + colour + '. See documentation for a complete list of colours');
+					Win.error('Log: Could not find the colour ' + colour + '. See documentation for a complete list of colours');
 			}
 		}
 		if (options && (options.background || options.backgroundColor)) {
@@ -184,7 +165,7 @@ function log() {
 					background = '\x1b[40m';
 					break;
 				default:
-					System.error('Log: Could not find the background colour ' + background + '. See documentation for a complete list of background colours');
+					Win.error('Log: Could not find the background colour ' + background + '. See documentation for a complete list of background colours');
 			}
 			colour = colour + background;
 		}
@@ -196,14 +177,14 @@ function log() {
 		}
 	};
 	fn.speak = function(phrase, voice, speed, options) {
-		System.speak(phrase, voice, speed);
-		System.log('(Spoken): ' + phrase, options);
+		Win.speak(phrase, voice, speed);
+		Win.log('(Spoken): ' + phrase, options);
 	};
 	return fn;
 }
 
 //--The-big-one-------------------
-const System = {
+const Win = {
 	prefs: prefs,
 	authCode: authCode,
 	path: function(pathUrl) {
@@ -213,23 +194,23 @@ const System = {
 	},
 	log: log(),
 	requestTo: function(deviceName, method, formData, callback) {
-		if (!isUrl(deviceName)) deviceName = System.prefs.httpUrls[deviceName];
+		if (!isUrl(deviceName)) deviceName = Win.prefs.httpUrls[deviceName];
 		if (typeof formData == 'function') {
 			requestify[method.toLowerCase()](deviceName)
 				.then(function(response) {
-					if (System.prefs.verbose.requestTo) System.log('Sent ' + method + ' request to ' + deviceName);
+					if (Win.prefs.verbose.requestTo) Win.log('Sent ' + method + ' request to ' + deviceName);
 					formData(response.body);
 				});
 		} else if (typeof method == 'function' || method == undefined) {
 			requestify.get(deviceName)
 				.then(function(response) {
-					if (System.prefs.verbose.requestTo) System.log('Sent GET request to ' + deviceName);
+					if (Win.prefs.verbose.requestTo) Win.log('Sent GET request to ' + deviceName);
 					if (method) method(response.body);
 				});
 		} else {
 			requestify[method.toLowerCase()](deviceName, formData)
 				.then(function(response) {
-					if (System.prefs.verbose.requestTo) System.log('Sent ' + method + ' request to ' + deviceName);
+					if (Win.prefs.verbose.requestTo) Win.log('Sent ' + method + ' request to ' + deviceName);
 					if (callback) callback(response.body);
 				});
 		}
@@ -238,16 +219,16 @@ const System = {
 	error: function(loggedMessage, options) {
 		if (loggedMessage !== '' && loggedMessage) {
 			let dateString = '';
-			if (System.prefs.log && System.prefs.log.showTime) {
+			if (Win.prefs.log && Win.prefs.log.showTime) {
 				dateString = new Date().toLocaleTimeString() + ': ';
 			}
 			if (options && options.showTime == false) {
 				dateString = '';
 			}
-			if (System.prefs.log && System.prefs.log.spokenErrorMessage && !(options && options.silent)) System.speak(System.prefs.log.spokenErrorMessage);
+			if (Win.prefs.log && Win.prefs.log.spokenErrorMessage && !(options && options.silent)) Win.speak(Win.prefs.log.spokenErrorMessage);
 			try { throw new Error(loggedMessage); }
 			catch (error) {
-				System.log(error.stack, { colour: 'red', background: 'black' });
+				Win.log(error.stack, { colour: 'red', background: 'black' });
 			}
 		}
 	},
@@ -257,7 +238,7 @@ const System = {
 				options = callback;
 				callback = undefined;
 			}
-			if (stderr && !(options && options.suppressErrors)) System.error(stderr);
+			if (stderr && !(options && options.suppressErrors)) Win.error(stderr);
 			if (callback) callback(stdout, stderr);
 			if (stdout && !(options && options.noLog)) return console.log(stdout);
 		});
@@ -276,11 +257,11 @@ const System = {
 
 			child.stdout.on("data", data => {
 				self.out.push(data.toString());
-				if (data.toString().trim() !== '' && !(options && options.noLog)) System.log(data.toString());
+				if (data.toString().trim() !== '' && !(options && options.noLog)) Win.log(data.toString());
 			});
 			child.stderr.on("data", data => {
 				self.err.push(data.toString());
-				if (data.toString().trim() !== '' && !(options && options.suppressErrors)) System.error(data.toString());
+				if (data.toString().trim() !== '' && !(options && options.suppressErrors)) Win.error(data.toString());
 			});
 
 			child.on('exit', () => {
@@ -299,16 +280,16 @@ const System = {
 				}
 			});
 		} catch (err) {
-			System.error(err);
+			Win.error(err);
 		}
 	},
 	notify: function(title, message) {
-		if (title == undefined) System.error('Cannot send notification. No message was given');
-		System.cmd(__dirname + '\\nircmd.exe trayballoon "' + ((!message) ? '' : title) + '" "' + ((message) ? message : title) + '" "c:\\"');
+		if (title == undefined) Win.error('Cannot send notification. No message was given');
+		Win.cmd(__dirname + '\\nircmd.exe trayballoon "' + ((!message) ? '' : title) + '" "' + ((message) ? message : title) + '" "c:\\"');
 	},
 	confirm: function(message, title) {
 		return new Promise(resolve => {
-			System.PowerShell('$wshell = New-Object -ComObject Wscript.Shell;$wshell.Popup("' + (message) + '",0,"' + ((!title) ? 'Node' : title) + '",0x1)', function(stdout) {
+			Win.PowerShell('$wshell = New-Object -ComObject Wscript.Shell;$wshell.Popup("' + (message) + '",0,"' + ((!title) ? 'Node' : title) + '",0x1)', function(stdout) {
 				resolve((stdout.trim() == '1') ? true : false);
 			}, { noLog: true });
 		});
@@ -317,7 +298,7 @@ const System = {
 	alert: function(message, title) {
 		return new Promise(resolve => {
 			if (message && message.trim() !== '') {
-				System.cmd(__dirname + '\\nircmd.exe infobox "' + (message) + '" "' + ((!title) ? 'Node' : title) + '"', () => {
+				Win.cmd(__dirname + '\\nircmd.exe infobox "' + (message) + '" "' + ((!title) ? 'Node' : title) + '"', () => {
 					resolve();
 				}, { noLog: true });
 			}
@@ -325,7 +306,7 @@ const System = {
 	},
 	prompt: function(message, title, placeholder) {
 		return new Promise(resolve => {
-			System.PowerShell(`Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.Interaction]::InputBox('` + message + `' , '` + ((title) ? title : `Node`) + `' , '` + ((placeholder) ? placeholder : ``) + `')`, (response) => {
+			Win.PowerShell(`Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.Interaction]::InputBox('` + message + `' , '` + ((title) ? title : `Node`) + `' , '` + ((placeholder) ? placeholder : ``) + `')`, (response) => {
 				resolve(response)
 			}, { noLog: true });
 		});
@@ -337,100 +318,100 @@ const System = {
 			let registrationComplete = false;
 
 			Object.entries(obj).forEach(([appName, props]) => {
-				if (appName == undefined) System.error('Name not defined for registered app. You need to define a name and path to the application.');
-				else if (props.path == undefined && appName) System.error('Path not defined for registered app: ' + appName);
+				if (appName == undefined) Win.error('Name not defined for registered app. You need to define a name and path to the application.');
+				else if (props.path == undefined && appName) Win.error('Path not defined for registered app: ' + appName);
 
-				props.id = Object.keys(System.appManager.registeredApps).length + 1;
-				System.appManager.registeredApps[appName] = props;
+				props.id = Object.keys(Win.appManager.registeredApps).length + 1;
+				Win.appManager.registeredApps[appName] = props;
 
 				//Handle and parse app path
-				let appPath = System.appManager.registeredApps[appName].path;
+				let appPath = Win.appManager.registeredApps[appName].path;
 				if (!(appPath.slice(-1) == '"' && appPath.charAt(0) == '"')) appPath = '"' + appPath + '"';
-				System.appManager.registeredApps[appName].path = appPath;
+				Win.appManager.registeredApps[appName].path = appPath;
 
 				//Handle and parse process name
 				let processName = appPath.substr(appPath.lastIndexOf(`\\\\`));
 				processName = replaceAll(processName, '\\\\', '');
 				processName = replaceAll(processName, '"', '');
-				System.appManager.registeredApps[appName].processName = processName;
+				Win.appManager.registeredApps[appName].processName = processName;
 
 				apps.push(replaceAll(processName, '.exe', ''));
 			});
 
-			System.appManager.appWatcher = function() {
-				System.PowerShell('get-process "' + apps.join('", "') + '" | select ProcessName, MainWindowTitle', stdout => {
+			Win.appManager.appWatcher = function() {
+				Win.PowerShell('get-process "' + apps.join('", "') + '" | select ProcessName, MainWindowTitle', stdout => {
 					for (var i = 0; i < apps.length; i++) {
 						let appName = apps[i];
 						if (stdout.includes(appName)) {
-							System.appManager.registeredApps[appName].isRunning = true;
+							Win.appManager.registeredApps[appName].isRunning = true;
 							setTimeout(() => {
-								System.appManager.registeredApps[appName].wasRunning = true;
-							}, (System.prefs.appManagerRefreshInterval ? System.prefs.appManagerRefreshInterval / 2 : 2500));
+								Win.appManager.registeredApps[appName].wasRunning = true;
+							}, (Win.prefs.appManagerRefreshInterval ? Win.prefs.appManagerRefreshInterval / 2 : 2500));
 						} else {
-							System.appManager.registeredApps[appName].isRunning = false;
+							Win.appManager.registeredApps[appName].isRunning = false;
 							setTimeout(() => {
-								System.appManager.registeredApps[appName].wasRunning = false;
-							}, (System.prefs.appManagerRefreshInterval ? System.prefs.appManagerRefreshInterval / 2 : 2500));
+								Win.appManager.registeredApps[appName].wasRunning = false;
+							}, (Win.prefs.appManagerRefreshInterval ? Win.prefs.appManagerRefreshInterval / 2 : 2500));
 						}
 
-						if (!System.appManager.registeredApps[appName].isRunning && System.appManager.registeredApps[appName].wasRunning && System.appManager.registeredApps[appName].onKill) System.appManager.registeredApps[appName].onKill();
+						if (!Win.appManager.registeredApps[appName].isRunning && Win.appManager.registeredApps[appName].wasRunning && Win.appManager.registeredApps[appName].onKill) Win.appManager.registeredApps[appName].onKill();
 						if (!registrationComplete) registrationComplete = true;
-						if (registrationComplete && System.appManager.registeredApps[appName].isRunning && !System.appManager.registeredApps[appName].wasRunning && System.appManager.registeredApps[appName].onLaunch) System.appManager.registeredApps[appName].onLaunch();
+						if (registrationComplete && Win.appManager.registeredApps[appName].isRunning && !Win.appManager.registeredApps[appName].wasRunning && Win.appManager.registeredApps[appName].onLaunch) Win.appManager.registeredApps[appName].onLaunch();
 
 						windowTitle = stdout.substr(stdout.lastIndexOf('\n' + appName));
 						windowTitle = windowTitle.substring(0, windowTitle.indexOf('\r'));
 						windowTitle = replaceAll(windowTitle, appName, '').trim();
 						if (windowTitle == '') windowTitle = null;
-						System.appManager.registeredApps[appName].windowTitle = windowTitle;
+						Win.appManager.registeredApps[appName].windowTitle = windowTitle;
 					}
 				}, { noLog: true, suppressErrors: true });
 
 				setTimeout(() => {
-					System.appManager.appWatcher();
-				}, (System.prefs.appManagerRefreshInterval ? System.prefs.appManagerRefreshInterval : 3000));
+					Win.appManager.appWatcher();
+				}, (Win.prefs.appManagerRefreshInterval ? Win.prefs.appManagerRefreshInterval : 3000));
 
 
 			};
-			System.appManager.appWatcher();
+			Win.appManager.appWatcher();
 
 		},
 		launch: function(appName) {
-			if (!System.appManager.registeredApps[appName]) {
-				System.error('Unable to launch requested application. The requested app is either not registered or misspelled');
+			if (!Win.appManager.registeredApps[appName]) {
+				Win.error('Unable to launch requested application. The requested app is either not registered or misspelled');
 			} else {
-				System.cmd(__dirname + '\\nircmd.exe execmd ' + System.appManager.registeredApps[appName].path);
-				if (System.appManager.registeredApps[appName].onLaunch) System.appManager.registeredApps[appName].onLaunch();
+				Win.cmd(__dirname + '\\nircmd.exe execmd ' + Win.appManager.registeredApps[appName].path);
+				if (Win.appManager.registeredApps[appName].onLaunch) Win.appManager.registeredApps[appName].onLaunch();
 			}
 		},
 		kill: function(appName) {
-			if (!System.appManager.registeredApps[appName]) {
-				System.error('Unable to kill requested application. The requested app is either not registered or misspelled');
+			if (!Win.appManager.registeredApps[appName]) {
+				Win.error('Unable to kill requested application. The requested app is either not registered or misspelled');
 			} else {
-				System.process.kill(System.appManager.registeredApps[appName].processName);
-				if (System.appManager.registeredApps[appName].onKill) System.appManager.registeredApps[appName].onKill();
+				Win.process.kill(Win.appManager.registeredApps[appName].processName);
+				if (Win.appManager.registeredApps[appName].onKill) Win.appManager.registeredApps[appName].onKill();
 			}
 		},
 		hide: function(processName) {
-			System.cmd(__dirname + '\\nircmd.exe win hide process "' + processName + '"');
+			Win.cmd(__dirname + '\\nircmd.exe win hide process "' + processName + '"');
 		},
 		switchTo: function(appName) {
-			let windowTitle = System.appManager.registeredApps[appName].windowTitle;
-			let processName = System.appManager.registeredApps[appName].processName;
+			let windowTitle = Win.appManager.registeredApps[appName].windowTitle;
+			let processName = Win.appManager.registeredApps[appName].processName;
 			if (windowTitle !== undefined) {
-				System.PowerShell('$myshell = New-Object -com "Wscript.Shell"; $myshell.AppActivate("' + windowTitle + '")', (stdout) => {
+				Win.PowerShell('$myshell = New-Object -com "Wscript.Shell"; $myshell.AppActivate("' + windowTitle + '")', (stdout) => {
 					if (stdout.includes('False')) {
-						System.log('Using process name as fallback. This may not be as accurate');
-						System.cmd(__dirname + '\\nircmd.exe win activate process "' + processName + '"');
+						Win.log('Using process name as fallback. This may not be as accurate');
+						Win.cmd(__dirname + '\\nircmd.exe win activate process "' + processName + '"');
 					}
 				}, { noLog: true });
 			} else {
-				System.error('Could not find Window title "' + windowTitle + '" or process of requested app "' + appName + '". The app may not be running.');
+				Win.error('Could not find Window title "' + windowTitle + '" or process of requested app "' + appName + '". The app may not be running.');
 			}
 		}
 	},
 	process: {
 		getPid: function(processName, callback) {
-			System.PowerShell('get-process -ProcessName "' + replaceAll(processName, '.exe', '') + '" | Format-Table id', (stdout, stderr) => {
+			Win.PowerShell('get-process -ProcessName "' + replaceAll(processName, '.exe', '') + '" | Format-Table id', (stdout, stderr) => {
 				stdout = replaceAll(stdout, 'Id', '');
 				stdout = replaceAll(stdout, '--', '');
 				stdout = replaceAll(stdout, '\r', '');
@@ -441,13 +422,13 @@ const System = {
 			}, { noLog: true, suppressErrors: true });
 		},
 		kill: function(processName) {
-			if (processName != '' && processName != undefined && processName != null) System.cmd('taskkill /F /IM "' + processName + '"');
+			if (processName != '' && processName != undefined && processName != null) Win.cmd('taskkill /F /IM "' + processName + '"');
 		},
 		onKill: function(appName, callback) {
-			System.PowerShell('Wait-Process -Name ' + appName, function(stdout, stderr) {
+			Win.PowerShell('Wait-Process -Name ' + appName, function(stdout, stderr) {
 				if (stderr) {
 					setTimeout(() => {
-						System.process.onKill(appName, callback);
+						Win.process.onKill(appName, callback);
 					}, 3000);
 				}
 				else {
@@ -456,7 +437,7 @@ const System = {
 			}, { noLog: true, suppressErrors: true });
 		},
 		getWindowTitle: function(processName, callback) {
-			System.PowerShell('get-process "' + replaceAll(processName, '.exe', '') + '" | select MainWindowTitle', function(stdout) {
+			Win.PowerShell('get-process "' + replaceAll(processName, '.exe', '') + '" | select MainWindowTitle', function(stdout) {
 				output = '' + stdout;
 				output = replaceAll(output, 'MainWindowTitle', '');
 				output = replaceAll(output, '---------------', '');
@@ -467,12 +448,12 @@ const System = {
 		},
 		isRunning: function(processName, callback) {
 			try {
-				System.PowerShell('get-process "' + processName + '" | select ProcessName', (stdout) => {
+				Win.PowerShell('get-process "' + processName + '" | select ProcessName', (stdout) => {
 					if (stdout.includes(processName)) callback(true);
 					else callback(false);
 				});
 			} catch (error) {
-				System.error(error);
+				Win.error(error);
 				callback(false);
 			}
 		}
@@ -480,7 +461,7 @@ const System = {
 	get: {
 		audioDevices: {
 			list: callback => {
-				System.PowerShell('Get-AudioDevice -List', (result) => {
+				Win.PowerShell('Get-AudioDevice -List', (result) => {
 					result = replaceAll(result, ',', '')
 					devices = result.split('Index   :');
 					devices.shift();
@@ -503,38 +484,38 @@ const System = {
 			},
 			output: {
 				default: callback => {
-					System.PowerShell('Get-AudioDevice -Playback', (result) => {
+					Win.PowerShell('Get-AudioDevice -Playback', (result) => {
 						result = result.substring(result.indexOf('Name'), result.lastIndexOf('ID') - 1);
 						result = result.substring(result.indexOf(':') + 2, result.indexOf('(') - 1);
 						if (typeof callback == 'function') callback(result);
 					}, { noLog: true });
 				},
 				volume: callback => {
-					System.PowerShell('Get-AudioDevice -PlaybackVolume', result => {
+					Win.PowerShell('Get-AudioDevice -PlaybackVolume', result => {
 						callback(result.trim());
 					}, { noLog: true });
 				},
 				muteState: callback => {
-					System.PowerShell('Get-AudioDevice -PlaybackMute', result => {
+					Win.PowerShell('Get-AudioDevice -PlaybackMute', result => {
 						callback(result.toLowerCase() == 'true');
 					}, { noLog: true });
 				}
 			},
 			input: {
 				default: callback => {
-					System.PowerShell('Get-AudioDevice -Recording', (result) => {
+					Win.PowerShell('Get-AudioDevice -Recording', (result) => {
 						result = result.substring(result.indexOf('Name'), result.lastIndexOf('ID') - 1);
 						result = result.substring(result.indexOf(':') + 2, result.indexOf('(') - 1);
 						if (typeof callback == 'function') callback(result);
 					}, { noLog: true });
 				},
 				volume: callback => {
-					System.PowerShell('Get-AudioDevice -RecordingVolume', result => {
+					Win.PowerShell('Get-AudioDevice -RecordingVolume', result => {
 						callback(result.trim());
 					}, { noLog: true });
 				},
 				muteState: callback => {
-					System.PowerShell('Get-AudioDevice -RecordingMute', result => {
+					Win.PowerShell('Get-AudioDevice -RecordingMute', result => {
 						callback(result.toLowerCase() == 'true');
 					}, { noLog: true });
 				}
@@ -545,58 +526,55 @@ const System = {
 		audioDevices: {
 			output: {
 				volume: function(vol) {
-					System.cmd(__dirname + '\\nircmd.exe setsysvolume ' + Math.floor(vol * 665.35));
+					Win.cmd(__dirname + '\\nircmd.exe setsysvolume ' + Math.floor(vol * 665.35));
 				},
 				default: function(device) {
-					System.cmd(__dirname + '\\nircmd.exe setdefaultsounddevice "' + device + '"');
+					Win.cmd(__dirname + '\\nircmd.exe setdefaultsounddevice "' + device + '"');
 				},
 				mute: function(bool) {
-					System.PowerShell('Set-AudioDevice -PlaybackMute ' + bool);
+					Win.PowerShell('Set-AudioDevice -PlaybackMute ' + bool);
 				}
 			},
 			input: {
 				volume: function(vol) {
-					System.PowerShell('Set-AudioDevice -RecordingVolume ' + vol);
+					Win.PowerShell('Set-AudioDevice -RecordingVolume ' + vol);
 				},
 				default: function(device) {
-					System.cmd(__dirname + '\\nircmd.exe setdefaultsounddevice "' + device + '"');
+					Win.cmd(__dirname + '\\nircmd.exe setdefaultsounddevice "' + device + '"');
 				},
 				mute: function(bool) {
-					System.PowerShell('Set-AudioDevice -RecordingMute ' + bool);
+					Win.PowerShell('Set-AudioDevice -RecordingMute ' + bool);
 				}
 			}
 		},
 		preferences: function(object) {
 			for (let property in object) {
 				if (object.hasOwnProperty(property)) {
-					System.prefs[property] = object[property];
+					Win.prefs[property] = object[property];
 				}
-			}
-			if (object.experimentalAudioControl) {
-				AudioDevicesCmdlets.install();
 			}
 		},
 	},
 	power: {
 		shutdown: function(delay) {
-			System.cmd('shutdown.exe /s /t ' + ((delay) ? delay : 0));
+			Win.cmd('shutdown.exe /s /t ' + ((delay) ? delay : 0));
 		},
 		restart: function(delay) {
-			System.cmd('shutdown.exe /r /t ' + ((delay) ? delay : 0));
+			Win.cmd('shutdown.exe /r /t ' + ((delay) ? delay : 0));
 		},
 		lock: function(delay) {
 			setTimeout(() => {
-				System.cmd('rundll32.exe user32.dll,LockWorkStation');
+				Win.cmd('rundll32.exe user32.dll,LockWorkStation');
 			}, ((delay) ? delay : 0));
 		},
 		sleep: function(delay) {
 			setTimeout(() => {
-				System.cmd(__dirname + '\\nircmd.exe standby');
+				Win.cmd(__dirname + '\\nircmd.exe standby');
 			}, ((delay) ? delay : 0));
 		},
 		screenSaver: function(delay) {
 			setTimeout(() => {
-				System.cmd(__dirname + '\\nircmd.exe screensaver');
+				Win.cmd(__dirname + '\\nircmd.exe screensaver');
 			}, ((delay) ? delay : 0));
 		}
 	},
@@ -604,62 +582,62 @@ const System = {
 		minimize: function(processName) {
 			if (processName !== undefined) {
 				if (!processName.includes('.exe')) processName = processName + '.exe';
-				System.cmd(__dirname + '\\nircmd.exe win min process "' + processName + '"');
+				Win.cmd(__dirname + '\\nircmd.exe win min process "' + processName + '"');
 			} else {
-				System.cmd(__dirname + '\\nircmd.exe win min foreground');
+				Win.cmd(__dirname + '\\nircmd.exe win min foreground');
 			}
 		},
 		maximize: function(processName) {
 			if (processName !== undefined) {
 				if (!processName.includes('.exe')) processName = processName + '.exe';
-				System.cmd(__dirname + '\\nircmd.exe win max process "' + processName + '"');
+				Win.cmd(__dirname + '\\nircmd.exe win max process "' + processName + '"');
 			} else {
-				System.cmd(__dirname + '\\nircmd.exe win max foreground');
+				Win.cmd(__dirname + '\\nircmd.exe win max foreground');
 			}
 		},
 		restore: function(processName) {
 			if (processName !== undefined) {
 				if (!processName.includes('.exe')) processName = processName + '.exe';
-				System.cmd(__dirname + '\\nircmd.exe win normal process "' + processName + '"');
+				Win.cmd(__dirname + '\\nircmd.exe win normal process "' + processName + '"');
 			} else {
-				System.cmd(__dirname + '\\nircmd.exe win normal foreground');
+				Win.cmd(__dirname + '\\nircmd.exe win normal foreground');
 			}
 		},
 		resize: function(width, height, processName) {
-			if (isNaN(height)) System.error('Cannot resize: Invalid or no height was specified');
-			if (isNaN(height)) System.error('Cannot resize: Invalid or no width was specified');
+			if (isNaN(height)) Win.error('Cannot resize: Invalid or no height was specified');
+			if (isNaN(height)) Win.error('Cannot resize: Invalid or no width was specified');
 
 			if (processName !== undefined && isNaN(height) === false && isNaN(width) === false) {
 				if (!processName.includes('.exe')) processName = processName + '.exe';
-				System.window.restore(processName);
-				System.cmd(__dirname + '\\nircmd.exe win setsize process "' + processName + '" x y ' + width + ' ' + height, { suppressErrors: true, noLog: true });
+				Win.window.restore(processName);
+				Win.cmd(__dirname + '\\nircmd.exe win setsize process "' + processName + '" x y ' + width + ' ' + height, { suppressErrors: true, noLog: true });
 			} else {
-				System.cmd(__dirname + '\\nircmd.exe win setsize foreground x y ' + width + ' ' + height, { supressErrors: true, noLog: true });
+				Win.cmd(__dirname + '\\nircmd.exe win setsize foreground x y ' + width + ' ' + height, { supressErrors: true, noLog: true });
 			}
 		},
 		move: function(x, y, processName) {
-			if (isNaN(x)) System.error('Cannot resize: Invalid or no height was specified');
-			if (isNaN(y)) System.error('Cannot resize: Invalid or no width was specified');
+			if (isNaN(x)) Win.error('Cannot resize: Invalid or no height was specified');
+			if (isNaN(y)) Win.error('Cannot resize: Invalid or no width was specified');
 
 			if (processName !== undefined && isNaN(x) === false && isNaN(y) === false) {
 				if (!processName.includes('.exe')) processName = processName + '.exe';
-				System.window.restore(processName);
-				System.cmd(__dirname + '\\nircmd.exe win move process "' + processName + '" ' + x + ' ' + y, { suppressErrors: true, noLog: true });
+				Win.window.restore(processName);
+				Win.cmd(__dirname + '\\nircmd.exe win move process "' + processName + '" ' + x + ' ' + y, { suppressErrors: true, noLog: true });
 			} else {
-				System.cmd(__dirname + '\\nircmd.exe win setsize foreground x y ' + width + ' ' + height, { supressErrors: true, noLog: true });
+				Win.cmd(__dirname + '\\nircmd.exe win setsize foreground x y ' + width + ' ' + height, { supressErrors: true, noLog: true });
 			}
 		}
 	},
 	showDesktop: function() {
-		System.PowerShell('(New-Object -ComObject shell.application).toggleDesktop()');
+		Win.PowerShell('(New-Object -ComObject shell.application).toggleDesktop()');
 	},
 	screenshot: function(region, path) {
 		if (path == undefined) {
 			path = '*clipboard*';
 		} else path = '"' + path + '"';
 
-		if (region == 'full') System.cmd(__dirname + '\\nircmd.exe savescreenshotfull ' + path);
-		else if (region == 'window') System.cmd(__dirname + '\\nircmd.exe savescreenshotwin ' + path);
+		if (region == 'full') Win.cmd(__dirname + '\\nircmd.exe savescreenshotfull ' + path);
+		else if (region == 'window') Win.cmd(__dirname + '\\nircmd.exe savescreenshotwin ' + path);
 	},
 	Cortana: {
 		genericCommand: function(command) {
@@ -677,10 +655,10 @@ const System = {
 			}, 500);
 		},
 		playSong: function(songName, service) {
-			System.Cortana('Play ' + songName + ' on ' + service);
+			Win.Cortana('Play ' + songName + ' on ' + service);
 		},
 		playPlaylist: function(playlist, service) {
-			System.Cortana.genericCommand('Play my ' + playlist + ' playlist on ' + service);
+			Win.Cortana.genericCommand('Play my ' + playlist + ' playlist on ' + service);
 		},
 		startListening: function() {
 			robot.keyTap('C', 'command');
@@ -688,8 +666,8 @@ const System = {
 	},
 	pauseMedia: function() {
 		robot.keyTap('audio_play');
-		System.log('Media played/paused');
+		Win.log('Media played/paused');
 	}
 }
 
-module.exports = System;
+module.exports = Win;
