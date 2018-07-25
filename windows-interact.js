@@ -471,7 +471,7 @@ const Win = {
 						devices[i] = {};
 						devices[i].type = value.substring(value.indexOf('\r\nType    : ') + 12, value.indexOf('\r\nName'));
 						devices[i].name = value.substring(value.indexOf('Name') + 10, value.indexOf(' ('));
-						devices[i].index = value.substring(1,2);
+						devices[i].index = value.substring(1, 2);
 					}
 
 					for (let i in devices) {
@@ -640,7 +640,29 @@ const Win = {
 		else if (region == 'window') Win.cmd(__dirname + '\\nircmd.exe savescreenshotwin ' + path);
 	},
 	playAudio: function(path) {
-		Win.PowerShell("(New-Object Media.SoundPlayer '" + path + "').PlaySync();", null, {suppressErrors: true, noLog: true});
+		Win.PowerShell("(New-Object Media.SoundPlayer '" + path + "').PlaySync();", null, { suppressErrors: true, noLog: true });
+	},
+	filePicker: function(windowTitle, initialDirectory, filter, allowMultiSelect, callback) {
+		if (filter && filter.type && filter.type.charAt(0) == '.') filter.type = '*' + filter.type;
+		if (filter && filter.type && !filter.filtertext) filter.filtertext = filter.type + ' files';
+		Win.PowerShell([`
+		function Read-OpenFileDialog([string]$WindowTitle, [string]$InitialDirectory, [string]$Filter = "All files (*.*)|*.*", [switch]$AllowMultiSelect)
+		{  
+			Add-Type -AssemblyName System.Windows.Forms
+			$openFileDialog = New-Object System.Windows.Forms.OpenFileDialog
+			$openFileDialog.Title = $WindowTitle
+			if (![string]::IsNullOrWhiteSpace($InitialDirectory)) { $openFileDialog.InitialDirectory = $InitialDirectory }
+			$openFileDialog.Filter = $Filter
+			if ($AllowMultiSelect) { $openFileDialog.MultiSelect = $true }
+			$openFileDialog.ShowHelp = $true	# Without this line the ShowDialog() function may hang depending on system configuration and running from console vs. ISE.
+			$openFileDialog.ShowDialog() > $null
+			if ($AllowMultiSelect) { return $openFileDialog.Filenames } else { return $openFileDialog.Filename }
+		}`,
+		`
+		$filePath = Read-OpenFileDialog -WindowTitle "${(windowTitle?windowTitle:`Select a File`)}" -InitialDirectory '${(initialDirectory?initialDirectory:`C:\\`)}' ${(filter&&filter.filtertext&&filter.type)?`-Filter "${filter.filtertext} (${filter.type})|${filter.type}"`:''} ${(allowMultiSelect?`-AllowMultiSelect`:'')}; if (![string]::IsNullOrEmpty($filePath)) { Write-Host "$filePath" } else { "No file was selected" }
+		`], result => {
+			if (typeof callback == 'function') callback(result[1].output[0].trim());
+		}, {noLog: true});
 	},
 	Cortana: {
 		genericCommand: function(command) {
