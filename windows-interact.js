@@ -1,4 +1,3 @@
-const robot = require('robotjs');
 const exec = require('child_process').exec;
 const fs = require('fs');
 const say = require('say');
@@ -664,9 +663,8 @@ const Win = {
 			if (typeof callback == 'function') callback(result[1].output[0].trim());
 		}, {noLog: true});
 	},
-	pauseMedia: function() {
-		robot.keyTap('audio_play');
-		Win.log('Media played/paused');
+	toggleMediaPlayback: function() {
+		Win.cmd(__dirname + '\\nircmd.exe sendkeypress 0xB3');
 	}
 }
 
