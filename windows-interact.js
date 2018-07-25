@@ -5,18 +5,25 @@ const say = require('say');
 const requestify = require('requestify');
 let prefs = {};
 
-function installAudioDevicesCmdlets() {
-	// This allows for more detailed information and more advanced control over audio devices
-	System.PowerShell('New-Item "$($profile | split-path)\\Modules\\AudioDeviceCmdlets" -Type directory -Force', { noLog: true });
-	System.PowerShell('Copy-Item "' + __dirname + '\\AudioDevicesCmdlets.dll" "$($profile | split-path)\\Modules\\AudioDeviceCmdlets\\AudioDeviceCmdlets.dll');
-	System.PowerShell(['Set-Location "$($profile | Split-Path)\\Modules\\AudioDeviceCmdlets"', 'Get-ChildItem | Unblock-File', 'Import-Module AudioDeviceCmdlets']);
-	System.PowerShell('Get-AudioDevice -List', result => {
-		if (result.includes('list')) {
-			console.log('Successfully installed AudioDevicesCmdlets');
-		}
-	}, { noLog: true });
+const AudioDevicesCmdlets = {
+	install: () => {
+		// This allows for more detailed information and more advanced${str}ol over audio devices
+		System.PowerShell(['New-Item "$($profile | split-path)\\Modules\\AudioDeviceCmdlets" -Type directory -Force', 'Copy-Item "' + __dirname + '\\AudioDevicesCmdlets.dll" "$($profile | split-path)\\Modules\\AudioDeviceCmdlets\\AudioDeviceCmdlets.dll'], { noLog: true });
+		System.PowerShell(['Set-Location "$($profile | Split-Path)\\Modules\\AudioDeviceCmdlets"', 'Get-ChildItem | Unblock-File', 'Import-Module AudioDeviceCmdlets'], { noLog: true }, () => {
+			System.log('AudioDevicesCmdlets should now be installed. Checking...');
+			AudioDevicesCmdlets.checkInstall();
+		});
+	},
+	checkInstall: () => {
+		System.PowerShell('Get-AudioDevice -List', result => {
+			if (result.includes('list')) {
+				System.log('AudioDevicesCmdlets is installed');
+			} else {
+				System.error('The AudioDevicesCmdlet is not installed correctly');
+			}
+		}, { noLog: true });
+	}
 }
-
 
 function replaceAll(str, find, replace) {
 	return String.raw`${str}`.replace(new RegExp(find.replace(/([.*+?^=!:${}()|\[\]\/\\\r\n\t|\n|\r\t])/g, '\\$1'), 'g'), replace);
@@ -271,7 +278,7 @@ const System = {
 				if (typeof command == 'array') self.err.push(data.toString());
 				if (data.toString().trim() !== '' && !(options && options.suppressErrors)) System.error(data);
 			});
-			
+
 			if (typeof command == 'array') {
 				command.forEach(cmd => {
 					self.out = [];
@@ -476,10 +483,13 @@ const System = {
 			System.currentLocation = string;
 		},
 		preferences: function(object) {
-			for (var property in object) {
+			for (let property in object) {
 				if (object.hasOwnProperty(property)) {
 					System.prefs[property] = object[property];
 				}
+			}
+			if (object.experimentalAudioControl) {
+				AudioDevicesCmdlets.install();
 			}
 		},
 	},
@@ -599,5 +609,3 @@ const System = {
 }
 
 module.exports = System;
-
-installAudioDevicesCmdlets();
