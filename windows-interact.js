@@ -269,14 +269,16 @@ const System = {
 			const child = spawn("powershell.exe", ["-Command", "-"]);
 
 			child.stdout.on("data", data => {
-				if (typeof command == 'string') self.out = data.toString();
+				if (typeof command == 'string') {
+					self.out = data.toString(); child.stdin.end(); if (callback) callback(self.out, self.err);
+				}
 				if (typeof command == 'array') self.out.push(data.toString());
-				if (data.toString().trim() !== '' && !(options && options.noLog)) System.log(data);
+				if (data.toString().trim() !== '' && !(options && options.noLog)) System.log(data.toString());
 			});
 			child.stderr.on("data", data => {
-				if (typeof command == 'string') self.err = data.toString();
+				if (typeof command == 'string') self.err = data.toString(); child.stdin.end(); if (typeof command == 'string') if (callback) callback(self.out, self.err);
 				if (typeof command == 'array') self.err.push(data.toString());
-				if (data.toString().trim() !== '' && !(options && options.suppressErrors)) System.error(data);
+				if (data.toString().trim() !== '' && !(options && options.suppressErrors)) System.error(data.toString());
 			});
 
 			if (typeof command == 'array') {
@@ -285,13 +287,14 @@ const System = {
 					self.err = [];
 					child.stdin.write(`${cmd}\n`);
 					results.push({ command: cmd, output: self.out, errors: self.err });
+					if (results.length == command.length) {
+						child.stdin.end();
+						if (callback) callback(results);
+					}
 				});
-				if (callback) callback(results);
 			} else if (typeof command == 'string') {
-				child.stdin.write(`${cmd}\n`);
-				if (callback) callback(self.out, self.err);
+				child.stdin.write(`${command}\n`);
 			}
-			child.stdin.end();
 		} catch (err) {
 			System.error(err);
 		}
@@ -471,16 +474,43 @@ const System = {
 			}
 		}
 	},
+	get: {
+		audioDevices: {
+			output: {
+				default: function() {
+					System.PowerShell('Get-AudioDevice -Playback', (result, result2) => {
+						console.log(result, result2);
+						result = result.substring(indexOf('Name'), lastIndexOf('ID') - 1);
+						console.log(result);
+
+					});
+				}
+			},
+			updateDeviceInfo: function() {
+				System.PowerShell('Get-AudioDevice -List', (result) => {
+					console.log(result);
+				}, { noLog: true });
+			}
+		}
+	},
 	set: {
-		volume: function(vol) {
-			System.cmd(__dirname + '\\nircmd.exe setsysvolume ' + Math.floor(vol * 665.35));
-		},
-		defaultSoundDevice: function(device) {
-			System.cmd(__dirname + '\\nircmd.exe setdefaultsounddevice "' + device + '"');
-		},
-		location: function(string) {
-			System.log('Set location to ' + string);
-			System.currentLocation = string;
+		audioDevices: {
+			output: {
+				volume: function(vol) {
+					System.cmd(__dirname + '\\nircmd.exe setsysvolume ' + Math.floor(vol * 665.35));
+				},
+				default: function(device) {
+					System.cmd(__dirname + '\\nircmd.exe setdefaultsounddevice "' + device + '"');
+				}
+			},
+			input: {
+				volume: function(vol) {
+					System.PowerShell('Set-AudioDevice -RecordingVolume ' + vol);
+				},
+				default: function(vol) {
+					System.PowerShell('Set-AudioDevice ')
+				}
+			}
 		},
 		preferences: function(object) {
 			for (let property in object) {
