@@ -33,6 +33,10 @@ function isUrl(url) {
 	return /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)/.test(url);
 }
 
+function countStringOccurences(string, query) {
+	return (string.match(new RegExp(query, 'g')) || []).length;
+}
+
 String.prototype.replaceAll = function(t, e, n) {
 	let r = "" + this, g = "", l = r, s = 0, h = -1
 	for (n && (t = t.toLowerCase(), l = r.toLowerCase()); (h = l.indexOf(t)) > -1;)g += r.substring(s, s + h) + e, l = l.substring(h + t.length, l.length), s += h + t.length;
@@ -97,7 +101,7 @@ function speak() {
 		if (!TTSVoice) TTSVoice = System.prefs.TTSVoice;
 		say.speak(phrase, TTSVoice);
 	};
-	fn.stop = function(callback) {
+	fn.stop = callback => {
 		say.stop(() => {
 			if (callback) callback();
 		});
@@ -475,42 +479,64 @@ const System = {
 	},
 	get: {
 		audioDevices: {
+			list: callback => {
+				System.PowerShell('Get-AudioDevice -List', (result) => {
+					result = replaceAll(result, ',', '')
+					devices = result.split('Index   :');
+					devices.shift();
+
+					for (let i in devices) {
+						value = devices[i];
+						devices[i] = {};
+						devices[i].type = value.substring(value.indexOf('\r\nType    : ') + 12, value.indexOf('\r\nName'));
+						devices[i].name = value.substring(value.indexOf('Name') + 10, value.indexOf(' ('));
+						devices[i].index = value.substring(1,2);
+					}
+
+					for (let i in devices) {
+						if (devices[i].type.includes('Recording')) devices[i].type = 'input';
+						else if (devices[i].type.includes('Playback')) devices[i].type = 'output';
+					}
+
+					if (typeof callback == 'function') callback(devices);
+				}, { noLog: true });
+			},
 			output: {
-				default: function(callback) {
+				default: callback => {
 					System.PowerShell('Get-AudioDevice -Playback', (result) => {
 						result = result.substring(result.indexOf('Name'), result.lastIndexOf('ID') - 1);
 						result = result.substring(result.indexOf(':') + 2, result.indexOf('(') - 1);
 						if (typeof callback == 'function') callback(result);
 					}, { noLog: true });
 				},
-				volume: function(callback) {
+				volume: callback => {
 					System.PowerShell('Get-AudioDevice -PlaybackVolume', result => {
 						callback(result.trim());
-					}, {noLog: true});
+					}, { noLog: true });
 				},
 				muteState: callback => {
 					System.PowerShell('Get-AudioDevice -PlaybackMute', result => {
 						callback(result.toLowerCase() == 'true');
-					}, {noLog: true});
+					}, { noLog: true });
 				}
 			},
 			input: {
-				default: function(callback) {
+				default: callback => {
 					System.PowerShell('Get-AudioDevice -Recording', (result) => {
 						result = result.substring(result.indexOf('Name'), result.lastIndexOf('ID') - 1);
 						result = result.substring(result.indexOf(':') + 2, result.indexOf('(') - 1);
 						if (typeof callback == 'function') callback(result);
 					}, { noLog: true });
 				},
-				volume: function(callback) {
+				volume: callback => {
 					System.PowerShell('Get-AudioDevice -RecordingVolume', result => {
 						callback(result.trim());
-					}, {noLog: true});
+					}, { noLog: true });
 				},
 				muteState: callback => {
 					System.PowerShell('Get-AudioDevice -RecordingMute', result => {
 						callback(result.toLowerCase() == 'true');
-					}, {noLog: true});
+					}, { noLog: true });
 				}
 			}
 		}
@@ -523,14 +549,20 @@ const System = {
 				},
 				default: function(device) {
 					System.cmd(__dirname + '\\nircmd.exe setdefaultsounddevice "' + device + '"');
+				},
+				mute: function(bool) {
+					System.PowerShell('Set-AudioDevice -PlaybackMute ' + bool);
 				}
 			},
 			input: {
 				volume: function(vol) {
 					System.PowerShell('Set-AudioDevice -RecordingVolume ' + vol);
 				},
-				default: function(vol) {
-					System.PowerShell('Set-AudioDevice ')
+				default: function(device) {
+					System.cmd(__dirname + '\\nircmd.exe setdefaultsounddevice "' + device + '"');
+				},
+				mute: function(bool) {
+					System.PowerShell('Set-AudioDevice -RecordingMute ' + bool);
 				}
 			}
 		},
