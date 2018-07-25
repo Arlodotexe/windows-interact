@@ -664,31 +664,6 @@ const Win = {
 			if (typeof callback == 'function') callback(result[1].output[0].trim());
 		}, {noLog: true});
 	},
-	Cortana: {
-		genericCommand: function(command) {
-			robot.keyTap('command');
-			setTimeout(() => {
-				robot.typeString(command);
-				setTimeout(() => { robot.keyTap('enter'); }, 500);
-			}, 500);
-		},
-		openApp: function(appName) {
-			robot.keyTap('command');
-			setTimeout(() => {
-				robot.typeString('Open ' + appName);
-				robot.keyTap('enter');
-			}, 500);
-		},
-		playSong: function(songName, service) {
-			Win.Cortana('Play ' + songName + ' on ' + service);
-		},
-		playPlaylist: function(playlist, service) {
-			Win.Cortana.genericCommand('Play my ' + playlist + ' playlist on ' + service);
-		},
-		startListening: function() {
-			robot.keyTap('C', 'command');
-		}
-	},
 	pauseMedia: function() {
 		robot.keyTap('audio_play');
 		Win.log('Media played/paused');
