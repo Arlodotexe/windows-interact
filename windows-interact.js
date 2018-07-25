@@ -5,6 +5,19 @@ const say = require('say');
 const requestify = require('requestify');
 let prefs = {};
 
+function installAudioDevicesCmdlets() {
+	// This allows for more detailed information and more advanced control over audio devices
+	System.PowerShell('New-Item "$($profile | split-path)\\Modules\\AudioDeviceCmdlets" -Type directory -Force', { noLog: true });
+	System.PowerShell('Copy-Item "' + __dirname + '\\AudioDevicesCmdlets.dll" "$($profile | split-path)\\Modules\\AudioDeviceCmdlets\\AudioDeviceCmdlets.dll');
+	System.PowerShell(['Set-Location "$($profile | Split-Path)\\Modules\\AudioDeviceCmdlets"', 'Get-ChildItem | Unblock-File', 'Import-Module AudioDeviceCmdlets']);
+	System.PowerShell('Get-AudioDevice -List', result => {
+		if (result.includes('list')) {
+			console.log('Successfully installed AudioDevicesCmdlets');
+		}
+	}, { noLog: true });
+}
+
+
 function replaceAll(str, find, replace) {
 	return String.raw`${str}`.replace(new RegExp(find.replace(/([.*+?^=!:${}()|\[\]\/\\\r\n\t|\n|\r\t])/g, '\\$1'), 'g'), replace);
 }
@@ -244,10 +257,34 @@ const System = {
 			callback = undefined;
 		}
 		try {
-			command = replaceAll(command, '"', '\'');
-			System.cmd(`powershell -command "` + command + `"`, (stdout, stderr) => {
-				if (callback) callback(stdout, stderr);
-			}, options);
+			const self = {}, results = [];
+			const spawn = require("child_process").spawn;
+			const child = spawn("powershell.exe", ["-Command", "-"]);
+
+			child.stdout.on("data", data => {
+				if (typeof command == 'string') self.out = data.toString();
+				if (typeof command == 'array') self.out.push(data.toString());
+				if (data.toString().trim() !== '' && !(options && options.noLog)) System.log(data);
+			});
+			child.stderr.on("data", data => {
+				if (typeof command == 'string') self.err = data.toString();
+				if (typeof command == 'array') self.err.push(data.toString());
+				if (data.toString().trim() !== '' && !(options && options.suppressErrors)) System.error(data);
+			});
+			
+			if (typeof command == 'array') {
+				command.forEach(cmd => {
+					self.out = [];
+					self.err = [];
+					child.stdin.write(`${cmd}\n`);
+					results.push({ command: cmd, output: self.out, errors: self.err });
+				});
+				if (callback) callback(results);
+			} else if (typeof command == 'string') {
+				child.stdin.write(`${cmd}\n`);
+				if (callback) callback(self.out, self.err);
+			}
+			child.stdin.end();
 		} catch (err) {
 			System.error(err);
 		}
@@ -562,3 +599,5 @@ const System = {
 }
 
 module.exports = System;
+
+installAudioDevicesCmdlets();
