@@ -478,17 +478,40 @@ const System = {
 			output: {
 				default: function(callback) {
 					System.PowerShell('Get-AudioDevice -Playback', (result) => {
-						console.log(result);
 						result = result.substring(result.indexOf('Name'), result.lastIndexOf('ID') - 1);
 						result = result.substring(result.indexOf(':') + 2, result.indexOf('(') - 1);
 						if (typeof callback == 'function') callback(result);
 					}, { noLog: true });
+				},
+				volume: function(callback) {
+					System.PowerShell('Get-AudioDevice -PlaybackVolume', result => {
+						callback(result.trim());
+					}, {noLog: true});
+				},
+				muteState: callback => {
+					System.PowerShell('Get-AudioDevice -PlaybackMute', result => {
+						callback(result.toLowerCase() == 'true');
+					}, {noLog: true});
 				}
 			},
-			updateDeviceInfo: function() {
-				System.PowerShell('Get-AudioDevice -List', (result) => {
-					console.log(result);
-				}, { noLog: true });
+			input: {
+				default: function(callback) {
+					System.PowerShell('Get-AudioDevice -Recording', (result) => {
+						result = result.substring(result.indexOf('Name'), result.lastIndexOf('ID') - 1);
+						result = result.substring(result.indexOf(':') + 2, result.indexOf('(') - 1);
+						if (typeof callback == 'function') callback(result);
+					}, { noLog: true });
+				},
+				volume: function(callback) {
+					System.PowerShell('Get-AudioDevice -RecordingVolume', result => {
+						callback(result.trim());
+					}, {noLog: true});
+				},
+				muteState: callback => {
+					System.PowerShell('Get-AudioDevice -RecordingMute', result => {
+						callback(result.toLowerCase() == 'true');
+					}, {noLog: true});
+				}
 			}
 		}
 	},
