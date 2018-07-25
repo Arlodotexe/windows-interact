@@ -264,37 +264,36 @@ const System = {
 			callback = undefined;
 		}
 		try {
-			const self = {}, results = [];
+			let self = {}, results = [];
 			const spawn = require("child_process").spawn;
 			const child = spawn("powershell.exe", ["-Command", "-"]);
 
+			if (typeof command == 'string') command = [command];
+
 			child.stdout.on("data", data => {
-				if (typeof command == 'string') {
-					self.out = data.toString(); child.stdin.end(); if (callback) callback(self.out, self.err);
-				}
-				if (typeof command == 'array') self.out.push(data.toString());
+				self.out.push(data.toString());
 				if (data.toString().trim() !== '' && !(options && options.noLog)) System.log(data.toString());
 			});
 			child.stderr.on("data", data => {
-				if (typeof command == 'string') self.err = data.toString(); child.stdin.end(); if (typeof command == 'string') if (callback) callback(self.out, self.err);
-				if (typeof command == 'array') self.err.push(data.toString());
+				self.err.push(data.toString());
 				if (data.toString().trim() !== '' && !(options && options.suppressErrors)) System.error(data.toString());
 			});
 
-			if (typeof command == 'array') {
-				command.forEach(cmd => {
-					self.out = [];
-					self.err = [];
-					child.stdin.write(`${cmd}\n`);
-					results.push({ command: cmd, output: self.out, errors: self.err });
-					if (results.length == command.length) {
-						child.stdin.end();
-						if (callback) callback(results);
-					}
-				});
-			} else if (typeof command == 'string') {
-				child.stdin.write(`${command}\n`);
-			}
+			child.on('exit', () => {
+				if (callback && command.length > 1) callback(results);
+				else if (callback) callback(results[0].output.toString(), results[0].errors.toString());
+			});
+
+			command.forEach(cmd => {
+				self.out = [];
+				self.err = [];
+				child.stdin.write(`${cmd}\n`);
+				results.push({ command: cmd, output: self.out, errors: self.err });
+
+				if (results.length == command.length) {
+					child.stdin.end();
+				}
+			});
 		} catch (err) {
 			System.error(err);
 		}
@@ -477,13 +476,13 @@ const System = {
 	get: {
 		audioDevices: {
 			output: {
-				default: function() {
-					System.PowerShell('Get-AudioDevice -Playback', (result, result2) => {
-						console.log(result, result2);
-						result = result.substring(indexOf('Name'), lastIndexOf('ID') - 1);
+				default: function(callback) {
+					System.PowerShell('Get-AudioDevice -Playback', (result) => {
 						console.log(result);
-
-					});
+						result = result.substring(result.indexOf('Name'), result.lastIndexOf('ID') - 1);
+						result = result.substring(result.indexOf(':') + 2, result.indexOf('(') - 1);
+						if (typeof callback == 'function') callback(result);
+					}, { noLog: true });
 				}
 			},
 			updateDeviceInfo: function() {
