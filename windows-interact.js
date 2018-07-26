@@ -265,7 +265,7 @@ const Win = {
 			});
 
 			child.on('exit', () => {
-				if (callback && command.length > 1) callback(results);
+				if (callback && command.length > 1) callback(results.output, results.errors);
 				else if (callback) callback(results.output.toString(), results.errors.toString());
 			});
 
