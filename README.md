@@ -526,25 +526,15 @@ Make an HTTP request the easy way.
 
 To simplify this feature and make using it more natural, there is some flexibility with the parameters
 
-- There are 4 default parameters which will work in every scenario (no shorthand): `deviceName, method, formData, callback`
+- There are 4 default parameters which will work in every scenario (no shorthand): `url, method, formData, callback`
 - If the all parameters are ommited, an assumed GET request will be made.
 - If the second paramter is a function, it will assume that this is a callback and an assumed GET request will be made
 - If the third parameter is an object, it will send this as form data.
 - If the third parameter is a function, it execute it as a callback
 
-You can give friendly, reuseable names to URLs with `Win.set.preferences`. These are used in place of a URL when sending a request.
 
 ```javascript
-Win.set.preferences({
-    httpUrls: { 
-        thisMachine: 'http://127.0.0.1:80/',
-        thermostat: 'http://localhost:8084/'
-    }
-});
-```
-
-```javascript
-Win.requestTo(deviceName, method, formData, callback);
+Win.requestTo(url, method, formData, callback);
 
 // Make a POST request
 Win.requestTo('http://httpbin.org/post/', 'POST', {
@@ -569,15 +559,15 @@ Win.requestTo('http://httpbin.org/get/', function(response) {
 });
 
 // Make an assumed GET request to a predefined URL, and do nothing else
-Win.requestTo('thermostat');
+Win.requestTo('http://httpbin.org/get/');
 
 // Make a PUT request
-Win.requestTo('thisMachine', 'PUT', {
+Win.requestTo('http://httpbin.org/put/', 'PUT', {
     property: 'value'
 });
 
 // Make a PUT request, then do something with the response
-Win.requestTo('thisMachine', 'PUT', {
+Win.requestTo('http://httpbin.org/put/', 'PUT', {
     property: 'value'
 }, function(response) {
     Win.log(response)

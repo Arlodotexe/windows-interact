@@ -193,24 +193,24 @@ const Win = {
 		return pathUrl;
 	},
 	log: log(),
-	requestTo: function(deviceName, method, formData, callback) {
-		if (!isUrl(deviceName)) deviceName = Win.prefs.httpUrls[deviceName];
+	requestTo: function(url, method, formData, callback) {
+		if (!isUrl(url)) url = Win.prefs.httpUrls[url];
 		if (typeof formData == 'function') {
-			requestify[method.toLowerCase()](deviceName)
+			requestify[method.toLowerCase()](url)
 				.then(function(response) {
-					if (Win.prefs.verbose.requestTo) Win.log('Sent ' + method + ' request to ' + deviceName);
+					if (Win.prefs.verbose.requestTo) Win.log('Sent ' + method + ' request to ' + url);
 					formData(response.body);
 				});
 		} else if (typeof method == 'function' || method == undefined) {
-			requestify.get(deviceName)
+			requestify.get(url)
 				.then(function(response) {
-					if (Win.prefs.verbose.requestTo) Win.log('Sent GET request to ' + deviceName);
+					if (Win.prefs.verbose.requestTo) Win.log('Sent GET request to ' + url);
 					if (method) method(response.body);
 				});
 		} else {
-			requestify[method.toLowerCase()](deviceName, formData)
+			requestify[method.toLowerCase()](url, formData)
 				.then(function(response) {
-					if (Win.prefs.verbose.requestTo) Win.log('Sent ' + method + ' request to ' + deviceName);
+					if (Win.prefs.verbose.requestTo) Win.log('Sent ' + method + ' request to ' + url);
 					if (callback) callback(response.body);
 				});
 		}
