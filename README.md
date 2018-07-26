@@ -7,13 +7,14 @@ With `windows-interact`, NodeJS gains the following functionality:
 - [Control over audio devices](https://github.com/Arlodotexe/windows-interact#set-the-volume-of-the-current-audio-device)
 - [Shutdown, Restart, Lock, Sleep, or start Screen Saver](https://github.com/Arlodotexe/windows-interact#winpower)
 - [Send Toast notifications or Tray Balloons](https://github.com/Arlodotexe/windows-interact#winnotify)
+- Mixin replacements for the browser's [alert()](https://github.com/Arlodotexe/windows-interact#winconfirm), [confirm()](https://github.com/Arlodotexe/windows-interact#winconfirm), and [prompt()](https://github.com/Arlodotexe/windows-interact#winconfirm)
+- Native [Windows File Picker](https://github.com/Arlodotexe/windows-interact#winfilepicker)
 - [Take screenshots](https://github.com/Arlodotexe/windows-interact#take-a-screenshot)
 - [Asynchronous Text to speech](https://github.com/Arlodotexe/windows-interact#winspeak)
 - [Manipulate windows](https://github.com/Arlodotexe/windows-interact#winwindow) (Maximize, Minimize, etc.)
 - [Manage a list of registered apps](https://github.com/Arlodotexe/windows-interact#winappmanager) (with lots of extra features)
 - [Manage processes](https://github.com/Arlodotexe/windows-interact#winprocess)
-- Mixin replacements for the browser's [alert()](https://github.com/Arlodotexe/windows-interact#winconfirm), [confirm()](https://github.com/Arlodotexe/windows-interact#winconfirm), and [prompt()](https://github.com/Arlodotexe/windows-interact#winconfirm)
-- Enhance [console.log](https://github.com/Arlodotexe/windows-interact#winlog) and [Error throwing](https://github.com/Arlodotexe/windows-interact#winerror)
+- Enhanced [console.log](https://github.com/Arlodotexe/windows-interact#winlog) and [error throwing](https://github.com/Arlodotexe/windows-interact#winerror)
 - Different functions for running [PowerShell](https://github.com/Arlodotexe/windows-interact#winpowershell) or [CMD](https://github.com/Arlodotexe/windows-interact#wincmd) commands
 ---
 New in this version (1.1.7): 
@@ -32,6 +33,7 @@ New in this version (1.1.7):
  - Removed `Win.Cortana()`. This hasn't been working on slower machines (my bad) and would require a massive amount of work to do properly. Likely to return in a future update.
  - `Win.pauseMedia()` is now `Win.toggleMediaPlayback()`
  - Complete rewrite of Win.PowerShell. There was a lot of issue with the previous implementation when it came to string parsing. Not only is it fixed now, but you can also run multiple commands in the same powershell process before closing it by passing in an array.
+ - Removed `httpUrls` in preferences. I realized that I reinvented variables. Oops.
 
 Completely open to new features. Submit an issue labeled "Feature request" or contact me on twitter @[Arlodottxt](https://twitter.com/Arlodottxt) with your input.
 
@@ -622,14 +624,14 @@ Win.alert('Question');
 
 // Chain consecutive alerts
 async function chain() {
-    if(await Win.confirm('Message')) {
+    if(await Win.confirm('Message?')) {
         await Win.alert('Message!');
     }
 }
 chain();
 
 // Super simple self-executing async function
-(async()=>{
+(async ()=>{
     if(await Win.confirm('Message?')) {
         await Win.alert('Ok!');
     } else {
@@ -686,6 +688,37 @@ chain();
         await Win.alert('Me too!');
     }
 })();
+
+```
+
+## `Win.filePicker()`
+---
+Shows the native Windows File Picker (No really!) and returns the path for the selected file. If no file is selected, `undefined` is returned instead.
+
+```javascript
+Win.filePicker(windowTitle, initialDirectory, filter, allowMultiSelect, callback);
+
+// Default everything. 
+// windowTitle will be "Select a file".
+// initialDirectory will be C:\
+// Filter will be set to "All files"
+// multiSelect is disabled
+Win.filePicker(null, null, null, null, function(result){
+    console.log(result); // Path of selected file
+});
+
+Win.filePicker('Choose an app', 'C:\\Program Files\\', {filtertext: 'Programs', filterby: '*.exe'}, false, function(result){
+    console.log(result); // Path of a single chosen .exe file
+});
+
+Win.filePicker('Where is it at?', Win.path`C:\Users\Owner\OneDrive\Documents`, {filtertext: 'Specific file', filterby: 'Essay.docx'}, false, function(result){
+    console.log(result); // Path of Essay.docx file
+});
+
+Win.filePicker(null, null, {filterby: '.png'}, true, function(result) {
+    console.log(result); // Array of paths for the selected .png files
+});
+// 
 
 ```
 

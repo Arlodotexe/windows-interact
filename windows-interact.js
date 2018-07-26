@@ -193,24 +193,24 @@ const Win = {
 		return pathUrl;
 	},
 	log: log(),
-	requestTo: function(url, method, formData, callback) {
-		if (!isUrl(url)) url = Win.prefs.httpUrls[url];
+	requestTo: function(deviceName, method, formData, callback) {
+		if (!isUrl(deviceName)) deviceName = Win.prefs.httpUrls[deviceName];
 		if (typeof formData == 'function') {
-			requestify[method.toLowerCase()](url)
+			requestify[method.toLowerCase()](deviceName)
 				.then(function(response) {
-					if (Win.prefs.verbose.requestTo) Win.log('Sent ' + method + ' request to ' + url);
+					if (Win.prefs.verbose.requestTo) Win.log('Sent ' + method + ' request to ' + deviceName);
 					formData(response.body);
 				});
 		} else if (typeof method == 'function' || method == undefined) {
-			requestify.get(url)
+			requestify.get(deviceName)
 				.then(function(response) {
-					if (Win.prefs.verbose.requestTo) Win.log('Sent GET request to ' + url);
+					if (Win.prefs.verbose.requestTo) Win.log('Sent GET request to ' + deviceName);
 					if (method) method(response.body);
 				});
 		} else {
-			requestify[method.toLowerCase()](url, formData)
+			requestify[method.toLowerCase()](deviceName, formData)
 				.then(function(response) {
-					if (Win.prefs.verbose.requestTo) Win.log('Sent ' + method + ' request to ' + url);
+					if (Win.prefs.verbose.requestTo) Win.log('Sent ' + method + ' request to ' + deviceName);
 					if (callback) callback(response.body);
 				});
 		}
@@ -658,7 +658,7 @@ const Win = {
 		`
 		$filePath = Read-OpenFileDialog -WindowTitle "${(windowTitle?windowTitle:`Select a File`)}" -InitialDirectory '${(initialDirectory?initialDirectory:`C:\\`)}' ${(filter&&filter.filtertext&&filter.type)?`-Filter "${filter.filtertext} (${filter.type})|${filter.type}"`:''} ${(allowMultiSelect?`-AllowMultiSelect`:'')}; if (![string]::IsNullOrEmpty($filePath)) { Write-Host "$filePath" } else { "No file was selected" }
 		`], result => {
-			if (typeof callback == 'function') callback(result.output[0].trim());
+			if (typeof callback == 'function') callback(result[0].split(' '));
 		}, {noLog: true});
 	},
 	toggleMediaPlayback: function() {
