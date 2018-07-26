@@ -5,7 +5,6 @@ const AudioDevicesCmdlets = {
 		// This allows for more detailed information and more advanced control over audio devices
 		Win.PowerShell(['New-Item "$($profile | split-path)\\Modules\\AudioDeviceCmdlets" -Type directory -Force', 'Copy-Item "' + __dirname + '\\AudioDevicesCmdlets.dll" "$($profile | split-path)\\Modules\\AudioDeviceCmdlets\\AudioDeviceCmdlets.dll'], { noLog: true });
 		Win.PowerShell(['Set-Location "$($profile | Split-Path)\\Modules\\AudioDeviceCmdlets"', 'Get-ChildItem | Unblock-File', 'Import-Module AudioDeviceCmdlets'], () => {
-			Win.log('AudioDevicesCmdlets should now be installed. Checking...');
 			AudioDevicesCmdlets.checkInstall();
 		}, { noLog: true });
 	},
