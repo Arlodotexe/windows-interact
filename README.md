@@ -11,6 +11,7 @@ With `windows-interact`, NodeJS gains the following functionality:
 - Native [Windows File Picker](https://github.com/Arlodotexe/windows-interact#winfilepicker)
 - [Take screenshots](https://github.com/Arlodotexe/windows-interact#take-a-screenshot)
 - [Asynchronous Text to speech](https://github.com/Arlodotexe/windows-interact#winspeak)
+- Play audio files in the background
 - [Manipulate windows](https://github.com/Arlodotexe/windows-interact#winwindow) (Maximize, Minimize, etc.)
 - [Manage a list of registered apps](https://github.com/Arlodotexe/windows-interact#winappmanager) (with lots of extra features)
 - [Manage processes](https://github.com/Arlodotexe/windows-interact#winprocess)
@@ -19,7 +20,7 @@ With `windows-interact`, NodeJS gains the following functionality:
 ---
 New in this version (1.1.7): 
  - Added support for the native Windows File Picker
- - Added method for playing audio files
+ - Added method for playing/stopping audio files
  - Added Win.prompt as a replacement for the browser's `prompt()`
  - An upgrade for managing and getting info about Audio Devices:
     - Retrieve information about audio devices 
@@ -34,8 +35,14 @@ New in this version (1.1.7):
  - `Win.pauseMedia()` is now `Win.toggleMediaPlayback()`
  - Complete rewrite of Win.PowerShell. There was a lot of issue with the previous implementation when it came to string parsing. Not only is it fixed now, but you can also run multiple commands in the same powershell process before closing it by passing in an array.
  - Removed `httpUrls` in preferences. I realized that I reinvented variables. Oops.
+ What's next: 
+ - I'm working on a PowerShell session manager. It's pretty early, but it's already in use internally by Win.stopAudio().
+ - Planning on a categories for appManager, which would allow for group launching & killing, or doing something generic whenever you would launch any app listed in that category.
+ - The whole project will be moved to typescript. Not soon, but in the near future.
+ - I'm still recovering from a layoff, so development isn't as active as it could be. But I assure you, development is still alive and kicking :)
+ - Got ideas? Contact me. 
 
-Completely open to new features. Submit an issue labeled "Feature request" or contact me on twitter @[Arlodottxt](https://twitter.com/Arlodottxt) with your input.
+Completely open to new features. Submit an issue labeled "Feature request" or contact me on twitter @[Arlodottxt](https://twitter.com/Arlodottxt) with your suggestions.
 
 ---
 
@@ -58,7 +65,7 @@ Windows-Interact also relies moderately on [nircmd](http://nircmd.nirsoft.net/).
 ---
 Used to set various things within Windows, as well as set preferences for windows-interact
 
-#### Set Global user preferences for Windows Interact
+### Set Global user preferences for Windows Interact
 ---
 
 ```javascript
@@ -94,29 +101,109 @@ Win.set.preferences({
             requestTo: true
         }
     }
-    // Store URLs for quick access when using Win.requestTo
-    httpUrls: { 
-        thisMachine: 'http://127.0.0.1:80/',
-        thermostat: 'http://localhost:8084/'
-    }
 });
 ```
 
-#### Set the volume of the current audio device
+## Setting audio devices
 ---
+### Input
+#### Set the volume of the current input device
+```javascript
+Win.set.audioDevices.input.volume('50');
+```
+
+#### Set the mute state of the current input device
 This 99% accurate due to the math required behind the scenes
 ```javascript
-Win.set.volume('50');
+Win.set.audioDevices.input.mute();
 ```
 
-#### Set the default playback device in Windows
----
+#### Set the default input device in Windows
 
 ```javascript
-Win.set.defaultSoundDevice('Headset Earphone');
+Win.set.audioDevices.input.default('Headset Earphone');
 ```
 
-### `Win.log()`
+---
+
+### Output
+#### Set the volume of the current output device
+This 99% accurate due to the math required behind the scenes
+```javascript
+Win.set.audioDevices.output.volume('50');
+```
+
+#### Set the mute state of the current output device
+This 99% accurate due to the math required behind the scenes
+```javascript
+Win.set.audioDevices.output.mute();
+```
+
+#### Set the default output device in Windows
+
+```javascript
+Win.set.audioDevices.output.default('Headset Earphone');
+```
+
+---
+
+## `Win.get`
+
+Used to get the status of various things within Windows (currently, this is limited to audio devices)
+
+### Input
+#### Get the volume of the current input device
+```javascript
+Win.get.audioDevices.input.volume(function(result) {
+    console.log(result); // Volume level of the current default device
+});
+```
+
+#### Get the mute state of the current input device
+This 99% accurate due to the math required behind the scenes
+```javascript
+Win.get.audioDevices.input.mute(function(result) {
+    console.log(result); // Mute state of the current default device
+});
+```
+
+#### Get the default input device in Windows
+
+```javascript
+Win.get.audioDevices.input.default(function(result) {
+    console.log(result); // Name of the current default input device
+});
+```
+
+---
+
+### Output
+#### Get the volume of the current output device
+This 99% accurate due to the math required behind the scenes
+```javascript
+Win.get.audioDevices.output.volume(function(result) {
+    console.log(result); // Volume level of the current default device
+});
+```
+
+#### Get the mute state of the current output device
+This 99% accurate due to the math required behind the scenes
+```javascript
+Win.get.audioDevices.output.mute(function(result) {
+    console.log(result); // Mute state of the current default device
+});
+```
+
+#### Get the default output device in Windows
+
+```javascript
+Win.get.audioDevices.output.default(function(result) {
+    console.log(result); // Name of the current default output device
+});
+```
+
+
+## `Win.log()`
 ---
 An alternative to `console.log`. It will push the output of the log to the console and record each entry in a .txt file, and provide styling options for the text
 
@@ -195,7 +282,7 @@ Win.error('Error information');
 Win.error('Error information', {silent: true});
 ```
 
-### `Win.notify()`
+## `Win.notify()`
 ---
 
 Show a toast notification in Windows 10 (Or tray balloon on older versions of windows)
@@ -210,15 +297,17 @@ Win.notify('Title', 'Message');
 Win.notify('Message'); 
 ```
 
-### `Win.path`` `
+## `Win.path`` `
 ---
-Return a properly formatted Windows path for use in Javascript. This allows you to simply copy and paste a path from the File Explorer without having to worry about character-escaping (`\`) slashes
+Return a properly formatted Windows path for use in Javascript. This allows you to simply copy and paste a path from the File Explorer without having to worry about character-escaping (`\`) slashes. 
+
+If you are passing in a directory, surround the path with double quotes or escape the last backslash. Surrounding double quotes are always removed.
 
 ```javascript
 Win.path`C:\WINDOWS\system32\notepad.exe`;
 ```
 
-### `Win.speak()`
+## `Win.speak()`
 ---
 Speak text asynchronously. Similar to my [async-sayjs](https://github.com/Arlodotexe/async-sayjs) package (Yep, that started here), but with some benefits and enhancments.
 
@@ -381,7 +470,7 @@ Win.process.getWindowTitle('notepad', function(output) {
     });
 ```
 
-## `Win.window`
+## `Win.window()`
 
 Control a Window's state
 
@@ -447,7 +536,7 @@ Win.window.move('-50', '0', 'firefox.exe');
 Win.window.move(0, 50);
 ```
 
-### `Win.cmd()`
+## `Win.cmd()`
 ---
 Run a command in Command Prompt.
 
@@ -477,7 +566,7 @@ Win.cmd('tasklist', function(output){
 }, {noLog: true});
 ```
 
-### `Win.PowerShell()`
+## `Win.PowerShell()`
 ---
 Run a PowerShell command.
 
@@ -521,7 +610,7 @@ Win.PowerShell(['$somevariable="Hello World!"', 'Write-Host "$somevariable"'], f
 }, {noLog: true});
 ```
 
-### `Win.requestTo()`
+## `Win.requestTo()`
 ---
 
 Make an HTTP request the easy way.
@@ -613,7 +702,7 @@ if(Win.authCode.isValid('6')) {
 }
 ```
 
-### `Win.confirm()`
+## `Win.confirm()`
 
 An alternative to the browsers's `confirm()`. Unlike the browser, it will not stop execution of code and wait for the user. It will instead show multiple dialog boxes. To chain consecutive dialog boxes, you need to wrap them in an async function (see below).
 
@@ -641,7 +730,7 @@ chain();
 
 ```
 
-### `Win.alert()`
+## `Win.alert()`
 
 An alternative to the browsers's `alert()`. Unlike the browser, it will not stop execution of code and wait for the user. It will instead show multiple dialog boxes. To chain consecutive alerts, you need to wrap them in an async function (see below).
 
@@ -665,7 +754,7 @@ chain();
 })();
 ```
 
-### `Win.prompt()`
+## `Win.prompt()`
 
 An alternative to the browsers's `prompt()`. Unlike the browser, it will not stop execution of code and wait for the user. It will instead show multiple dialog boxes. To chain consecutive prompts, you need to wrap them in an async function (see below).
 
@@ -707,21 +796,48 @@ Win.filePicker(null, null, null, null, function(result){
     console.log(result); // Path of selected file
 });
 
+// Have the user choose an application from Program Files
 Win.filePicker('Choose an app', 'C:\\Program Files\\', {filtertext: 'Programs', filterby: '*.exe'}, false, function(result){
     console.log(result); // Path of a single chosen .exe file
 });
 
-Win.filePicker('Where is it at?', Win.path`C:\Users\Owner\OneDrive\Documents`, {filtertext: 'Specific file', filterby: 'Essay.docx'}, false, function(result){
+// Have the user choose a very specific file
+Win.filePicker('Where is it at?', Win.path`"C:\Users\Owner\OneDrive\Documents\"`, {filtertext: 'Specific file', filterby: 'Essay.docx'}, false, function(result){
     console.log(result); // Path of Essay.docx file
 });
 
+// Use some defaults and have the user pick a few .png files 
 Win.filePicker(null, null, {filterby: '.png'}, true, function(result) {
     console.log(result); // Array of paths for the selected .png files
 });
-// 
+
+// Have the user select an image file
+Win.filePicker('Select a picture', Win.path`"C:\Users\Owner\OneDrive\Pictures\"`, {filterby: ['.png', '.jpg', '.gif']}, true, function(result) {
+    console.log(result); // Array of paths for the selected .png, .jpg, or .gif files
+});
 
 ```
 
+## `Win.playAudio(path);`
+---
+Play an audio file in the background. Must be a `.wav` format. If you try any other format, it will fall back to Windows Media Player to play it (so make sure it's installed through Optional Features).
+
+```javascript
+Win.playAudio(Win.path`"C:\windows\media\tada.wav"`);
+```
+
+## `Win.stopAudio(path);`
+--
+Stop a playing audio file using the same path supplied to `Win.playAudio()`.
+
+```javascript
+
+Win.playAudio(Win.path`"C:\windows\media\Alarm02.wav"`);
+
+setTimeout(() => {
+    Win.stopAudio(Win.path`"C:\windows\media\Alarm02.wav"`)
+}, 2000);
+```
 
 ## `Win.power()`
 ---
@@ -769,10 +885,10 @@ Win.showDesktop();
 ```
 
 ### Pause or resume media being played
-Same as pressing the pause button on keyboard.
+Same as pressing the play/pause button on keyboard.
 
 ```javascript
-Win.pauseMedia();
+Win.toggleMediaPlayback();
 ```
 
 ### Take a screenshot
@@ -790,49 +906,4 @@ Win.screenshot('full', Win.path`C:\Users\User\Pictures\Screenshots\screenshot.pn
 
 // Screenshot the current window only and save to file
 Win.screenshot('window', Win.path`C:\Users\User\Pictures\Screenshots\screenshot.png`);
-```
-
-## `Win.Cortana`
-
-Interact with Cortana
-
-### Give Cortana a generic command
-
-```javascript
-Win.Cortana.genericCommand('Hello!');
-```
-
-### Use Cortana to open an app
-
-```javascript
-Win.Cortana.openApp('Microsoft Edge');
-```
-
-### Use Cortana to play a song
-
-```javascript
-Win.Cortana.playSong(songName, service);
-
-// Play 'Carry on my wayward son' on Spotify
-Win.Cortana.playSong('Carry on my wayward son', 'Spotify');
-// Play 'Carry on my warward son' on Groove
-Win.Cortana.playSong('Carry on my wayward son', 'Groove');
-```
-
-### Use Cortana to play a playlist
-
-```javascript
-Win.Cortana.playSong(playlist, service);
-
-// Play 'Carry on my wayward son' on Spotify
-Win.Cortana.playSong('Gaming'. 'Spotify');
-// Play 'Carry on my warward son' on Groove
-Win.Cortana.playSong('Oldies'. 'Groove');
-```
-
-### Invoke Cortana's listening mode
-Make sure you have "Let Cortana listen for my commands when I press the Windows Logo + C" enabled in the Setting app
-
-```javascript
-Win.Cortana.startListening();
 ```

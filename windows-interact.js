@@ -4,7 +4,11 @@ const fs = require('fs');
 const say = require('say');
 const requestify = require('requestify');
 let prefs = {};
+let powerShellSessions = [];
 
+function endsWith(search, suffix) {
+	return search.indexOf(suffix, search.length - suffix.length) !== -1;
+};
 
 function replaceAll(str, find, replace) {
 	return String.raw`${str}`.replace(new RegExp(find.replace(/([.*+?^=!:${}()|\[\]\/\\\r\n\t|\n|\r\t])/g, '\\$1'), 'g'), replace);
@@ -189,6 +193,7 @@ const Win = {
 	authCode: authCode,
 	path: function(pathUrl) {
 		pathUrl = replaceAll(pathUrl.raw[0], '\\', '\\\\');
+		if (endsWith(pathUrl, '\\\\')) pathUrl = pathUrl.substring(0, pathUrl.lastIndexOf('\\\\'));
 		if (pathUrl.slice(-1) == '"' && pathUrl.charAt(0) == '"') pathUrl = replaceAll(pathUrl, '"', '');
 		return pathUrl;
 	},
@@ -249,14 +254,14 @@ const Win = {
 			callback = undefined;
 		}
 		try {
-			let self = {out:[], err: []}, results = [];
+			let self = { out: [], err: [] }, results = [], id;
 			const spawn = require("child_process").spawn;
 			const child = spawn("powershell.exe", ["-Command", "-"]);
 
 			if (typeof command == 'string') command = [command];
 
 			child.stdout.on("data", data => {
-				if(data.toString() !== '\n') self.out.push(data.toString());
+				if (data.toString() !== '\n') self.out.push(data.toString());
 				if (data.toString().trim() !== '' && !(options && options.noLog)) Win.log(data.toString());
 			});
 			child.stderr.on("data", data => {
@@ -269,10 +274,35 @@ const Win = {
 				else if (callback) callback(results.output.toString(), results.errors.toString());
 			});
 
+			function end() {
+				child.stdin.end();
+			}
+
+			function newCommand(command) {
+				child.stdin.write(`${command}\n\r`);
+				console.log('Issuing new command: ' + command);
+				for (let i in powerShellSessions) {
+					if (powerShellSessions[i].id == id) {
+						powerShellSessions[i].results = { output: self.out, errors: self.err };
+					}
+				}
+			}
+
 			for (let i in command) {
 				child.stdin.write(`${command[i]}\n\r`);
-				if (i == command.length-1) {
-					child.stdin.end();
+				if (i == command.length - 1) {
+					if (!(options && options.keepAlive)) child.stdin.end();
+					else {
+						if (!(options && options.noLog)) console.log('PowerShell child process is still alive. ID #' + Number(powerShellSessions.length) + 1);
+						id = Number(powerShellSessions.length) + 1;
+						powerShellSessions.push({
+							command: command,
+							id: Number(powerShellSessions.length) + 1,
+							end: end,
+							newCommand: newCommand,
+							results: { output: self.out, errors: self.err }
+						});
+					}
 				}
 			}
 			results = { output: self.out, errors: self.err };
@@ -637,11 +667,36 @@ const Win = {
 		else if (region == 'window') Win.cmd(__dirname + '\\nircmd.exe savescreenshotwin ' + path);
 	},
 	playAudio: function(path) {
-		Win.PowerShell("(New-Object Media.SoundPlayer '" + path + "').PlaySync();", null, { suppressErrors: true, noLog: true });
+		path = replaceAll(path, '\\\\', '\\');
+		if (path.includes('.wav')) {
+			Win.PowerShell([`$soundplayer = New-Object Media.SoundPlayer '` + path + `'`, ` $soundplayer.Play();`], null, { keepAlive: true });
+		} else {
+			Win.PowerShell(`Add-Type -AssemblyName presentationCore;
+			$mediaPlayer = New-Object System.Windows.Media.MediaPlayer;
+			$mediaPlayer.open("${path}");
+			$mediaPlayer.Play()`, undefined, { keepAlive: true, noLog: true });
+		}
+	},
+	stopAudio: function(path) {
+		for (let i in powerShellSessions) {
+			if (powerShellSessions[i].command[0].includes(replaceAll(path, '\\\\', '\\'))) {
+				if (path.includes('.wav')) {
+					powerShellSessions[i].newCommand(`$soundplayer.Stop()`);
+					powerShellSessions[i].end();
+				} else powerShellSessions[i].end();
+			}
+		}
 	},
 	filePicker: function(windowTitle, initialDirectory, filter, allowMultiSelect, callback) {
-		if (filter && filter.type && filter.type.charAt(0) == '.') filter.type = '*' + filter.type;
-		if (filter && filter.type && !filter.filtertext) filter.filtertext = filter.type + ' files';
+		if (filter && filter.filterby && typeof filter.filterby == 'string' && filter.filterby.charAt(0) == '.') filter.filterby = '*' + filter.filterby;
+		if (filter && filter.filterby && !filter.filtertext) filter.filtertext = filter.filterby + ' files';
+		if (filter && (typeof filter.filterby == 'object' || typeof filter.filterby == 'array')) {
+			for (let i in filter.filterby) {
+				if (filter.filterby[i].charAt(0) == '.') filter.filterby[i] = '*' + filter.filterby[i];
+			}
+			filter.filterby = filter.filterby.join(';');
+		}
+
 		Win.PowerShell([`
 		function Read-OpenFileDialog([string]$WindowTitle, [string]$InitialDirectory, [string]$Filter = "All files (*.*)|*.*", [switch]$AllowMultiSelect)
 		{  
@@ -655,11 +710,11 @@ const Win = {
 			$openFileDialog.ShowDialog() > $null
 			if ($AllowMultiSelect) { return $openFileDialog.Filenames } else { return $openFileDialog.Filename }
 		}`,
-		`
-		$filePath = Read-OpenFileDialog -WindowTitle "${(windowTitle?windowTitle:`Select a File`)}" -InitialDirectory '${(initialDirectory?initialDirectory:`C:\\`)}' ${(filter&&filter.filtertext&&filter.type)?`-Filter "${filter.filtertext} (${filter.type})|${filter.type}"`:''} ${(allowMultiSelect?`-AllowMultiSelect`:'')}; if (![string]::IsNullOrEmpty($filePath)) { Write-Host "$filePath" } else { "No file was selected" }
+			`
+		$filePath = Read-OpenFileDialog -WindowTitle "${(windowTitle ? windowTitle : `Select a File`)}" -InitialDirectory '${(initialDirectory ? replaceAll(initialDirectory, '\\\\', '\\') : `C:\\`)}' ${(filter && filter.filtertext && filter.filterby) ? `-Filter "${filter.filtertext} (${filter.filterby})|${filter.filterby}"` : ''} ${(allowMultiSelect ? `-AllowMultiSelect` : '')}; if (![string]::IsNullOrEmpty($filePath)) { Write-Host "$filePath" } else { "No file was selected" }
 		`], result => {
-			if (typeof callback == 'function') callback(result[0].split(' '));
-		}, {noLog: true});
+				if (typeof callback == 'function') callback(result[0].includes('No file was selected') ? undefined : result[0]);
+			}, { noLog: true });
 	},
 	toggleMediaPlayback: function() {
 		Win.cmd(__dirname + '\\nircmd.exe sendkeypress 0xB3')
