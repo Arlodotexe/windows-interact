@@ -508,17 +508,15 @@ Win.PowerShell('Move-Item -Path .\\*.txt -Destination C:\\Logs', function(output
 }, {suppressErrors: true});
 
 // Run a command, but do not log the output and supress any errors that occurr (Don't print them to console or log)
-
 Win.PowerShell('Restart-Service -Name Audiosrv', function(output){
     doSomething();
 }, {suppressErrors: true, noLog: true});
 
 // Run multiple commands in the same powershell window
-
 Win.PowerShell(['$somevariable="Hello World!"', 'Write-Host "$somevariable"'], function(output, errors){
     console.log(output); // ['Hello World!']
     if(errors.length > 0) Win.error('Something went wrong');
-});
+}, {noLog: true});
 ```
 
 ### `Win.requestTo()`
