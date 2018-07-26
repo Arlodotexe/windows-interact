@@ -35,6 +35,7 @@ New in this version (1.1.7):
  - `Win.pauseMedia()` is now `Win.toggleMediaPlayback()`
  - Complete rewrite of Win.PowerShell. There was a lot of issue with the previous implementation when it came to string parsing. Not only is it fixed now, but you can also run multiple commands in the same powershell process before closing it by passing in an array.
  - Removed `httpUrls` in preferences. I realized that I reinvented variables. Oops.
+ 
  What's next: 
  - I'm working on a PowerShell session manager. It's pretty early, but it's already in use internally by Win.stopAudio().
  - Planning on a categories for appManager, which would allow for group launching & killing, or doing something generic whenever you would launch any app listed in that category.
