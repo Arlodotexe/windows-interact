@@ -481,10 +481,12 @@ Run a PowerShell command.
 
 You can run a single powershell command by passing a string, or run multiple commands in the same powershell instance by passing commands in an array.
 
+When you pass an array to run multiple commands, the returned output and errors will be an array, not a string 
+
 This is playing with real power. See [here](https://docs.microsoft.com/en-us/powershell/module/?view=powershell-6) and [here](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/?view=powershell-6) for resources on what you can do with PowerShell to automate and interact with Windows, beyond what Windows interact provides
 
 ```javascript
-function(string|array: command, function: callback, object: options)
+Win.PowerShell(string|array: command, callback, options)
 
 
 Win.PowerShell('ls');
@@ -511,7 +513,12 @@ Win.PowerShell('Restart-Service -Name Audiosrv', function(output){
     doSomething();
 }, {suppressErrors: true, noLog: true});
 
+// Run multiple commands in the same powershell window
 
+Win.PowerShell(['$somevariable="Hello World!"', 'Write-Host "$somevariable"'], function(output, errors){
+    console.log(output); // ['Hello World!']
+    if(errors.length > 0) Win.error('Something went wrong');
+});
 ```
 
 ### `Win.requestTo()`
