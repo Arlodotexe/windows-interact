@@ -1,3 +1,4 @@
+const robot = require('robotjs');
 const exec = require('child_process').exec;
 const fs = require('fs');
 const say = require('say');
@@ -248,14 +249,14 @@ const Win = {
 			callback = undefined;
 		}
 		try {
-			let self = {}, results = [];
+			let self = {out:[], err: []}, results = [];
 			const spawn = require("child_process").spawn;
 			const child = spawn("powershell.exe", ["-Command", "-"]);
 
 			if (typeof command == 'string') command = [command];
 
 			child.stdout.on("data", data => {
-				self.out.push(data.toString());
+				if(data.toString() !== '\n') self.out.push(data.toString());
 				if (data.toString().trim() !== '' && !(options && options.noLog)) Win.log(data.toString());
 			});
 			child.stderr.on("data", data => {
@@ -265,19 +266,16 @@ const Win = {
 
 			child.on('exit', () => {
 				if (callback && command.length > 1) callback(results);
-				else if (callback) callback(results[0].output.toString(), results[0].errors.toString());
+				else if (callback) callback(results.output.toString(), results.errors.toString());
 			});
 
-			command.forEach(cmd => {
-				self.out = [];
-				self.err = [];
-				child.stdin.write(`${cmd}\n`);
-				results.push({ command: cmd, output: self.out, errors: self.err });
-
-				if (results.length == command.length) {
+			for (let i in command) {
+				child.stdin.write(`${command[i]}\n\r`);
+				if (i == command.length-1) {
 					child.stdin.end();
 				}
-			});
+			}
+			results = { output: self.out, errors: self.err };
 		} catch (err) {
 			Win.error(err);
 		}
@@ -660,11 +658,11 @@ const Win = {
 		`
 		$filePath = Read-OpenFileDialog -WindowTitle "${(windowTitle?windowTitle:`Select a File`)}" -InitialDirectory '${(initialDirectory?initialDirectory:`C:\\`)}' ${(filter&&filter.filtertext&&filter.type)?`-Filter "${filter.filtertext} (${filter.type})|${filter.type}"`:''} ${(allowMultiSelect?`-AllowMultiSelect`:'')}; if (![string]::IsNullOrEmpty($filePath)) { Write-Host "$filePath" } else { "No file was selected" }
 		`], result => {
-			if (typeof callback == 'function') callback(result[1].output[0].trim());
+			if (typeof callback == 'function') callback(result.output[0].trim());
 		}, {noLog: true});
 	},
 	toggleMediaPlayback: function() {
-		Win.cmd(__dirname + '\\nircmd.exe sendkeypress 0xB3');
+		Win.cmd(__dirname + '\\nircmd.exe sendkeypress 0xB3')
 	}
 }
 

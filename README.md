@@ -12,9 +12,26 @@ With `windows-interact`, NodeJS gains the following functionality:
 - [Manipulate windows](https://github.com/Arlodotexe/windows-interact#winwindow) (Maximize, Minimize, etc.)
 - [Manage a list of registered apps](https://github.com/Arlodotexe/windows-interact#winappmanager) (with lots of extra features)
 - [Manage processes](https://github.com/Arlodotexe/windows-interact#winprocess)
-- Mixin replacements for the browser's [alert()](https://github.com/Arlodotexe/windows-interact#winconfirm) and [confirm()](https://github.com/Arlodotexe/windows-interact#winconfirm)
+- Mixin replacements for the browser's [alert()](https://github.com/Arlodotexe/windows-interact#winconfirm), [confirm()](https://github.com/Arlodotexe/windows-interact#winconfirm), and [prompt()](https://github.com/Arlodotexe/windows-interact#winconfirm)
 - Enhance [console.log](https://github.com/Arlodotexe/windows-interact#winlog) and [Error throwing](https://github.com/Arlodotexe/windows-interact#winerror)
 - Different functions for running [PowerShell](https://github.com/Arlodotexe/windows-interact#winpowershell) or [CMD](https://github.com/Arlodotexe/windows-interact#wincmd) commands
+---
+New in this version (1.1.7): 
+ - Added support for the native Windows File Picker
+ - Added method for playing audio files
+ - Added Win.prompt as a replacement for the browser's `prompt()`
+ - An upgrade for managing and getting info about Audio Devices:
+    - Retrieve information about audio devices 
+    - Check/Set volume levels
+    - Check/Set mute status
+    - Check/Set default device
+    - All of the above are available for input AND output devices!
+
+ What's changed:
+ - Dependency on robot.js has been removed. Huzzah!
+ - Removed `Win.Cortana()`. This hasn't been working on slower machines (my bad) and would require a massive amount of work to do properly. Likely to return in a future update.
+ - `Win.pauseMedia()` is now `Win.toggleMediaPlayback()`
+ - Complete rewrite of Win.PowerShell. There was a lot of issue with the previous implementation when it came to string parsing. Not only is it fixed now, but you can also run multiple commands in the same powershell process before closing it by passing in an array.
 
 Completely open to new features. Submit an issue labeled "Feature request" or contact me on twitter @[Arlodottxt](https://twitter.com/Arlodottxt) with your input.
 
@@ -460,11 +477,16 @@ Win.cmd('tasklist', function(output){
 
 ### `Win.PowerShell()`
 ---
-Run a PowerShell command
+Run a PowerShell command.
+
+You can run a single powershell command by passing a string, or run multiple commands in the same powershell instance by passing commands in an array.
 
 This is playing with real power. See [here](https://docs.microsoft.com/en-us/powershell/module/?view=powershell-6) and [here](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/?view=powershell-6) for resources on what you can do with PowerShell to automate and interact with Windows, beyond what Windows interact provides
 
 ```javascript
+function(string|array: command, function: callback, object: options)
+
+
 Win.PowerShell('ls');
 
 // Run a command, then do something with the output
@@ -488,6 +510,8 @@ Win.PowerShell('Move-Item -Path .\\*.txt -Destination C:\\Logs', function(output
 Win.PowerShell('Restart-Service -Name Audiosrv', function(output){
     doSomething();
 }, {suppressErrors: true, noLog: true});
+
+
 ```
 
 ### `Win.requestTo()`
