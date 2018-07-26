@@ -39,6 +39,7 @@ New in this version (1.1.7):
  What's next: 
  - I'm working on a PowerShell session manager. It's pretty early, but it's already in use internally by Win.stopAudio().
  - Planning on a categories for appManager, which would allow for group launching & killing, or doing something generic whenever you would launch any app listed in that category.
+ - Planning on removing dependency on requestify, perhaps building my own wrapper for nodes' native request methods with zero dependencies
  - The whole project will be moved to typescript. Not soon, but in the near future.
  - I'm still recovering from a layoff, so development isn't as active as it could be. But I assure you, development is still alive and kicking :)
  - Got ideas? Contact me. 
