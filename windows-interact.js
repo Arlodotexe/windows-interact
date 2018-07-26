@@ -1,4 +1,3 @@
-const robot = require('robotjs');
 const exec = require('child_process').exec;
 const fs = require('fs');
 const say = require('say');

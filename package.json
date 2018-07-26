@@ -20,7 +20,7 @@
   "homepage": "https://github.com/Arlodotexe/windows-interact#readme",
   "dependencies": {
     "requestify": "^0.2.5",
-    "say": "^0.14.0"
+    "say": "^0.15.0"
   },
   "devDependencies": {
     "node-minify": "^3.1.0"
