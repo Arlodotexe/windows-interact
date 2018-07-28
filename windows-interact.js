@@ -378,13 +378,13 @@ const Win = {
 				function newCommand(command, cb) {
 					writeCommand(command);
 					for (let i in powerShellSessions) {
-						if (powerShellSessions[i].id == id) {
+						if (powerShellSessions[i].id == options.id) {
 							let output = '';
 							function collectOutput(data) {
 								output = output + data.toString();
 							}
-							collectOutput = postbounce(collectOutput, 75, () => {
-								cb(output);
+							collectOutput = postbounce(collectOutput, 30, () => {
+								(once(cb(output)))();
 							});
 							child.stdout.on("data", data => {
 								collectOutput(data);
@@ -405,7 +405,7 @@ const Win = {
 								child.stdin.end();
 							}, 900); // wait a bit to let the last command finish outputting
 						} else {
-							if (!(options && options.noLog)) console.log('PowerShell child process is still alive. ID: "' + id + '"');
+							if (!(options && options.noLog)) console.log('PowerShell child process is still alive. ID: "' + options.id + '"');
 
 							powerShellSessions.push({
 								command: command,

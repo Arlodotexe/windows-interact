@@ -7,7 +7,7 @@ With `windows-interact`, NodeJS gains the following functionality:
 - [Control over audio devices](https://github.com/Arlodotexe/windows-interact#set-the-volume-of-the-current-audio-device)
 - [Shutdown, Restart, Lock, Sleep, or start Screen Saver](https://github.com/Arlodotexe/windows-interact#winpower)
 - [Send Toast notifications or Tray Balloons](https://github.com/Arlodotexe/windows-interact#winnotify)
-- Mixin replacements for the browser's [alert()](https://github.com/Arlodotexe/windows-interact#winconfirm), [confirm()](https://github.com/Arlodotexe/windows-interact#winconfirm), and [prompt()](https://github.com/Arlodotexe/windows-interact#winconfirm)
+- Mixin replacements for the browser's [alert()](https://github.com/Arlodotexe/windows-interact#winconfirm), [confirm()](https://github.com/Arlodotexe/windows-interact#winalert), and [prompt()](https://github.com/Arlodotexe/windows-interact#winprompt)
 - Native [Windows File Picker](https://github.com/Arlodotexe/windows-interact#winfilepicker)
 - [Take screenshots](https://github.com/Arlodotexe/windows-interact#take-a-screenshot)
 - [Asynchronous Text to speech](https://github.com/Arlodotexe/windows-interact#winspeak)
@@ -27,7 +27,7 @@ New in this version (1.1.8):
 
  What's changed:
  - Adjusted `Win.process.kill()` to allow killing by PID
- - Fixes to how `Win.PowerShell()` collects output with multiple commands
+ - LOTS of fixes to how `Win.PowerShell()` collects output and error with multiple commands
  
  What's next: 
  - I'm working on a PowerShell session manager. It's pretty early, but it's already in use internally by Win.stopAudio().
