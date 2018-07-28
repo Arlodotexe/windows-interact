@@ -1,9 +1,9 @@
 const Win = require('./windows-interact.js');
 
 
-Win.PowerShell(['dir', 'write-host "TEST 3"',  'dir'], result => {
-    console.log(result, result.length);
-}, { id: 'haha', noLog: true });
+Win.PowerShell(['dir', 'write-host "TEST 3"',  'dir aa'], (result, err) => {
+    console.log(err, err.length);
+}, { id: 'haha', noLog: true, suppressErrors: true });
 
 /* setTimeout(() => {
     Win.PowerShell.newCommand('haha', 'get-process', (output, err) => {
@@ -15,27 +15,33 @@ Win.PowerShell(['dir', 'write-host "TEST 3"',  'dir'], result => {
     }, 2000);
 }, 2000); */
 
-/* function unbounce(func, wait, cb) {
-	let timeout;
-	return function() {
-		let context = this, args = arguments;
-		let later = function() {
-			timeout = null;
-			func.apply(context, args);
-		}
-		clearTimeout(timeout);
-		timeout = setTimeout(later, wait);
-	}
+/* function postbounce(func, wait, cb) {
+    let timeout;
+    return function() {
+        let context = this, args = arguments;
+        let later = function() {
+            cb();
+            timeout = null;
+        }
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+        func.apply(context, args);
+    }
 }
 
 
-let test = unbounce(function() {
-    console.log('test');
-}, 2000);
+
 let i = true;
 
+let t = postbounce(function() {
+    console.log('test');
+}, 2000, () => {
+    console.log('done')
+    });
 function tryit() {
-    if (i) test();
+    if (i) {
+        t();
+    }
     setTimeout(() => {
         tryit();
     }, 200); 
@@ -47,6 +53,7 @@ setTimeout(() => {
         i = true;
         setTimeout(() => {
             i = false
-        }, 3000);
-    }, 1000);
-}, 3000); */
+        }, 500);
+    }, 500);
+}, 500); 
+ */

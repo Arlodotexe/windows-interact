@@ -564,16 +564,18 @@ Win.cmd('tasklist', function(output){
 
 ## `Win.PowerShell()`
 ---
-Run a PowerShell command.
+Run one or more PowerShell commands.
 
 You can run a single powershell command by passing a string, or run multiple commands in the same powershell instance by passing commands in an array.
 
-When you pass an array to run multiple commands, the returned output and errors will be an array, not a string 
+When you pass an array to run multiple commands, the returned output and errors will be an array, not a string.
+
+**NOTE**: It will do its best to seperate the outputs using tactics such as delaying each commands' execution a bit and only collecting the output for a command postbounce, but there are still some quirks. For example, if the first command takes longer than the last command, it mess up the output a bit. 
 
 This is playing with real power. See [here](https://docs.microsoft.com/en-us/powershell/module/?view=powershell-6) and [here](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/?view=powershell-6) for resources on what you can do with PowerShell to automate and interact with Windows, beyond what Windows interact provides
 
 ```javascript
-Win.PowerShell(string|array: command, callback, options)
+Win.PowerShell(string|array: command, callback, options);
 
 
 Win.PowerShell('ls');
@@ -605,6 +607,20 @@ Win.PowerShell(['$somevariable="Hello World!"', 'Write-Host "$somevariable"'], f
     if(errors.length > 0) Win.error('Something went wrong');
 }, {noLog: true});
 ```
+
+## Keeping a PowerShell session open for later use
+
+To keep a PowerShell session open, pass `keepAlive: true` and `ID: 'someid'` into the `options` object. 
+
+### `Win.PowerShell.newCommand(id, command)`
+Issue a new command to an open PowerShell session by the assigned ID
+
+```javascript
+
+```
+
+### `Win.PowerShell.endSession(id)`
+End an open PowerShell session by ID
 
 ## `Win.requestTo()`
 ---
@@ -673,7 +689,7 @@ You can set a custom parsing function, as well as a master key that will always 
 
 ```javascript
 Win.set.preferences({
-    // Set a master key
+    // Set a master key that is always accepted
     masterKey: 'AREALLYLONGSTRINGWITHLOTSOFCOMPLICATEDCHARACTERS',
     authCodeParse: function(receivedCode) {
     // Should return true or false if the receivedCode meets your criteria

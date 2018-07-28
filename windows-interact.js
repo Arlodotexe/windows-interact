@@ -290,7 +290,7 @@ const Win = {
 	PowerShell: (function() {
 		let fn = function(command, callback, options) {
 			// If given an array where the first command takes longer to finish than subsequent commands, the outputted array will freak the f*** out
-
+			// NEED a better way to discern outputs of seperate commands in the same window
 			if (typeof callback == 'object' && options == undefined) {
 				options = callback;
 				callback = undefined;
@@ -300,7 +300,7 @@ const Win = {
 
 			try {
 				let self = { out: [], err: [] }, results = [], id, commandq = [];
-				let outputBin = '';
+				let outputBin = '', errorBin = '';
 				const spawn = require("child_process").spawn;
 				const child = spawn("powershell.exe", ["-Command", "-"]);
 
@@ -310,17 +310,32 @@ const Win = {
 					if (data.toString() !== '') outputBin = outputBin + data.toString();
 				}
 
+				function collectErrors(data) {
+					if (data.toString() !== '') errorBin = errorBin + data.toString();
+				}
+
 				function pushOutput() {
+					if (errorBin.trim() == '') pushErrors();
 					if (outputBin !== '\n' && outputBin !== '\r' && outputBin !== '\r\n' && outputBin !== '') self.out.push(outputBin.toString());
 					if (outputBin.toString().trim() !== '' && !(options && options.noLog)) (options && options.keepAlive && options.id ? 'PowerShell Session "' + id + '":\n' : '') + Win.log(outputBin.toString());
 					outputBin = '';
 				}
 
+				function pushErrors() {
+					if (errorBin == '') {
+						errorBin = undefined;
+						self.err.push(errorBin);
+					}
+					else if (errorBin.trim() !== '\n' && errorBin.trim() !== '\r' && errorBin.trim() !== '\r\n') {
+						self.err.push(errorBin.toString());
+						if (errorBin.toString().trim() !== '' && !(options && options.suppressErrors)) Win.error(errorBin.toString());
+					}
+					errorBin = '';
+				}
+
 				function writeCommand(command) {
 					child.stdin.write(`${command}\n\r`);
 				}
-
-				dbWriteCommand = debounce(writeCommand, 250);
 
 				let checking = false;
 				function qCommand(command) {
@@ -334,20 +349,20 @@ const Win = {
 								commandq.shift();
 								if (commandq.length > 0) tryNext();
 								checking = false;
-							}, 500); // force every command to be seperated more to better discern output
+							}, 500); // force every command to be delayed to better discern output
 						}
 						tryNext();
 					}
 				}
-				collectUntilDone = postbounce(collectOutput, 30, pushOutput);
+				collectOutputUntilDelay = postbounce(collectOutput, 30, pushOutput);
+				collectErrorsUntilDelay = postbounce(collectErrors, 30, pushErrors);
 
 				child.stdout.on("data", data => {
-					collectUntilDone(data);
+					collectOutputUntilDelay(data);
 				});
 
 				child.stderr.on("data", data => {
-					self.err.push(data.toString());
-					if (data.toString().trim() !== '' && !(options && options.suppressErrors)) Win.error(data.toString());
+					collectErrorsUntilDelay(data);
 				});
 
 				child.on('exit', () => {
@@ -425,7 +440,7 @@ const Win = {
 			}
 		}
 
-		fn.endSession = function(id, command, callback) {
+		fn.endSession = function(id, callback) {
 			for (let i in powerShellSessions) {
 				if (powerShellSessions[i].id = id) {
 					powerShellSessions[i].end();
