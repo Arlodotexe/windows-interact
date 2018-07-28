@@ -20,14 +20,16 @@ With `windows-interact`, NodeJS gains the following functionality:
 ---
 New in this version (1.1.8): 
  - Added `Win.process.getPidByWindowTitle()`
- - Added `Win.PowerShell.addCommand()` and `Win.PowerShell.end()` as part of the new PowerShell session manager
+ - `Win.PowerShell()` now has a built in session manager!
+   - `Win.PowerShell.addCommand()` to issue a new command
+   -  `Win.PowerShell.end()` to end a session
  - New options for `Win.PowerShell()`'s `options` parameter: 
-  - `keepAlive` - Do not end the child process when the command(s) are completed
-  - `ID` - Assign an identity to this PowerShell session in order to issue a new command or end it at a later time.
+   - `keepAlive` - Do not end the child process when the command(s) are completed
+   - `ID` - Assign an identity to this PowerShell session in order to issue a new command or end it at a later time.
 
  What's changed:
  - Adjusted `Win.process.kill()` to allow killing by PID
- - LOTS of fixes to how `Win.PowerShell()` collects output and error with multiple commands
+ - LOTS of fixes to how `Win.PowerShell()` collects output and errors when using multiple commands. ~90% quirk-free! Still working on it, but it's _much_ better than last version.
  
  What's next: 
  - I'm working on a PowerShell session manager. It's pretty early, but it's already in use internally by Win.stopAudio().

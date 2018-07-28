@@ -376,6 +376,10 @@ const Win = {
 				}
 
 				function newCommand(command, cb) {
+					if (typeof command == 'array' || typeof command == 'object') {
+						Win.log('For now, newCommands for existing PowerShell sessions must be a single command, not an array. Your array will be joined with a "; " and executed, but the output for all commands will be returned as a single string', {colour: 'yellow'});
+						command = command.join('; ');
+					}
 					writeCommand(command);
 					for (let i in powerShellSessions) {
 						if (powerShellSessions[i].id == options.id) {
