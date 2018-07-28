@@ -1,8 +1,8 @@
 const Win = require('./windows-interact.js');
 
 
-Win.PowerShell(['write-host "TEST"', 'write-host "Line 2"', 'write-host "Line 3"'], result => {
-    console.log(result);
+Win.PowerShell(['dir', 'write-host "TEST 3"',  'dir'], result => {
+    console.log(result, result.length);
 }, { id: 'haha', noLog: true });
 
 /* setTimeout(() => {

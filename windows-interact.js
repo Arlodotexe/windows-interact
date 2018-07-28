@@ -289,6 +289,8 @@ const Win = {
 	},
 	PowerShell: (function() {
 		let fn = function(command, callback, options) {
+			// If given an array where the first command takes longer to finish than subsequent commands, the outputted array will freak the f*** out
+
 			if (typeof callback == 'object' && options == undefined) {
 				options = callback;
 				callback = undefined;
@@ -305,11 +307,11 @@ const Win = {
 				if (typeof command == 'string') command = [command];
 
 				function collectOutput(data) {
-					outputBin = outputBin + data.toString();
+					if (data.toString() !== '') outputBin = outputBin + data.toString();
 				}
 
 				function pushOutput() {
-					if (outputBin !== '\n' || outputBin !== '\r' || outputBin !== '\r\n') self.out.push(outputBin.toString());
+					if (outputBin !== '\n' && outputBin !== '\r' && outputBin !== '\r\n' && outputBin !== '') self.out.push(outputBin.toString());
 					if (outputBin.toString().trim() !== '' && !(options && options.noLog)) (options && options.keepAlive && options.id ? 'PowerShell Session "' + id + '":\n' : '') + Win.log(outputBin.toString());
 					outputBin = '';
 				}
@@ -317,21 +319,27 @@ const Win = {
 				function writeCommand(command) {
 					child.stdin.write(`${command}\n\r`);
 				}
+
 				dbWriteCommand = debounce(writeCommand, 250);
 
+				let checking = false;
 				function qCommand(command) {
 					commandq.push(command);
-					function tryNext() {
-						writeCommand(commandq[0]);
-						commandq.shift();
-						setTimeout(() => {
-							if (commandq.length > 0) tryNext();
-						}, 250);
-					}
-					tryNext();
-				}
 
-				collectUntilDone = postbounce(collectOutput, 5, pushOutput);
+					if (checking == false) {
+						function tryNext() {
+							checking = true;
+							setTimeout(() => {
+								writeCommand(commandq[0]);
+								commandq.shift();
+								if (commandq.length > 0) tryNext();
+								checking = false;
+							}, 500); // force every command to be seperated more to better discern output
+						}
+						tryNext();
+					}
+				}
+				collectUntilDone = postbounce(collectOutput, 30, pushOutput);
 
 				child.stdout.on("data", data => {
 					collectUntilDone(data);
@@ -376,9 +384,12 @@ const Win = {
 				}
 
 				function checkIfDone() {
-					if (commandq.length === 0 && command.length > 1) {
-						if (!(options && options.keepAlive && options.id)) end()
-						else {
+					if (commandq.length === 0 && command.length > 0) {
+						if (!(options && options.keepAlive && options.id)) {
+							setTimeout(() => {
+								child.stdin.end();
+							}, 900); // wait a bit to let the last command finish outputting
+						} else {
 							if (!(options && options.noLog)) console.log('PowerShell child process is still alive. ID: "' + id + '"');
 
 							powerShellSessions.push({
