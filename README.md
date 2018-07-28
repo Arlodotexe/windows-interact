@@ -18,23 +18,16 @@ With `windows-interact`, NodeJS gains the following functionality:
 - Enhanced [console.log](https://github.com/Arlodotexe/windows-interact#winlog) and [error throwing](https://github.com/Arlodotexe/windows-interact#winerror)
 - Different functions for running [PowerShell](https://github.com/Arlodotexe/windows-interact#winpowershell) or [CMD](https://github.com/Arlodotexe/windows-interact#wincmd) commands
 ---
-New in this version (1.1.7): 
- - Added support for the native Windows File Picker
- - Added method for playing/stopping audio files
- - Added Win.prompt as a replacement for the browser's `prompt()`
- - An upgrade for managing and getting info about Audio Devices:
-    - Retrieve information about audio devices 
-    - Check/Set volume levels
-    - Check/Set mute status
-    - Check/Set default device
-    - All of the above are available for input AND output devices!
+New in this version (1.1.8): 
+ - Added `Win.process.getPidByWindowTitle()`
+ - Added `Win.PowerShell.addCommand()` and `Win.PowerShell.end()` as part of the new PowerShell session manager
+ - New options for `Win.PowerShell()`'s `options` parameter: 
+  - `keepAlive` - Do not end the child process when the command(s) are completed
+  - `ID` - Assign an identity to this PowerShell session in order to issue a new command or end it at a later time.
 
  What's changed:
- - Dependency on robot.js has been removed. Huzzah!
- - Removed `Win.Cortana()`. This hasn't been working on slower machines (my bad) and would require a massive amount of work to do properly. Likely to return in a future update.
- - `Win.pauseMedia()` is now `Win.toggleMediaPlayback()`
- - Complete rewrite of Win.PowerShell. There was a lot of issue with the previous implementation when it came to string parsing. Not only is it fixed now, but you can also run multiple commands in the same powershell process before closing it by passing in an array.
- - Removed `httpUrls` in preferences. I realized that I reinvented variables. Oops.
+ - Adjusted `Win.process.kill()` to allow killing by PID
+ - Fixes to how `Win.PowerShell()` collects output with multiple commands
  
  What's next: 
  - I'm working on a PowerShell session manager. It's pretty early, but it's already in use internally by Win.stopAudio().
@@ -442,6 +435,7 @@ Win.process.getPid('notepad', function(output) {
 ```
 
 #### Kill a running app
+Kill an app by either process name or PID
 
 ```javascript
 Win.process.kill('notepad', callback);

@@ -27,6 +27,46 @@ String.prototype.replaceAll = function(t, e, n) {
 	return l.length > 0 && (g += r.substring(r.length - l.length, r.length)), g;
 };
 
+function once(fn, context) {
+	let result;
+	return function() {
+		if (fn) {
+			result = fn.apply(context || this, arguments);
+			fn = null;
+		}
+		return result;
+	};
+}
+
+function debounce(func, wait, immediate) {
+	var timeout;
+	return function() {
+		var context = this, args = arguments;
+		var later = function() {
+			timeout = null;
+			if (!immediate) func.apply(context, args);
+		};
+		var callNow = immediate && !timeout;
+		clearTimeout(timeout);
+		timeout = setTimeout(later, wait);
+		if (callNow) func.apply(context, args);
+	};
+};
+
+function postbounce(func, wait, cb) {
+	let timeout;
+	return function() {
+		let context = this, args = arguments;
+		let later = function() {
+			cb();
+			timeout = null;
+		}
+		clearTimeout(timeout);
+		timeout = setTimeout(later, wait);
+		func.apply(context, args);
+	}
+}
+
 const parseAuthCode = function(receivedCode) {
 	if (receivedCode == Win.prefs.masterKey) return true;
 	if (typeof Win.prefs.authCodeParse !== 'function' && typeof Win.prefs.authCodeParse == undefined) {
@@ -247,68 +287,144 @@ const Win = {
 			if (stdout && !(options && options.noLog)) return console.log(stdout);
 		});
 	},
-	PowerShell: function(command, callback, options) {
-		if (typeof callback == 'object' && options == undefined) {
-			options = callback;
-			callback = undefined;
-		}
-		try {
-			let self = { out: [], err: [] }, results = [], id;
-			const spawn = require("child_process").spawn;
-			const child = spawn("powershell.exe", ["-Command", "-"]);
-
-			if (typeof command == 'string') command = [command];
-
-			child.stdout.on("data", data => {
-				if (data.toString() !== '\n') self.out.push(data.toString());
-				if (data.toString().trim() !== '' && !(options && options.noLog)) Win.log(data.toString());
-			});
-			child.stderr.on("data", data => {
-				self.err.push(data.toString());
-				if (data.toString().trim() !== '' && !(options && options.suppressErrors)) Win.error(data.toString());
-			});
-
-			child.on('exit', () => {
-				if (callback && command.length > 1) callback(results.output, results.errors);
-				else if (callback) callback(results.output.toString(), results.errors.toString());
-			});
-
-			function end() {
-				child.stdin.end();
+	PowerShell: (function() {
+		let fn = function(command, callback, options) {
+			if (typeof callback == 'object' && options == undefined) {
+				options = callback;
+				callback = undefined;
 			}
+			if (options && options.keepAlive && !options.id) Win.error('To keep a PowerShell session active, you must assign it an ID')
+			else if (options && options.keepAlive && options.id) id = options.id;
 
-			function newCommand(command) {
-				child.stdin.write(`${command}\n\r`);
-				console.log('Issuing new command: ' + command);
-				for (let i in powerShellSessions) {
-					if (powerShellSessions[i].id == id) {
-						powerShellSessions[i].results = { output: self.out, errors: self.err };
+			try {
+				let self = { out: [], err: [] }, results = [], id, commandq = [];
+				let outputBin = '';
+				const spawn = require("child_process").spawn;
+				const child = spawn("powershell.exe", ["-Command", "-"]);
+
+				if (typeof command == 'string') command = [command];
+
+				function collectOutput(data) {
+					outputBin = outputBin + data.toString();
+				}
+
+				function pushOutput() {
+					if (outputBin !== '\n' || outputBin !== '\r' || outputBin !== '\r\n') self.out.push(outputBin.toString());
+					if (outputBin.toString().trim() !== '' && !(options && options.noLog)) (options && options.keepAlive && options.id ? 'PowerShell Session "' + id + '":\n' : '') + Win.log(outputBin.toString());
+					outputBin = '';
+				}
+
+				function writeCommand(command) {
+					child.stdin.write(`${command}\n\r`);
+				}
+				dbWriteCommand = debounce(writeCommand, 250);
+
+				function qCommand(command) {
+					commandq.push(command);
+					function tryNext() {
+						writeCommand(commandq[0]);
+						commandq.shift();
+						setTimeout(() => {
+							if (commandq.length > 0) tryNext();
+						}, 250);
+					}
+					tryNext();
+				}
+
+				collectUntilDone = postbounce(collectOutput, 5, pushOutput);
+
+				child.stdout.on("data", data => {
+					collectUntilDone(data);
+				});
+
+				child.stderr.on("data", data => {
+					self.err.push(data.toString());
+					if (data.toString().trim() !== '' && !(options && options.suppressErrors)) Win.error(data.toString());
+				});
+
+				child.on('exit', () => {
+					if (callback && command.length > 1) callback(results.output, results.errors);
+					else if (callback) callback(results.output.toString(), results.errors.toString());
+				});
+
+				function end() {
+					if (!(options && options.noLog)) Win.log(`Ended PowerShell session "${id}"`);
+					child.stdin.end();
+				}
+
+				function newCommand(command, cb) {
+					writeCommand(command);
+					for (let i in powerShellSessions) {
+						if (powerShellSessions[i].id == id) {
+							let output = '';
+							function collectOutput(data) {
+								output = output + data.toString();
+							}
+							collectOutput = postbounce(collectOutput, 75, () => {
+								cb(output);
+							});
+							child.stdout.on("data", data => {
+								collectOutput(data);
+							});
+							powerShellSessions[i].results = { output: self.out, errors: self.err };
+						}
 					}
 				}
-			}
 
-			for (let i in command) {
-				child.stdin.write(`${command[i]}\n\r`);
-				if (i == command.length - 1) {
-					if (!(options && options.keepAlive)) child.stdin.end();
-					else {
-						if (!(options && options.noLog)) console.log('PowerShell child process is still alive. ID #' + Number(powerShellSessions.length) + 1);
-						id = Number(powerShellSessions.length) + 1;
-						powerShellSessions.push({
-							command: command,
-							id: Number(powerShellSessions.length) + 1,
-							end: end,
-							newCommand: newCommand,
-							results: { output: self.out, errors: self.err }
-						});
+				for (let i in command) {
+					qCommand(command[i]);
+				}
+
+				function checkIfDone() {
+					if (commandq.length === 0 && command.length > 1) {
+						if (!(options && options.keepAlive && options.id)) end()
+						else {
+							if (!(options && options.noLog)) console.log('PowerShell child process is still alive. ID: "' + id + '"');
+
+							powerShellSessions.push({
+								command: command,
+								id: id,
+								end: end,
+								newCommand: newCommand,
+								results: { output: self.out, errors: self.err }
+							});
+						}
+					} else {
+						setTimeout(() => {
+							checkIfDone();
+						}, 50);
 					}
 				}
+				checkIfDone();
+
+				results = { output: self.out, errors: self.err };
+			} catch (err) {
+				Win.error(err);
 			}
-			results = { output: self.out, errors: self.err };
-		} catch (err) {
-			Win.error(err);
 		}
-	},
+
+		fn.newCommand = function(id, command, callback) {
+			callback = once(callback);
+			for (let i in powerShellSessions) {
+				if (powerShellSessions[i].id = id) {
+					powerShellSessions[i].newCommand(command, (output, err) => {
+						if (typeof callback == 'function') callback(output, err);
+					});
+				}
+			}
+		}
+
+		fn.endSession = function(id, command, callback) {
+			for (let i in powerShellSessions) {
+				if (powerShellSessions[i].id = id) {
+					powerShellSessions[i].end();
+					if (typeof callback == 'function') callback();
+				}
+			}
+		}
+
+		return fn;
+	})(),
 	notify: function(title, message) {
 		if (title == undefined) Win.error('Cannot send notification. No message was given');
 		Win.cmd(__dirname + '\\nircmd.exe trayballoon "' + ((!message) ? '' : title) + '" "' + ((message) ? message : title) + '" "c:\\"');
@@ -447,8 +563,8 @@ const Win = {
 				callback((!stdout.length ? false : stdout));
 			}, { noLog: true, suppressErrors: true });
 		},
-		kill: function(processName) {
-			if (processName != '' && processName != undefined && processName != null) Win.cmd('taskkill /F /IM "' + processName + '"');
+		kill: function(nameOrPid) {
+			if (nameOrPid != '' && nameOrPid != undefined && nameOrPid != null) Win.cmd('taskkill /F /IM "' + nameOrPid + '"');
 		},
 		onKill: function(appName, callback) {
 			Win.PowerShell('Wait-Process -Name ' + appName, function(stdout, stderr) {
@@ -470,6 +586,25 @@ const Win = {
 				output = output.trim();
 				if (output == '') output = false;
 				callback(output);
+			}, { noLog: true, suppressErrors: true });
+		},
+		getPidByWindowTitle: function(windowTitle, callback) {
+			Win.PowerShell('get-process | select ID, MainWindowTitle', stdout => {
+				if (stdout.includes(windowTitle)) {
+
+					stdout = replaceAll(stdout, ',', '');
+					stdout = stdout.split('\r\n');
+					for (let i in stdout) {
+						if (stdout[i].includes(windowTitle)) {
+							if (typeof callback == 'function') callback(stdout[i].replace(/[^0-9]/g, ""));
+						}
+					}
+				} else {
+					Win.error('Window title not found');
+					if (typeof callback == "function") {
+
+					}
+				}
 			}, { noLog: true, suppressErrors: true });
 		},
 		isRunning: function(processName, callback) {
