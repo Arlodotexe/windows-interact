@@ -34,6 +34,7 @@ New in this version (1.1.8):
  What's changed:
  - Fixes a lot of commands that would fail if your directory had a space in it
  - Adjusted `Win.process.kill()` to allow killing by PID
+ - The callback for `Win.PowerShell()` now fires after the commands have completed, instead of when the session is ended.
  - LOTS of fixes to how `Win.PowerShell()` collects output and errors when using multiple commands. ~90% quirk-free! Still working on it, but it's _much_ better than last version.
  
  What's next: 
@@ -623,10 +624,16 @@ To keep a PowerShell session open, pass `keepAlive: true` and `ID: 'someid'` int
 Issue a new command to an open PowerShell session by the assigned ID
 
 ```javascript
+// Keep a windows open first
+Win.PowerShell('$tester = "Hello world"', (result, err) => {
+    console.log('First run')
+}, { noLog: false, keepAlive: true, id: 'test' });
+
+// Then add a new command
 
 ```
 
-### `Win.PowerShell.endSession(id)`
+### `Win.PowerShell.endSession(id, callback)`
 End an open PowerShell session by ID
 
 ## `Win.requestTo()`
