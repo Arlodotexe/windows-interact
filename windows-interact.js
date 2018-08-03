@@ -97,6 +97,10 @@ const authCode = {
 	}
 };
 
+function nircmd(command, callback, options) {
+	Win.PowerShell(['cd ' + Win.path`${__dirname}`, '.\\nircmd ' + command], callback, options ? options : { noLog: true });
+}
+
 function speak() {
 	let speechQ = [];
 	let fn = function(phrase, TTSVoice, speed, callback) {
@@ -366,12 +370,12 @@ const Win = {
 				});
 
 				child.on('exit', () => {
-					if (callback && command.length > 1) callback(results.output, results.errors);
-					else if (callback) callback(results.output.toString(), results.errors.toString());
+					if (typeof callback == 'function' && command.length > 1) callback(results.output, results.errors);
+					else if (typeof callback == 'function') callback(results.output.toString(), results.errors.toString());
 				});
 
 				function end() {
-					if (!(options && options.noLog)) Win.log(`Ended PowerShell session "${id}"`);
+					if (!(options && options.noLog)) Win.log(`Ended PowerShell session "${options.id}"`);
 					child.stdin.end();
 				}
 
@@ -380,9 +384,11 @@ const Win = {
 						Win.log('For now, newCommands for existing PowerShell sessions must be a single command, not an array. Your array will be joined with a "; " and executed, but the output for all commands will be returned as a single string', { colour: 'yellow' });
 						command = command.join('; ');
 					}
-					writeCommand(command);
+
 					for (let i in powerShellSessions) {
 						if (powerShellSessions[i].id == options.id) {
+							powerShellSessions[i].child.stdin.write(`${command}\n\r`);
+
 							let output = '';
 							function collectOutput(data) {
 								output = output + data.toString();
@@ -413,6 +419,7 @@ const Win = {
 
 							powerShellSessions.push({
 								command: command,
+								child: child,
 								id: id,
 								end: end,
 								newCommand: newCommand,
@@ -435,18 +442,30 @@ const Win = {
 
 		fn.newCommand = function(id, command, callback) {
 			callback = once(callback);
-			for (let i in powerShellSessions) {
-				if (powerShellSessions[i].id = id) {
-					powerShellSessions[i].newCommand(command, (output, err) => {
-						if (typeof callback == 'function') callback(output, err);
-					});
+			setTimeout(() => {
+				if (powerShellSessions.length < 1) {
+					Win.log('No PowerShell sessions are alive', { colour: 'yellow' });
+				} else if ((function() {
+					for (let i in powerShellSessions) {
+						if (powerShellSessions[i].id == id) return true;
+					}
+				})()) {
+					Win.log('Could not find PowerShell session "' + id + '"', { colour: 'yellow' });
 				}
-			}
+
+				for (let i in powerShellSessions) {
+					if (powerShellSessions[i].id = id) {
+						powerShellSessions[i].newCommand(command, (output, err) => {
+							if (typeof callback == 'function') callback(output, err);
+						});
+					}
+				}
+			}, 550);
 		}
 
 		fn.endSession = function(id, callback) {
 			for (let i in powerShellSessions) {
-				if (powerShellSessions[i].id = id) {
+				if (powerShellSessions[i].id == id) {
 					powerShellSessions[i].end();
 					if (typeof callback == 'function') callback();
 				}
@@ -455,9 +474,9 @@ const Win = {
 
 		return fn;
 	})(),
-	notify: function(title, message) {
-		if (title == undefined) Win.error('Cannot send notification. No message was given');
-		Win.PowerShell(['cd ' +  Win.path`${__dirname}`, '.\\nircmd.exe trayballoon "' + ((!message) ? '' : title) + '" "' + ((message) ? message : title) + '" "c:\\"']);
+	notify: function(message, title) {
+		if (message == undefined) Win.error('Cannot send notification. No message was given');
+		nircmd('trayballoon "' + ((!title) ? ' ' : message) + '" "' + ((title) ? title : message) + '" "c:\\"');
 	},
 	confirm: function(message, title) {
 		return new Promise(resolve => {
@@ -470,9 +489,9 @@ const Win = {
 	alert: function(message, title) {
 		return new Promise(resolve => {
 			if (message && message.trim() !== '') {
-				Win.PowerShell(['cd ' + Win.path`${__dirname}`, '.\\nircmd.exe infobox "' + (message) + '" "' + ((!title) ? 'Node' : title) + '"'], () => {
+				nircmd('infobox "' + (message) + '" "' + ((!title) ? 'Node' : title) + '"', () => {
 					resolve();
-				}, { noLog: true });
+				});
 			}
 		});
 	},
@@ -551,7 +570,7 @@ const Win = {
 			if (!Win.appManager.registeredApps[appName]) {
 				Win.error('Unable to launch requested application. The requested app is either not registered or misspelled');
 			} else {
-				Win.PowerShell(['cd ' + Win.path`${__dirname}`, '.\\nircmd.exe execmd ' + Win.appManager.registeredApps[appName].path]);
+				nircmd('execmd ' + Win.appManager.registeredApps[appName].path);
 				if (Win.appManager.registeredApps[appName].onLaunch) Win.appManager.registeredApps[appName].onLaunch();
 			}
 		},
@@ -564,7 +583,7 @@ const Win = {
 			}
 		},
 		hide: function(processName) {
-			Win.PowerShell(['cd ' + Win.path`${__dirname}`, '.\\nircmd.exe win hide process "' + processName + '"']);
+			nircmd('win hide process "' + processName + '"');
 		},
 		switchTo: function(appName) {
 			let windowTitle = Win.appManager.registeredApps[appName].windowTitle;
@@ -573,7 +592,7 @@ const Win = {
 				Win.PowerShell('$myshell = New-Object -com "Wscript.Shell"; $myshell.AppActivate("' + windowTitle + '")', (stdout) => {
 					if (stdout.includes('False')) {
 						Win.log('Using process name as fallback. This may not be as accurate');
-						Win.PowerShell(['cd ' + Win.path`${__dirname}`, '.\\nircmd.exe win activate process "' + processName + '"']);
+						nircmd('win activate process "' + processName + '"');
 					}
 				}, { noLog: true });
 			} else {
@@ -717,10 +736,10 @@ const Win = {
 		audioDevices: {
 			output: {
 				volume: function(vol) {
-					Win.PowerShell(['cd ' + Win.path`${__dirname}`, '.\\nircmd.exe setsysvolume ' + Math.floor(vol * 665.35)]);
+					nircmd('setsysvolume ' + Math.floor(vol * 665.35));
 				},
 				default: function(device) {
-					Win.PowerShell(['cd ' + Win.path`${__dirname}`, '.\\nircmd.exe setdefaultsounddevice "' + device + '"']);
+					nircmd('setdefaultsounddevice "' + device + '"');
 				},
 				mute: function(bool) {
 					Win.PowerShell('Set-AudioDevice -PlaybackMute ' + bool);
@@ -731,7 +750,7 @@ const Win = {
 					Win.PowerShell('Set-AudioDevice -RecordingVolume ' + vol);
 				},
 				default: function(device) {
-					Win.PowerShell(['cd ' + Win.path`${__dirname}`, '.\\nircmd.exe setdefaultsounddevice "' + device + '"']);
+					nircmd('setdefaultsounddevice "' + device + '"');
 				},
 				mute: function(bool) {
 					Win.PowerShell('Set-AudioDevice -RecordingMute ' + bool);
@@ -775,23 +794,23 @@ const Win = {
 				if (!processName.includes('.exe')) processName = processName + '.exe';
 				Win.PowerShell(['cd ' + Win.path`${__dirname}`, '\\nircmd.exe win min process "' + processName + '"']);
 			} else {
-				Win.PowerShell(['cd ' + Win.path`${__dirname}`, '.\\nircmd.exe win min foreground']);
+				nircmd('win min foreground');
 			}
 		},
 		maximize: function(processName) {
 			if (processName !== undefined) {
 				if (!processName.includes('.exe')) processName = processName + '.exe';
-				Win.PowerShell(['cd ' + Win.path`${__dirname}`, '.\\nircmd.exe win max process "' + processName + '"']);
+				nircmd('win max process "' + processName + '"');
 			} else {
-				Win.PowerShell(['cd ' + Win.path`${__dirname}`, '.\\nircmd.exe win max foreground']);
+				nircmd('win max foreground');
 			}
 		},
 		restore: function(processName) {
 			if (processName !== undefined) {
 				if (!processName.includes('.exe')) processName = processName + '.exe';
-				Win.PowerShell(['cd ' + Win.path`${__dirname}`, '.\\nircmd.exe win normal process "' + processName + '"']);
+				nircmd('win normal process "' + processName + '"');
 			} else {
-				Win.PowerShell(['cd ' + Win.path`${__dirname}`, '.\\nircmd.exe win normal foreground']);
+				nircmd('win normal foreground');
 			}
 		},
 		resize: function(width, height, processName) {
@@ -803,7 +822,7 @@ const Win = {
 				Win.window.restore(processName);
 				Win.PowerShell(['cd ' + Win.path`${__dirname}`, '\\nircmd.exe win setsize process "' + processName + '" x y ' + width + ' ' + height], { suppressErrors: true, noLog: true });
 			} else {
-				Win.PowerShell(['cd ' + Win.path`${__dirname}`, '.\\nircmd.exe win setsize foreground x y ' + width + ' ' + height], { supressErrors: true, noLog: true });
+				nircmd('win setsize foreground x y ' + width + ' ' + height, undefined, { supressErrors: true, noLog: true });
 			}
 		},
 		move: function(x, y, processName) {
@@ -813,9 +832,9 @@ const Win = {
 			if (processName !== undefined && isNaN(x) === false && isNaN(y) === false) {
 				if (!processName.includes('.exe')) processName = processName + '.exe';
 				Win.window.restore(processName);
-				Win.PowerShell(['cd ' + Win.path`${__dirname}`, '.\\nircmd.exe win move process "' + processName + '" ' + x + ' ' + y], { suppressErrors: true, noLog: true });
+				nircmd('win move process "' + processName + '" ' + x + ' ' + y, undefined, { suppressErrors: true, noLog: true });
 			} else {
-				Win.PowerShell(['cd ' + Win.path`${__dirname}`, '.\\nircmd.exe win setsize foreground x y ' + width + ' ' + height], { supressErrors: true, noLog: true });
+				nircmd('win setsize foreground x y ' + width + ' ' + height, undefined, { supressErrors: true, noLog: true });
 			}
 		}
 	},
@@ -827,8 +846,8 @@ const Win = {
 			path = '*clipboard*';
 		} else path = '"' + path + '"';
 
-		if (region == 'full') Win.PowerShell(['cd ' + Win.path`${__dirname}`, '.\\nircmd.exe savescreenshotfull ' + path]);
-		else if (region == 'window') Win.PowerShell(['cd ' + Win.path`${__dirname}`, '.\\nircmd.exe savescreenshotwin ' + path]);
+		if (region == 'full') nircmd('savescreenshotfull ' + path);
+		else if (region == 'window') nircmd('savescreenshotwin ' + path);
 	},
 	playAudio: function(path) {
 		path = replaceAll(path, '\\\\', '\\');
