@@ -369,12 +369,10 @@ const Win = {
 					collectErrorsUntilDelay(data);
 				});
 
-				child.on('exit', () => {
-					if (typeof callback == 'function' && command.length > 1) callback(results.output, results.errors);
-					else if (typeof callback == 'function') callback(results.output.toString(), results.errors.toString());
-				});
-
-				function end() {
+				function end(cb) {
+					child.on('exit', () => {
+						if (typeof cb == 'function') cb();
+					});
 					if (!(options && options.noLog)) Win.log(`Ended PowerShell session "${options.id}"`);
 					child.stdin.end();
 				}
@@ -410,6 +408,8 @@ const Win = {
 
 				function checkIfDone() {
 					if (commandq.length === 0 && command.length > 0) {
+						if (typeof callback == 'function' && command.length > 1) callback(results.output, results.errors);
+						else if (typeof callback == 'function') callback(results.output.toString(), results.errors.toString());
 						if (!(options && options.keepAlive && options.id)) {
 							setTimeout(() => {
 								child.stdin.end();
@@ -466,8 +466,7 @@ const Win = {
 		fn.endSession = function(id, callback) {
 			for (let i in powerShellSessions) {
 				if (powerShellSessions[i].id == id) {
-					powerShellSessions[i].end();
-					if (typeof callback == 'function') callback();
+					powerShellSessions[i].end(callback);
 				}
 			}
 		}
