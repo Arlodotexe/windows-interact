@@ -18,6 +18,10 @@ With `windows-interact`, NodeJS gains the following functionality:
 - Enhanced [console.log](https://github.com/Arlodotexe/windows-interact#winlog) and [error throwing](https://github.com/Arlodotexe/windows-interact#winerror)
 - Different functions for running [PowerShell](https://github.com/Arlodotexe/windows-interact#winpowershell) or [CMD](https://github.com/Arlodotexe/windows-interact#wincmd) commands
 ---
+
+The current released version is 1.1.7. [See the release notes](changelog.md)
+
+
 New in this version (1.1.8): 
  - Added `Win.process.getPidByWindowTitle()`
  - `Win.PowerShell()` now has a built in session manager!
@@ -28,6 +32,7 @@ New in this version (1.1.8):
    - `ID` - Assign an identity to this PowerShell session in order to issue a new command or end it at a later time.
 
  What's changed:
+ - Fixes a lot of commands that would fail if your directory had a space in it
  - Adjusted `Win.process.kill()` to allow killing by PID
  - LOTS of fixes to how `Win.PowerShell()` collects output and errors when using multiple commands. ~90% quirk-free! Still working on it, but it's _much_ better than last version.
  
