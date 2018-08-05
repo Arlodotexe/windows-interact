@@ -266,13 +266,6 @@ const Win = {
 	speak: speak(),
 	error: function(loggedMessage, options) {
 		if (loggedMessage !== '' && loggedMessage) {
-			let dateString = '';
-			if (Win.prefs.log && Win.prefs.log.showTime) {
-				dateString = new Date().toLocaleTimeString() + ': ';
-			}
-			if (options && options.showTime == false) {
-				dateString = '';
-			}
 			if (Win.prefs.log && Win.prefs.log.spokenErrorMessage && !(options && options.silent)) Win.speak(Win.prefs.log.spokenErrorMessage);
 			try { throw new Error(loggedMessage); }
 			catch (error) {
