@@ -286,8 +286,6 @@ const Win = {
 	},
 	PowerShell: (function() {
 		let fn = function(command, callback, options) {
-			// If given an array where the first command takes longer to finish than subsequent commands, the outputted array will freak the f*** out
-			// NEED a better way to discern outputs of seperate commands in the same window
 			if (typeof callback == 'object' && options == undefined) {
 				options = callback;
 				callback = undefined;
