@@ -302,6 +302,7 @@ const Win = {
 				if (typeof command == 'string') command = [command];
 
 				function collectOutput(data) {
+					console.log('data ' + data.toString());
 					if (data.toString() !== '') outputBin = outputBin + data.toString();
 				}
 
@@ -349,10 +350,12 @@ const Win = {
 						tryNext();
 					}
 				}
-				collectOutputUntilDelay = postbounce(collectOutput, 30, pushOutput);
-				collectErrorsUntilDelay = postbounce(collectErrors, 30, pushErrors);
+				collectOutputUntilDelay = postbounce(collectOutput, 1000, pushOutput);
+				collectErrorsUntilDelay = postbounce(collectErrors, 1000, pushErrors);
 
 				child.stdout.on("data", data => {
+					console.log('at least i work')
+
 					collectOutputUntilDelay(data);
 				});
 
@@ -385,7 +388,7 @@ const Win = {
 							collectOutput = postbounce(collectOutput, 30, () => {
 								(once(cb(output)))();
 							});
-							child.stdout.on("data", data => {
+							powerShellSessions[i].child.stdout.on("data", data => {
 								collectOutput(data);
 							});
 							powerShellSessions[i].results = { output: self.out, errors: self.err };
@@ -399,31 +402,35 @@ const Win = {
 
 				function checkIfDone() {
 					if (commandq.length === 0 && command.length > 0) {
-						if (typeof callback == 'function' && command.length > 1) callback(results.output, results.errors);
-						else if (typeof callback == 'function') callback(results.output.toString(), results.errors.toString());
-						if (!(options && options.keepAlive && options.id)) {
-							setTimeout(() => {
-								child.stdin.end();
-							}, 900); // wait a bit to let the last command finish outputting
-						} else {
-							if (!(options && options.noLog)) console.log('PowerShell child process is still alive. ID: "' + options.id + '"');
+						setTimeout(() => {
 
-							powerShellSessions.push({
-								command: command,
-								child: child,
-								id: id,
-								end: end,
-								newCommand: newCommand,
-								results: { output: self.out, errors: self.err }
-							});
-						}
+							if (typeof callback == 'function' && command.length > 1) callback(results.output, results.errors);
+							else if (typeof callback == 'function') callback(results.output.toString(), results.errors.toString());
+							if (!(options && options.keepAlive && options.id)) {
+								child.stdin.end();
+							} else {
+								if (!(options && options.noLog)) console.log('PowerShell child process is still alive. ID: "' + options.id + '"');
+
+								powerShellSessions.push({
+									command: command,
+									child: child,
+									id: id,
+									end: end,
+									newCommand: newCommand,
+									results: { output: self.out, errors: self.err }
+								});
+							}
+						}, 900); // wait a bit to let the last command finish outputting
+
 					} else {
 						setTimeout(() => {
 							checkIfDone();
 						}, 50);
 					}
 				}
-				checkIfDone();
+				setTimeout(() => {
+					checkIfDone();
+				}, 2000);
 
 				results = { output: self.out, errors: self.err };
 			} catch (err) {
@@ -519,30 +526,77 @@ const Win = {
 				apps.push(replaceAll(processName, '.exe', ''));
 			});
 
+			function setIsRunning(processName, bool) {
+				for (let i in Win.appManager.registeredApps) {
+					if (Win.appManager.registeredApps[i].path.includes(processName)) {
+						Win.appManager.registeredApps[i].isRunning = bool;
+					} else if (i == Win.appManager.registeredApps.length) {
+						Win.appManager.registeredApps[i].isRunning = null;
+					}
+				}
+			}
+
+			function setWasRunning(processName, bool) {
+				for (let i in Win.appManager.registeredApps) {
+					if (Win.appManager.registeredApps[i].path.includes(processName)) {
+						Win.appManager.registeredApps[i].wasRunning = bool;
+					} else if (i == Win.appManager.registeredApps.length) {
+						Win.appManager.registeredApps[i].wasRunning = null;
+					}
+				}
+			}
+
+			function getIsRunning(processName) {
+				for (let i in Win.appManager.registeredApps) {
+					if (Win.appManager.registeredApps[i].path.includes(processName) && Win.appManager.registeredApps[i].isRunning !== undefined) {
+						return Win.appManager.registeredApps[i].isRunning;
+					} else if (i == Win.appManager.registeredApps.length) {
+						return false;
+					}
+				}
+			}
+
+			function getWasRunning(processName) {
+				for (let i in Win.appManager.registeredApps) {
+					if (Win.appManager.registeredApps[i].path.includes(processName) && Win.appManager.registeredApps[i].wasRunning !== undefined) {
+						return Win.appManager.registeredApps[i].wasRunning;
+					} else if (i == Win.appManager.registeredApps.length) {
+						return false;
+					}
+				}
+			}
+
 			Win.appManager.appWatcher = function() {
-				Win.PowerShell('get-process "' + apps.join('", "') + '" | select ProcessName, MainWindowTitle', stdout => {
-					for (var i = 0; i < apps.length; i++) {
+				Win.PowerShell('get-process "' + apps.join('", "') + '" | select ProcessName, MainWindowTitle', (stdout) => {
+					console.log(stdout);
+					for (let i in apps) {
 						let appName = apps[i];
 						if (stdout.includes(appName)) {
-							Win.appManager.registeredApps[appName].isRunning = true;
+							setIsRunning(appName, true);
 							setTimeout(() => {
-								Win.appManager.registeredApps[appName].wasRunning = true;
+								setWasRunning(appName, true);
 							}, (Win.prefs.appManagerRefreshInterval ? Win.prefs.appManagerRefreshInterval / 2 : 2500));
 						} else {
-							Win.appManager.registeredApps[appName].isRunning = false;
+							setIsRunning(appName, false);
 							setTimeout(() => {
-								Win.appManager.registeredApps[appName].wasRunning = false;
+								setWasRunning(appName, false);
 							}, (Win.prefs.appManagerRefreshInterval ? Win.prefs.appManagerRefreshInterval / 2 : 2500));
 						}
 
-						if (!Win.appManager.registeredApps[appName].isRunning && Win.appManager.registeredApps[appName].wasRunning && Win.appManager.registeredApps[appName].onKill) Win.appManager.registeredApps[appName].onKill();
+						if (!getIsRunning(appName) && getWasRunning(appName) && Win.appManager.registeredApps[appName].onKill) Win.appManager.registeredApps[appName].onKill();
 						if (!registrationComplete) registrationComplete = true;
-						if (registrationComplete && Win.appManager.registeredApps[appName].isRunning && !Win.appManager.registeredApps[appName].wasRunning && Win.appManager.registeredApps[appName].onLaunch) Win.appManager.registeredApps[appName].onLaunch();
+						if (registrationComplete && getIsRunning(appName) && !getWasRunning(appName) && Win.appManager.registeredApps[appName].onLaunch) Win.appManager.registeredApps[appName].onLaunch();
 
 						windowTitle = stdout.substr(stdout.lastIndexOf('\n' + appName));
 						windowTitle = windowTitle.substring(0, windowTitle.indexOf('\r'));
 						windowTitle = replaceAll(windowTitle, appName, '').trim();
 						if (windowTitle == '') windowTitle = null;
+
+						for (let i in Win.appManager.registeredApps) {
+							if (Win.appManager.registeredApps[i].path.includes(appName)) {
+								return Win.appManager.registeredApps[i].windowTitle = windowTitle;
+							}
+						}
 						Win.appManager.registeredApps[appName].windowTitle = windowTitle;
 					}
 				}, { noLog: true, suppressErrors: true });
