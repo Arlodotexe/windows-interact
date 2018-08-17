@@ -401,7 +401,7 @@ const Win = {
 						checkingIfDone = true;
 						setTimeout(() => {
 							if (typeof callback == 'function' && command.length > 1) callback(self.out, self.err);
-							else if (typeof callback == 'function') callback(self.out, self.err);
+							else if (typeof callback == 'function') callback(self.out.toString(), self.err.toString());
 							if (!(options && options.keepAlive && options.id)) {
 								child.stdin.end();
 							} else {
@@ -502,6 +502,7 @@ const Win = {
 
 				props.id = Object.keys(Win.appManager.registeredApps).length + 1;
 				Win.appManager.registeredApps[appName] = props;
+				Win.appManager.registeredApps[appName].name = appName;
 
 				//Handle and parse app path
 				let appPath = Win.appManager.registeredApps[appName].path;
@@ -557,9 +558,17 @@ const Win = {
 				}
 			}
 
+			function getNameByProcessName(processName) {
+				for (let i in Win.appManager.registeredApps) {
+					if (Win.appManager.registeredApps[i].path.includes(processName)) {
+						return Win.appManager.registeredApps[i].name.toString();
+					}
+				}
+			}
+			console.log(getNameByProcessName('notepad'));
+
 			Win.appManager.appWatcher = function() {
 				Win.PowerShell('get-process "' + apps.join('", "') + '" | select ProcessName, MainWindowTitle', (stdout) => {
-					console.log(stdout);
 					for (let i in apps) {
 						let appName = apps[i];
 						if (stdout.includes(appName)) {
@@ -574,9 +583,9 @@ const Win = {
 							}, (Win.prefs.appManagerRefreshInterval ? Win.prefs.appManagerRefreshInterval / 2 : 2500));
 						}
 
-						if (!getIsRunning(appName) && getWasRunning(appName) && Win.appManager.registeredApps[appName].onKill) Win.appManager.registeredApps[appName].onKill();
+						if (!getIsRunning(appName) && getWasRunning(appName) && Win.appManager.registeredApps[appName].onKill) Win.appManager.registeredApps[getNameByProcessName(appName)].onKill();
 						if (!registrationComplete) registrationComplete = true;
-						if (registrationComplete && getIsRunning(appName) && !getWasRunning(appName) && Win.appManager.registeredApps[appName].onLaunch) Win.appManager.registeredApps[appName].onLaunch();
+						if (registrationComplete && getIsRunning(appName) && !getWasRunning(appName) && Win.appManager.registeredApps[getNameByProcessName(appName)].onLaunch) Win.appManager.registeredApps[getNameByProcessName(appName)].onLaunch();
 
 						windowTitle = stdout.substr(stdout.lastIndexOf('\n' + appName));
 						windowTitle = windowTitle.substring(0, windowTitle.indexOf('\r'));
