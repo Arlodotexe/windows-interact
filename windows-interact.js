@@ -294,7 +294,7 @@ const Win = {
 			else if (options && options.keepAlive && options.id) id = options.id;
 
 			try {
-				let self = { out: [], err: [] }, results = [], id, commandq = [];
+				let self = { out: [], err: [] }, results = [], id, commandq = [], checkingIfDone = false;
 				let outputBin = '', errorBin = '';
 				const spawn = require("child_process").spawn;
 				const child = spawn("powershell.exe", ["-Command", "-"]);
@@ -302,7 +302,6 @@ const Win = {
 				if (typeof command == 'string') command = [command];
 
 				function collectOutput(data) {
-					console.log('data ' + data.toString());
 					if (data.toString() !== '') outputBin = outputBin + data.toString();
 				}
 
@@ -311,10 +310,12 @@ const Win = {
 				}
 
 				function pushOutput() {
-					if (errorBin.trim() == '') pushErrors();
-					if (outputBin !== '\n' && outputBin !== '\r' && outputBin !== '\r\n' && outputBin !== '') self.out.push(outputBin.toString());
+					if (errorBin.trim() !== '') pushErrors();
+					if (outputBin !== '\n' && outputBin !== '\r' && outputBin !== '\r\n' && outputBin !== '') self.out.push(outputBin);
 					if (outputBin.toString().trim() !== '' && !(options && options.noLog)) (options && options.keepAlive && options.id ? 'PowerShell Session "' + id + '":\n' : '') + Win.log(outputBin.toString());
 					outputBin = '';
+
+					(once(checkIfDone()))();
 				}
 
 				function pushErrors() {
@@ -327,21 +328,18 @@ const Win = {
 						if (errorBin.toString().trim() !== '' && !(options && options.suppressErrors)) Win.error(errorBin.toString());
 					}
 					errorBin = '';
-				}
-
-				function writeCommand(command) {
-					child.stdin.write(`${command}\n\r`);
+					(once(checkIfDone()))();
 				}
 
 				let checking = false;
 				function qCommand(command) {
 					commandq.push(command);
-
 					if (checking == false) {
 						function tryNext() {
 							checking = true;
 							setTimeout(() => {
-								writeCommand(commandq[0]);
+								child.stdin.setEncoding('utf-8');
+								child.stdin.write(`${commandq[0]}\r\n`);
 								commandq.shift();
 								if (commandq.length > 0) tryNext();
 								checking = false;
@@ -354,8 +352,6 @@ const Win = {
 				collectErrorsUntilDelay = postbounce(collectErrors, 1000, pushErrors);
 
 				child.stdout.on("data", data => {
-					console.log('at least i work')
-
 					collectOutputUntilDelay(data);
 				});
 
@@ -401,11 +397,11 @@ const Win = {
 				}
 
 				function checkIfDone() {
-					if (commandq.length === 0 && command.length > 0) {
+					if (commandq.length === 0 && command.length > 0 && !checkingIfDone) {
+						checkingIfDone = true;
 						setTimeout(() => {
-
-							if (typeof callback == 'function' && command.length > 1) callback(results.output, results.errors);
-							else if (typeof callback == 'function') callback(results.output.toString(), results.errors.toString());
+							if (typeof callback == 'function' && command.length > 1) callback(self.out, self.err);
+							else if (typeof callback == 'function') callback(self.out, self.err);
 							if (!(options && options.keepAlive && options.id)) {
 								child.stdin.end();
 							} else {
@@ -420,7 +416,7 @@ const Win = {
 									results: { output: self.out, errors: self.err }
 								});
 							}
-						}, 900); // wait a bit to let the last command finish outputting
+						}, 1000); // wait a bit to let the last command finish outputting
 
 					} else {
 						setTimeout(() => {
@@ -428,11 +424,6 @@ const Win = {
 						}, 50);
 					}
 				}
-				setTimeout(() => {
-					checkIfDone();
-				}, 2000);
-
-				results = { output: self.out, errors: self.err };
 			} catch (err) {
 				Win.error(err);
 			}
