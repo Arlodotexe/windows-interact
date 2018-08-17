@@ -32,6 +32,7 @@ New in this version (1.1.8):
    - `ID` - Assign an identity to this PowerShell session in order to issue a new command or end it at a later time.
 
  What's changed:
+ - The appManager has been refactored to allow naming an app with any name when registering
  - Fixes a lot of commands that would fail if your directory had a space in it
  - Adjusted `Win.process.kill()` to allow killing by PID
  - The callback for `Win.PowerShell()` now fires after the commands have completed, instead of when the session is ended.
