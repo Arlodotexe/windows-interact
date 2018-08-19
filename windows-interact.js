@@ -67,21 +67,33 @@ function postbounce(func, wait, cb) {
 	}
 }
 
-async function tryForUntil(tries, delay, func, conditions, notMetCallback) {
+async function tryForUntil(tries, delay, conditions, toTry, notMetCallback, successCallback) {
 	for (let i = 0; i < tries; i++) {
 		await (() => {
-			return new Promise(resolve => {
+			return new Promise((resolve) => {
 				setTimeout(() => {
-					func();
-					resolve();
+					toTry();
 					if (eval(conditions)) {
-						console.log('conditions met')
+						i = tries; // Make the loop stop
+						notMetCallback = null; // This should not run now
+						if (typeof successCallback == 'function') successCallback();
 					} else if (i == tries - 1) {
-						notMetCallback();
+						if (typeof notMetCallback == 'function') notMetCallback();
+					}
+					else {
+						resolve(); // Let the loop keep going
 					}
 				}, delay);
 			});
 		})();
+	}
+}
+
+function isVerbose(option) {
+	if (Win.prefs.log && Win.prefs.log.verbose && Win.prefs.log.verbose[option] === true) {
+		return true;
+	} else {
+		return false;
 	}
 }
 
@@ -304,10 +316,7 @@ const Win = {
 	},
 	PowerShell: (function() {
 		let fn = function(command, callback, options) {
-			if (typeof callback == 'object' && options == undefined) {
-				options = callback;
-				callback = undefined;
-			}
+
 			if (options && options.keepAlive && !options.id) Win.error('To keep a PowerShell session active, you must assign it an ID')
 			else if (options && options.keepAlive && options.id) id = options.id;
 
@@ -321,8 +330,14 @@ const Win = {
 				}
 			}
 
+			function setParams(cmd, cb, opts) {
+				command = cmd;
+				callback = cb;
+				options = opts;
+			}
+
 			try {
-				let self = { out: [], err: [] }, id, commandq = [];
+				let self = { out: [], err: [] }, commandq = [];
 				let checkingIfDone = false, triggered = false;
 				let outputBin = '', errorBin = '';
 				const spawn = require("child_process").spawn;
@@ -344,7 +359,7 @@ const Win = {
 					if (outputBin !== '\n' && outputBin !== '\r' && outputBin !== '\r\n' && outputBin !== '') self.out.push(outputBin);
 
 					if (outputBin.toString().trim() !== '' && commandq.length > 0 && (!(commandq[0].options && commandq[0].options.noLog))) {
-						Win.log((commandq.length > 0 && (commandq[0].options && commandq[0].options.keepAlive && commandq[0].options.id) ? 'PowerShell Session "' + commandq[0].options.id + '":\n' : '') + outputBin.toString());
+						Win.log((commandq.length > 0 && (commandq[0].options && commandq[0].options.keepAlive && commandq[0].options.id) ? 'PowerShell session "' + commandq[0].options.id + '":\n' : '') + outputBin.toString());
 					}
 					outputBin = '';
 
@@ -381,11 +396,20 @@ const Win = {
 					}, 800);
 				}
 
-				function qCommand(command) {
-					commandq.push({ command, options });
+				function qCommand(command, options) {
+					commandq.push({ command: command, options: options });
 					if (commandq.length == 1 && triggered == false) {
 						triggered = true;
 						runNextInQ();
+					} else if (options.id) {
+						// This is a new command for an existing session
+						setTimeout(() => {
+							for (let i in powerShellSessions) {
+								if (powerShellSessions[i].id == options.id) {
+									powerShellSessions[i].child.stdin.write(`${commandq[0].command}\r\n`);
+								}
+							}
+						}, 800);
 					}
 				}
 
@@ -408,48 +432,39 @@ const Win = {
 					child.stdin.end();
 				}
 
-				function newCommand(command, id, cb) {
+				function newCommand(command, id, cb, options) {
 					if (typeof command == 'array' || typeof command == 'object') {
 						Win.log('For now, newCommands for existing PowerShell sessions must be a single command, not an array. Your array will be joined with a "; " and executed, but the output for all commands will be returned as a single string', { colour: 'yellow' });
 						command = command.join('; ');
 					}
+					self = { out: [], err: [] };
+					checkingIfDone = false, triggered = false;
+					outputBin = '', errorBin = '';
 
-					for (let i in powerShellSessions) {
-						if (powerShellSessions[i].id == options.id) {
-							powerShellSessions[i].child.stdin.write(`${command}\n\r`);
+					setParams(command, cb, options);
+					options.id = id;
+					options.existingSession = true;
 
-							let output = '';
-							function collectOutput(data) {
-								output = output + data.toString();
-							}
-							collectOutput = postbounce(collectOutput, 30, () => {
-								(once(cb(output)))();
-							});
-							powerShellSessions[i].child.stdout.on("data", data => {
-								collectOutput(data);
-							});
-							powerShellSessions[i].results = { output: self.out, errors: self.err };
-						}
-					}
+					qCommand(command, { ...options });
 				}
 
 				for (let i in command) {
-					qCommand(command[i]);
+					qCommand(command[i], options);
 				}
 
 				function checkIfDone() {
-					//console.log(commandq);
 					if (commandq.length === 0 && command.length > 0 && checkingIfDone === false) {
 						checkingIfDone = true;
 						setTimeout(() => {
 							if (typeof callback == 'function' && command.length > 1) callback(self.out, self.err);
 							else if (typeof callback == 'function') callback(self.out.toString(), self.err.toString());
-							if (!(options && options.keepAlive && options.id)) {
+							if ((options && options.existingSession == true)) {
+								// Command from existing powershell session
+							} else if (!(options && options.keepAlive == true && options.id)) {
 								child.stdin.end();
 								checkingIfDone = false;
 							} else {
-								if (options && options.noLog) Win.log('PowerShell process is being kept alive. ID: "' + options.id + '"', { colour: 'yellow' });
-
+								if (isVerbose('PowerShell')) Win.log('PowerShell process is being kept alive. ID: "' + options.id + '"', { colour: 'yellow' });
 								powerShellSessions.push({
 									command: command,
 									child: child,
@@ -473,10 +488,9 @@ const Win = {
 			}
 		}
 
-		fn.newCommand = function(id, command, callback) {
-			callback = once(callback);
+		fn.newCommand = function(id, command, callback, options) {
 
-			tryForUntil(10, 1000, () => {
+			tryForUntil(10, 1500, 'powerShellSessions.length > 0', () => {
 				if ((function() {
 					for (let i in powerShellSessions) {
 						if (powerShellSessions[i].id == id) {
@@ -486,22 +500,21 @@ const Win = {
 						}
 					}
 				})()) {
-					once(() => {
-						for (let i in powerShellSessions) {
+					(once(() => {
+						for (let i = 0; i < powerShellSessions.length; i++) {
 							if (powerShellSessions[i].id = id) {
-								powerShellSessions[i].newCommand(command, id, (output, err) => {
-									if (typeof callback == 'function') callback(output, err);
-								});
-								break;
+								powerShellSessions[i].newCommand(command, id, callback, options);
+								i = powerShellSessions.length;
 							}
 						}
-					});
+					}))();
 				} else {
-					Win.log('Could not find PowerShell session "' + id + '". Retrying...', { colour: 'yellow' });
+					if (isVerbose('PowerShell')) Win.log('Could not find PowerShell session "' + id + '". Retrying...', { colour: 'yellow' });
 				}
-
-			}, (powerShellSessions.length > 1), () => {
-				Win.log('No PowerShell sessions are alive', { colour: 'yellow' });
+			}, () => {
+				if (isVerbose('PowerShell')) Win.log('No PowerShell sessions are alive', { colour: 'yellow' });
+			}, () => {
+				if (isVerbose('PowerShell')) Win.log(`PowerShell session "${id}" found!`, { colour: 'yellow' });
 			});
 		}
 
