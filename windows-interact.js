@@ -67,6 +67,24 @@ function postbounce(func, wait, cb) {
 	}
 }
 
+async function tryForUntil(tries, delay, func, conditions, notMetCallback) {
+	for (let i = 0; i < tries; i++) {
+		await (() => {
+			return new Promise(resolve => {
+				setTimeout(() => {
+					func();
+					resolve();
+					if (eval(conditions)) {
+						console.log('conditions met')
+					} else if (i == tries - 1) {
+						notMetCallback();
+					}
+				}, delay);
+			});
+		})();
+	}
+}
+
 const parseAuthCode = function(receivedCode) {
 	if (receivedCode == Win.prefs.masterKey) return true;
 	if (typeof Win.prefs.authCodeParse !== 'function' && typeof Win.prefs.authCodeParse == undefined) {
@@ -293,11 +311,23 @@ const Win = {
 			if (options && options.keepAlive && !options.id) Win.error('To keep a PowerShell session active, you must assign it an ID')
 			else if (options && options.keepAlive && options.id) id = options.id;
 
+			function getPowerShellSession(cb) {
+				for (let i in powerShellSessions) {
+					if (powerShellSessions[i].id == options.id) {
+						cb(powerShellSessions[i]);
+					} else if (i == powerShellSessions.length) {
+						cb()
+					}
+				}
+			}
+
 			try {
-				let self = { out: [], err: [] }, results = [], id, commandq = [], checkingIfDone = false;
+				let self = { out: [], err: [] }, id, commandq = [];
+				let checkingIfDone = false, triggered = false;
 				let outputBin = '', errorBin = '';
 				const spawn = require("child_process").spawn;
 				const child = spawn("powershell.exe", ["-Command", "-"]);
+				child.stdin.setEncoding('utf-8');
 
 				if (typeof command == 'string') command = [command];
 
@@ -312,44 +342,55 @@ const Win = {
 				function pushOutput() {
 					if (errorBin.trim() !== '') pushErrors();
 					if (outputBin !== '\n' && outputBin !== '\r' && outputBin !== '\r\n' && outputBin !== '') self.out.push(outputBin);
-					if (outputBin.toString().trim() !== '' && !(options && options.noLog)) (options && options.keepAlive && options.id ? 'PowerShell Session "' + id + '":\n' : '') + Win.log(outputBin.toString());
+
+					if (outputBin.toString().trim() !== '' && commandq.length > 0 && (!(commandq[0].options && commandq[0].options.noLog))) {
+						Win.log((commandq.length > 0 && (commandq[0].options && commandq[0].options.keepAlive && commandq[0].options.id) ? 'PowerShell Session "' + commandq[0].options.id + '":\n' : '') + outputBin.toString());
+					}
 					outputBin = '';
 
 					(once(checkIfDone()))();
+					shiftQ();
+					if (commandq.length > 0) runNextInQ();
 				}
 
 				function pushErrors() {
 					if (errorBin == '') {
-						errorBin = undefined;
 						self.err.push(errorBin);
-					}
-					else if (errorBin.trim() !== '\n' && errorBin.trim() !== '\r' && errorBin.trim() !== '\r\n') {
+					} else if (errorBin.trim() !== '\n' && errorBin.trim() !== '\r' && errorBin.trim() !== '\r\n') {
 						self.err.push(errorBin.toString());
-						if (errorBin.toString().trim() !== '' && !(options && options.suppressErrors)) Win.error(errorBin.toString());
+						if (errorBin.toString().trim() !== '' && commandq.length > 0 && !(commandq[0].options && commandq[0].options.suppressErrors)) {
+							Win.error(errorBin.toString());
+						}
 					}
 					errorBin = '';
+
 					(once(checkIfDone()))();
+					shiftQ();
+					if (commandq.length > 0) runNextInQ();
 				}
 
-				let checking = false;
+				function shiftQ() {
+					commandq.shift();
+				}
+
+				shiftQ = debounce(shiftQ, 800, true);
+
+				function runNextInQ() {
+					setTimeout(() => {
+						child.stdin.write(`${commandq[0].command}\r\n`);
+					}, 800);
+				}
+
 				function qCommand(command) {
-					commandq.push(command);
-					if (checking == false) {
-						function tryNext() {
-							checking = true;
-							setTimeout(() => {
-								child.stdin.setEncoding('utf-8');
-								child.stdin.write(`${commandq[0]}\r\n`);
-								commandq.shift();
-								if (commandq.length > 0) tryNext();
-								checking = false;
-							}, 500); // force every command to be delayed to better discern output
-						}
-						tryNext();
+					commandq.push({ command, options });
+					if (commandq.length == 1 && triggered == false) {
+						triggered = true;
+						runNextInQ();
 					}
 				}
-				collectOutputUntilDelay = postbounce(collectOutput, 1000, pushOutput);
-				collectErrorsUntilDelay = postbounce(collectErrors, 1000, pushErrors);
+
+				collectOutputUntilDelay = postbounce(collectOutput, 800, pushOutput);
+				collectErrorsUntilDelay = postbounce(collectErrors, 800, pushErrors);
 
 				child.stdout.on("data", data => {
 					collectOutputUntilDelay(data);
@@ -367,7 +408,7 @@ const Win = {
 					child.stdin.end();
 				}
 
-				function newCommand(command, cb) {
+				function newCommand(command, id, cb) {
 					if (typeof command == 'array' || typeof command == 'object') {
 						Win.log('For now, newCommands for existing PowerShell sessions must be a single command, not an array. Your array will be joined with a "; " and executed, but the output for all commands will be returned as a single string', { colour: 'yellow' });
 						command = command.join('; ');
@@ -397,26 +438,29 @@ const Win = {
 				}
 
 				function checkIfDone() {
-					if (commandq.length === 0 && command.length > 0 && !checkingIfDone) {
+					//console.log(commandq);
+					if (commandq.length === 0 && command.length > 0 && checkingIfDone === false) {
 						checkingIfDone = true;
 						setTimeout(() => {
 							if (typeof callback == 'function' && command.length > 1) callback(self.out, self.err);
 							else if (typeof callback == 'function') callback(self.out.toString(), self.err.toString());
 							if (!(options && options.keepAlive && options.id)) {
 								child.stdin.end();
+								checkingIfDone = false;
 							} else {
-								if (!(options && options.noLog)) console.log('PowerShell child process is still alive. ID: "' + options.id + '"');
+								if (options && options.noLog) Win.log('PowerShell process is being kept alive. ID: "' + options.id + '"', { colour: 'yellow' });
 
 								powerShellSessions.push({
 									command: command,
 									child: child,
-									id: id,
+									id: options.id,
 									end: end,
 									newCommand: newCommand,
 									results: { output: self.out, errors: self.err }
 								});
+								checkingIfDone = false;
 							}
-						}, 1000); // wait a bit to let the last command finish outputting
+						}, 800); // wait a bit to let the last command finish outputting
 
 					} else {
 						setTimeout(() => {
@@ -431,25 +475,34 @@ const Win = {
 
 		fn.newCommand = function(id, command, callback) {
 			callback = once(callback);
-			setTimeout(() => {
-				if (powerShellSessions.length < 1) {
-					Win.log('No PowerShell sessions are alive', { colour: 'yellow' });
-				} else if ((function() {
+
+			tryForUntil(10, 1000, () => {
+				if ((function() {
 					for (let i in powerShellSessions) {
-						if (powerShellSessions[i].id == id) return true;
+						if (powerShellSessions[i].id == id) {
+							return true;
+						} else if (i == powerShellSessions.length - 1) {
+							return false;
+						}
 					}
 				})()) {
-					Win.log('Could not find PowerShell session "' + id + '"', { colour: 'yellow' });
+					once(() => {
+						for (let i in powerShellSessions) {
+							if (powerShellSessions[i].id = id) {
+								powerShellSessions[i].newCommand(command, id, (output, err) => {
+									if (typeof callback == 'function') callback(output, err);
+								});
+								break;
+							}
+						}
+					});
+				} else {
+					Win.log('Could not find PowerShell session "' + id + '". Retrying...', { colour: 'yellow' });
 				}
 
-				for (let i in powerShellSessions) {
-					if (powerShellSessions[i].id = id) {
-						powerShellSessions[i].newCommand(command, (output, err) => {
-							if (typeof callback == 'function') callback(output, err);
-						});
-					}
-				}
-			}, 550);
+			}, (powerShellSessions.length > 1), () => {
+				Win.log('No PowerShell sessions are alive', { colour: 'yellow' });
+			});
 		}
 
 		fn.endSession = function(id, callback) {
@@ -565,7 +618,6 @@ const Win = {
 					}
 				}
 			}
-			console.log(getNameByProcessName('notepad'));
 
 			Win.appManager.appWatcher = function() {
 				Win.PowerShell('get-process "' + apps.join('", "') + '" | select ProcessName, MainWindowTitle', (stdout) => {
