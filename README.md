@@ -38,6 +38,7 @@ New in version (1.1.8):
  - The appManager has been refactored to allow naming an app with any name when registering
  - Fixes a lot of commands that would fail if your directory had a space in it
  - Adjusted `Win.process.kill()` to allow killing by PID
+ - Fixed an issue where options passed into `Win.PowerShell()` would overwrite options for subsequent command
  - The callback for `Win.PowerShell()` now fires after the commands have completed, instead of when the session is ended.
  - LOTS of fixes to how `Win.PowerShell()` collects output and errors when using multiple commands. ~95% quirk-free! Still working on it, but it's _much_ better than last version.
  
