@@ -5,7 +5,7 @@ const requestify = require('requestify');
 const supplementals = require('./supplementals');
 let prefs = {};
 
-const psVars = {
+let psVars = {
 	powerShellSessions: [],
 	commandq: [],
 	self: { out: [], err: [] },
@@ -14,6 +14,10 @@ const psVars = {
 	outputBin: '',
 	errorBin: ''
 };
+
+setInterval(_ => {
+/* 	console.log('COMMANDQ: ', psVars.commandq)
+ */}, 800)
 
 function endsWith(search, suffix) {
 	return search.indexOf(suffix, search.length - suffix.length) !== -1;
@@ -176,7 +180,7 @@ const authCode = {
 };
 
 function nircmd(command, callback, options) {
-	Win.PowerShell(['cd ' + Win.path`${__dirname}`, '.\\nircmd ' + command], callback, options ? options : { noLog: true });
+	Win.PowerShell(['.\\nircmd ' + command], callback, options ? options : { noLog: true });
 }
 
 function speak() {
@@ -366,7 +370,7 @@ const Win = {
 		let fn = function(command, callback, options) {
 
 			if (options && options.keepAlive && !options.id) Win.error('To keep a PowerShell session active, you must assign it an ID')
-			else if (options && options.keepAlive && options.id) id = options.id;
+			else if (options && options.keepAlive === true && options.id !== undefined) id = options.id;
 
 			function getPowerShellSession(cb) {
 				for (let i in psVars.powerShellSessions) {
@@ -392,8 +396,8 @@ const Win = {
 				if (typeof command == 'string') command = [command];
 
 				function keepAlive(data) {
-					if (isVerbose('PowerShell')) Win.log('PowerShell process is being kept alive. ID: "' + data.options.id + '"', { colour: 'yellow' });
 					if (data && data.options && data.options.keepAlive == true && data.options.id !== undefined) {
+						if (isVerbose('PowerShell')) Win.log('PowerShell process is being kept alive. ID: "' + data.options.id + '"', { colour: 'yellow' });
 						psVars.powerShellSessions.push({
 							command: data.command,
 							child: data.child,
@@ -414,23 +418,22 @@ const Win = {
 				}
 
 				function pushOutput() {
+					if (psVars.outputBin !== '\n' && psVars.outputBin !== '\r' && psVars.outputBin !== '\r\n' && psVars.outputBin !== '') {
+						psVars.self.out.push(psVars.outputBin.trim());
+					}
+
+					if (psVars.outputBin.toString().trim() !== '' && psVars.commandq.length > 0 && !(psVars.commandq[0].options && psVars.commandq[0].options.noLog === true)) {
+						Win.log((psVars.commandq.length > 0 && (psVars.commandq[0].options && psVars.commandq[0].options.keepAlive && psVars.commandq[0].options.id) ? 'PowerShell session "' + psVars.commandq[0].options.id + '":\n' : '') + psVars.outputBin.toString().trim());
+					}
+
 					if (psVars.outputBin.trim() !== '') pushErrors();
-					if (psVars.outputBin !== '\n' && psVars.outputBin !== '\r' && psVars.outputBin !== '\r\n' && psVars.outputBin !== '') psVars.self.out.push(psVars.outputBin.trim());
-
-					if (psVars.outputBin.toString().trim() !== '' && psVars.commandq.length > 0 && !(psVars.commandq[0].options && psVars.commandq[0].options.noLog)) {
-						Win.log((psVars.commandq.length > 0 && (psVars.commandq[0].options && psVars.commandq[0].options.keepAlive && psVars.commandq[0].options.id) ? 'PowerShell session "' + psVars.commandq[0].options.id + '":\n' : '') + psVars.outputBin.toString());
-					}
-
-					if (psVars.commandq[0].options && psVars.commandq[0].options.keepAlive && psVars.commandq[0].options.id) {
-						keepAlive(psVars.commandq[0]);
-					}
 					psVars.outputBin = '';
 
-					(once(checkIfDone(psVars.commandq[0].options)))(psVars.commandq[0].options);
-					shiftQ();
+					(once(checkIfDone()))();
+
 					setTimeout(() => {
 						runNextInQ();
-					}, 1000);
+					}, 800);
 				}
 
 				function pushErrors() {
@@ -438,18 +441,22 @@ const Win = {
 						psVars.self.err.push(psVars.errorBin);
 					} else if (psVars.errorBin.trim() !== '\n' && psVars.errorBin.trim() !== '\r' && psVars.errorBin.trim() !== '\r\n') {
 						psVars.self.err.push(psVars.errorBin.toString().trim());
-						if (psVars.errorBin.toString().trim() !== '' && psVars.commandq.length > 0 && !(psVars.commandq[0].options && psVars.commandq[0].options.suppressErrors)) {
+						if (psVars.errorBin.toString().trim() !== '' && psVars.commandq.length > 0 && !(psVars.commandq[0].options && psVars.commandq[0].options.suppressErrors == true)) {
 							Win.error(psVars.errorBin.toString());
 						}
 					}
 					psVars.errorBin = '';
 
-					(once(checkIfDone(psVars.commandq[0].options)))(psVars.commandq[0].options);
+					if (psVars.commandq[0] && psVars.commandq[0].options && psVars.commandq[0].options.id) {
+						(once(keepAlive(psVars.commandq[0])))();
+					}
+
+					(once(checkIfDone()))();
 
 					shiftQ();
 					setTimeout(() => {
 						runNextInQ();
-					}, 1000);
+					}, 800);
 				}
 
 				function shiftQ() {
@@ -509,7 +516,7 @@ const Win = {
 					}
 					psVars.self = { out: [], err: [] };
 					psVars.checkingIfDone = false, psVars.triggered = false;
-					psVars.outputBin = '', psVars.outputBin = '';
+					psVars.outputBin = '', psVars.errorBin = '';
 
 					setParams(command, cb, options);
 					options.id = id;
@@ -521,20 +528,18 @@ const Win = {
 					qCommand(command[i], options);
 				}
 
-				// Problem is that I'm using one function to check one thing but needs to access data about multiple things
-				function checkIfDone(options) {
+				function checkIfDone() {
 					if (psVars.commandq.length === 0 && psVars.checkingIfDone === false) {
 						psVars.checkingIfDone = true;
 						setTimeout(() => {
 							if (typeof callback == 'function' && command.length > 1) callback(psVars.self.out, psVars.self.err);
 							else if (typeof callback == 'function') callback(psVars.self.out.toString(), psVars.self.err.toString());
-							console.log(options);
-							if (!(options && options.keepAlive == true && options.id !== undefined && options.existingSession == true)) {
+							if (!(options && options.keepAlive == true && options.existingSession == true)) {
 								child.stdin.end();
 
 								psVars.self = { out: [], err: [] };
 								psVars.checkingIfDone = false, psVars.triggered = false;
-								psVars.outputBin = '', psVars.outputBin = '';
+								psVars.outputBin = '', psVars.errorBin = '';
 							} else {
 								psVars.checkingIfDone = false;
 							}
@@ -606,8 +611,12 @@ const Win = {
 	alert: function(message, title) {
 		return new Promise(resolve => {
 			if (message && message.trim() !== '') {
+				Win.PowerShell(`$wshell = New-Object -ComObject Wscript.Shell
+				$wshell.Popup("${message}",0,"${((!title) ? 'Node' : title)}")`, () => {
+						resolve();
+					});
 				nircmd('infobox "' + (message) + '" "' + ((!title) ? 'Node' : title) + '"', () => {
-					resolve();
+
 				});
 			}
 		});
@@ -883,8 +892,9 @@ const Win = {
 					}, { noLog: true });
 				},
 				isPlaying: callback => {
-					Win.PowerShell(supplementals.AudioDetection, once(output => {
-						if (output.trim() == 'True') {
+					Win.PowerShell(supplementals.AudioDetection, (result => {
+						//console.log(result);
+						if (result.trim() == 'True') {
 							callback(true);
 						} else {
 							callback(false);
@@ -1085,8 +1095,10 @@ const Win = {
 	}
 }
 
-
 // This doesn't work unless its run once before running outside of this file
-//Win.PowerShell(supplementals.AudioDetection, () => { console.log('here') }, {noLog: true});
+function audioDetection() {
+	Win.PowerShell(supplementals.AudioDetection, () => {  }, {noLog: true});
+}
+audioDetection();
 
 module.exports = Win;

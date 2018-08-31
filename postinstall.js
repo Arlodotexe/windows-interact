@@ -14,7 +14,7 @@ const AudioDevicesCmdlets = {
 				Win.log('AudioDevicesCmdlets is installed correctly.');
 				return true;
 			} else {
-				Win.error('The AudioDevicesCmdlet did not installed correctly. Please reinstall windows-interact using a privileged account. If this does not install, you will lose audio device management functionality.');
+				Win.error('The AudioDevicesCmdlet did not installed correctly. Please reinstall windows-interact using a privileged command line. If this does not install, you will not have audio device management functionality.');
 			}
 		}, { noLog: true });
 	}
