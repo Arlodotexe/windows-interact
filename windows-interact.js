@@ -15,10 +15,6 @@ const psVars = {
 	errorBin: ''
 };
 
-setInterval(() => {
-	console.log(psVars.commandq);
-}, 200);
-
 function endsWith(search, suffix) {
 	return search.indexOf(suffix, search.length - suffix.length) !== -1;
 };
@@ -389,12 +385,25 @@ const Win = {
 			}
 
 			try {
-
 				const spawn = require("child_process").spawn;
 				const child = spawn("powershell.exe", ["-Command", "-"]);
 				child.stdin.setEncoding('utf-8');
 
 				if (typeof command == 'string') command = [command];
+
+				function keepAlive(data) {
+					if (isVerbose('PowerShell')) Win.log('PowerShell process is being kept alive. ID: "' + data.options.id + '"', { colour: 'yellow' });
+					if (data && data.options && data.options.keepAlive == true && data.options.id !== undefined) {
+						psVars.powerShellSessions.push({
+							command: data.command,
+							child: data.child,
+							id: data.options.id,
+							end: end,
+							newCommand: newCommand,
+							results: { output: psVars.self.out, errors: psVars.self.err }
+						});
+					}
+				}
 
 				function collectOutput(data) {
 					if (data.toString() !== '') psVars.outputBin = psVars.outputBin + data.toString();
@@ -411,9 +420,13 @@ const Win = {
 					if (psVars.outputBin.toString().trim() !== '' && psVars.commandq.length > 0 && !(psVars.commandq[0].options && psVars.commandq[0].options.noLog)) {
 						Win.log((psVars.commandq.length > 0 && (psVars.commandq[0].options && psVars.commandq[0].options.keepAlive && psVars.commandq[0].options.id) ? 'PowerShell session "' + psVars.commandq[0].options.id + '":\n' : '') + psVars.outputBin.toString());
 					}
+
+					if (psVars.commandq[0].options && psVars.commandq[0].options.keepAlive && psVars.commandq[0].options.id) {
+						keepAlive(psVars.commandq[0]);
+					}
 					psVars.outputBin = '';
 
-					(once(checkIfDone()))();
+					(once(checkIfDone(psVars.commandq[0].options)))(psVars.commandq[0].options);
 					shiftQ();
 					setTimeout(() => {
 						runNextInQ();
@@ -431,8 +444,9 @@ const Win = {
 					}
 					psVars.errorBin = '';
 
-					(once(checkIfDone()))();
+					(once(checkIfDone(psVars.commandq[0].options)))(psVars.commandq[0].options);
 
+					shiftQ();
 					setTimeout(() => {
 						runNextInQ();
 					}, 1000);
@@ -445,7 +459,6 @@ const Win = {
 				function runNextInQ() {
 					if (psVars.commandq.length > 0) {
 						child.stdin.write(`${psVars.commandq[0].command}\r\n`);
-						shiftQ();
 					}
 				}
 
@@ -454,7 +467,7 @@ const Win = {
 
 
 				function qCommand(command, options) {
-					psVars.commandq.push({ command: command, options: options });
+					psVars.commandq.push({ command: command, options: options, child: child });
 					if (psVars.commandq.length == 1 && psVars.triggered == false && !(options && options.id && options.existingSession)) {
 						psVars.triggered = true;
 						runNextInQ();
@@ -508,29 +521,21 @@ const Win = {
 					qCommand(command[i], options);
 				}
 
-				function checkIfDone() {
+				// Problem is that I'm using one function to check one thing but needs to access data about multiple things
+				function checkIfDone(options) {
 					if (psVars.commandq.length === 0 && psVars.checkingIfDone === false) {
 						psVars.checkingIfDone = true;
 						setTimeout(() => {
 							if (typeof callback == 'function' && command.length > 1) callback(psVars.self.out, psVars.self.err);
 							else if (typeof callback == 'function') callback(psVars.self.out.toString(), psVars.self.err.toString());
-							if (!(options && options.keepAlive == true && options.id && options.existingSession == true)) {
+							console.log(options);
+							if (!(options && options.keepAlive == true && options.id !== undefined && options.existingSession == true)) {
 								child.stdin.end();
 
 								psVars.self = { out: [], err: [] };
 								psVars.checkingIfDone = false, psVars.triggered = false;
 								psVars.outputBin = '', psVars.outputBin = '';
 							} else {
-								console.log('new', command);
-								if (isVerbose('PowerShell')) Win.log('PowerShell process is being kept alive. ID: "' + options.id + '"', { colour: 'yellow' });
-								psVars.powerShellSessions.push({
-									command: command,
-									child: child,
-									id: options.id,
-									end: end,
-									newCommand: newCommand,
-									results: { output: psVars.self.out, errors: psVars.self.err }
-								});
 								psVars.checkingIfDone = false;
 							}
 						}, 800); // wait a bit to let the last command finish outputting
