@@ -180,7 +180,7 @@ const authCode = {
 };
 
 function nircmd(command, callback, options) {
-	Win.PowerShell(['.\\nircmd ' + command], callback, options ? options : { noLog: true });
+	Win.PowerShell('.\\nircmd ' + command, callback, options ? options : { noLog: true });
 }
 
 function speak() {
@@ -514,6 +514,7 @@ const Win = {
 						Win.log('For now, newCommands for existing PowerShell sessions must be a single command, not an array. Your array will be joined with a "; " and executed, but the output for all commands will be returned as a single string', { colour: 'yellow' });
 						command = command.join('; ');
 					}
+					if (options == undefined) options = {};
 					psVars.self = { out: [], err: [] };
 					psVars.checkingIfDone = false, psVars.triggered = false;
 					psVars.outputBin = '', psVars.errorBin = '';
@@ -582,7 +583,7 @@ const Win = {
 			}, () => {
 				if (isVerbose('PowerShell')) Win.log('No PowerShell sessions are alive', { colour: 'yellow' });
 			}, () => {
-				if (isVerbose('PowerShell')) Win.log(`PowerShell session "${id}" found!`, { colour: 'yellow' });
+				//if (isVerbose('PowerShell')) Win.log(`PowerShell session "${id}" found!`, { colour: 'yellow' });
 			});
 		}
 
@@ -892,14 +893,14 @@ const Win = {
 					}, { noLog: true });
 				},
 				isPlaying: callback => {
-					Win.PowerShell(supplementals.AudioDetection, (result => {
+					Win.PowerShell(supplementals.AudioDetection, result => {
 						//console.log(result);
 						if (result.trim() == 'True') {
 							callback(true);
 						} else {
 							callback(false);
 						}
-					}), { noLog: true });
+					}, { noLog: true });
 				}
 			},
 			input: {
@@ -1091,14 +1092,8 @@ const Win = {
 			}, { noLog: true });
 	},
 	toggleMediaPlayback: function() {
-		Win.PowerShell(['cd ' + Win.path`${__dirname}`, '\\nircmd.exe sendkeypress 0xB3'])
+		nircmd('sendkeypress 0xB3');
 	}
 }
-
-// This doesn't work unless its run once before running outside of this file
-function audioDetection() {
-	Win.PowerShell(supplementals.AudioDetection, () => {  }, {noLog: true});
-}
-audioDetection();
 
 module.exports = Win;

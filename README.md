@@ -26,7 +26,6 @@ With `windows-interact`, NodeJS gains the following functionality:
 I am working on fixing one last major bug with the new PowerShell session manager. After this, 1.1.8 should be ready for primetime
 
 New in version (1.1.8): 
- - Added `Win.get.audioDevices.output.isPlaying`. Windows-interact can now detect if audio is playing!
  - Added `Win.process.getPidByWindowTitle()`
  - `Win.PowerShell()` now has a built in session manager!
    - `Win.PowerShell.addCommand()` to issue a new command
@@ -36,6 +35,7 @@ New in version (1.1.8):
    - `ID` - Assign an identity to this PowerShell session in order to issue a new command or end it at a later time.
 
  What's changed:
+ - Tons of bug fixes, maybe a few new bugs I haven't found yet (Report them for me? Thanks!)
  - The appManager has been refactored to allow naming an app with any name when registering
  - Fixes a lot of commands that would fail if your directory had a space in it
  - Adjusted `Win.process.kill()` to allow killing by PID
@@ -44,12 +44,12 @@ New in version (1.1.8):
  - LOTS of fixes to how `Win.PowerShell()` collects output and errors when using multiple commands. ~95% quirk-free! Still working on it, but it's _much_ better than last version.
  
  What's next: 
- - I'm working on a PowerShell session manager. It's pretty early, but it's already in use internally by Win.stopAudio().
+ - There will be a lot of refactoring coming soon, this project is getting massive and its time to split it up a little
+  - Planning on adding `Win.get.audioDevices.output.isPlaying`, but it the direct code only works from external scripts, not from Windows-interact itself. This will be coming soon!
  - Planning on a categories for appManager, which would allow for group launching & killing, or doing something generic whenever you would launch any app listed in that category.
  - Planning on removing dependency on requestify, perhaps building my own wrapper for nodes' native request methods with zero dependencies
- - The whole project will be moved to typescript. Not soon, but in the near future.
  - I'm still recovering from a layoff, so development isn't as active as it could be. But I assure you, development is still alive and kicking :)
- - Got ideas? Contact me. 
+ - Got ideas? Contact me or open an issue. 
 
 Completely open to new features. Submit an issue labeled "Feature request" or contact me on twitter @[Arlodottxt](https://twitter.com/Arlodottxt) with your suggestions.
 
@@ -584,7 +584,7 @@ You can run a single powershell command by passing a string, or run multiple com
 
 When you pass an array to run multiple commands, the returned output and errors will be an array, not a string.
 
-**NOTE**: It will do its best to seperate the outputs using tactics such as delaying each commands' execution a bit and only collecting the output for a command postbounce, but there are still some quirks. For example, if the first command takes longer than the last command, it mess up the output a bit. 
+**NOTE**: It will do its best to seperate the outputs using tactics such as delaying each commands' execution a bit and only collecting the output for a command postbounce, but there are still some quirks.
 
 This is playing with real power. See [here](https://docs.microsoft.com/en-us/powershell/module/?view=powershell-6) and [here](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/?view=powershell-6) for resources on what you can do with PowerShell to automate and interact with Windows, beyond what Windows interact provides
 
