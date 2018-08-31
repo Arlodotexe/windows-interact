@@ -26,6 +26,7 @@ With `windows-interact`, NodeJS gains the following functionality:
 I am working on fixing one last major bug with the new PowerShell session manager. After this, 1.1.8 should be ready for primetime
 
 New in version (1.1.8): 
+ - Added `Win.get.audioDevices.output.isPlaying`. Windows-interact can now detect if audio is playing!
  - Added `Win.process.getPidByWindowTitle()`
  - `Win.PowerShell()` now has a built in session manager!
    - `Win.PowerShell.addCommand()` to issue a new command
