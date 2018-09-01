@@ -510,20 +510,20 @@ const Win = {
 					child.stdin.end();
 				}
 
-				function newCommand(command, id, cb, options) {
-					if (typeof command == 'array' || typeof command == 'object') {
-						Win.log('For now, newCommands for existing PowerShell sessions must be a single command, not an array. Your array will be joined with a "; " and executed, but the output for all commands will be returned as a single string', { colour: 'yellow' });
-						command = command.join('; ');
+				function newCommand(command, cb, options) {
+					if (!(typeof command == 'array' || typeof command == 'object')) {
+						command = [command];
 					}
-					if (options == undefined) options = {};
+					if (options == undefined || (options && !options.id)) Win.error('The options parameter and value "id" is required for new commands');
 					psVars.self = { out: [], err: [] };
 					psVars.checkingIfDone = false, psVars.triggered = false;
 					psVars.outputBin = '', psVars.errorBin = '';
 
-					options.id = id;
 					options.existingSession = true;
 					setParams(command, cb, options);
-					qCommand(command, { ...options });
+					for (let i in command) {
+						qCommand(command, { ...options });
+					}
 				}
 
 				for (let i in command) {
@@ -559,12 +559,12 @@ const Win = {
 			}
 		}
 
-		fn.newCommand = function(id, command, callback, options) {
+		fn.newCommand = function(command, callback, options) {
 
 			tryForUntil(10, 1500, 'psVars.powerShellSessions.length > 0', () => {
 				if ((function() {
 					for (let i in psVars.powerShellSessions) {
-						if (psVars.powerShellSessions[i].id == id) {
+						if (psVars.powerShellSessions[i].id == options.id) {
 							return true;
 						} else if (i == psVars.powerShellSessions.length - 1) {
 							return false;
@@ -573,19 +573,19 @@ const Win = {
 				})()) {
 					(once(() => {
 						for (let i = 0; i < psVars.powerShellSessions.length; i++) {
-							if (psVars.powerShellSessions[i].id = id) {
-								psVars.powerShellSessions[i].newCommand(command, id, callback, options);
+							if (psVars.powerShellSessions[i].id = options.id) {
+								psVars.powerShellSessions[i].newCommand(command, callback, options);
 								i = psVars.powerShellSessions.length;
 							}
 						}
 					}))();
 				} else {
-					if (isVerbose('PowerShell')) Win.log('Could not find PowerShell session "' + id + '". Retrying...', { colour: 'yellow' });
+					if (isVerbose('PowerShell')) Win.log('Could not find PowerShell session "' + options.id + '". Retrying...', { colour: 'yellow' });
 				}
 			}, () => {
 				if (isVerbose('PowerShell')) Win.log('No PowerShell sessions are alive', { colour: 'yellow' });
 			}, () => {
-				//if (isVerbose('PowerShell')) Win.log(`PowerShell session "${id}" found!`, { colour: 'yellow' });
+				//if (isVerbose('PowerShell')) Win.log(`PowerShell session "${options.id}" found!`, { colour: 'yellow' });
 			});
 		}
 

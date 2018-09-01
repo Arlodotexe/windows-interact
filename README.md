@@ -43,6 +43,10 @@ New in version (1.1.8):
  - The callback for `Win.PowerShell()` now fires after the commands have completed, instead of when the session is ended.
  - LOTS of fixes to how `Win.PowerShell()` collects output and errors when using multiple commands. ~95% quirk-free! Still working on it, but it's _much_ better than last version.
  
+ Known issues: 
+ - `Win.PowerShell()`:
+   - If the first command does not have any output or errors (such as `Start-Sleep` or assigning a variable with `$var = "something"`), the callback will never be called. This is because Win.PowerShell waits for output to stop being collected for a certain amount of time so it can get the output for only a single command, so if a command never gives any output, it will never know that a command has finished.
+
  What's next: 
  - There will be a lot of refactoring coming soon, this project is getting massive and its time to split it up a little.
  - Most or all methods will be converted to Promises instead of callbacks
