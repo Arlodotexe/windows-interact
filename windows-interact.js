@@ -421,12 +421,12 @@ const Win = {
 
 				function pushOutput() {
 					if (psVars.outputBin !== '\n' && psVars.outputBin !== '\r' && psVars.outputBin !== '\r\n' && psVars.outputBin !== '') {
-						psVars.self.out.push(replaceAll(psVars.outputBin, 'End Win.PowerShell() command', ''));
+						psVars.self.out.push(replaceAll(psVars.outputBin, 'End Win.PowerShell() command\n', ''));
 					}
 
 					if (psVars.outputBin.toString().trim() !== '' && psVars.commandq.length > 0 && !(psVars.commandq[0].options && psVars.commandq[0].options.noLog === true)) {
-						psVars.outputBin = replaceAll(psVars.outputBin, 'End Win.PowerShell() command', '');
-						Win.log((psVars.commandq.length > 0 && (psVars.commandq[0].options && psVars.commandq[0].options.keepAlive && psVars.commandq[0].options.id) ? 'PowerShell session "' + psVars.commandq[0].options.id + '":\n' : '') + psVars.outputBin.toString().trim());
+						psVars.outputBin = replaceAll(psVars.outputBin, 'End Win.PowerShell() command\n', '');
+						Win.log((psVars.commandq.length > 0 && (psVars.commandq[0].options && psVars.commandq[0].options.keepAlive && psVars.commandq[0].options.id) ? '\x1b[33mPowerShell session "' + psVars.commandq[0].options.id + '":\x1b[0m\n' : '') + psVars.outputBin.toString().trim());
 					}
 
 					if (psVars.outputBin.trim() !== '') pushErrors();
