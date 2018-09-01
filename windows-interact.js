@@ -447,7 +447,7 @@ const Win = {
 					}
 					psVars.errorBin = '';
 
-					if (psVars.commandq[0] && psVars.commandq[0].options && psVars.commandq[0].options.id) {
+					if (psVars.commandq[0] && psVars.commandq[0].options && psVars.commandq[0].options.id && options.keepAlive == true && options.existingSession == undefined) {
 						(once(keepAlive(psVars.commandq[0])))();
 					}
 
@@ -480,13 +480,14 @@ const Win = {
 						runNextInQ();
 					} else if (options && options.id && options.existingSession) {
 						// This is a new command for an existing session
-						setTimeout(() => {
-							for (let i in psVars.powerShellSessions) {
-								if (psVars.powerShellSessions[i].id == options.id) {
+						for (let i in psVars.powerShellSessions) {
+							if (psVars.powerShellSessions[i].id == options.id) {
+								setTimeout(() => {
 									psVars.powerShellSessions[i].child.stdin.write(`${psVars.commandq[0].command}\r\n`);
-								}
+								}, 800);
+								break;
 							}
-						}, 800);
+						}
 					}
 				}
 
@@ -519,9 +520,9 @@ const Win = {
 					psVars.checkingIfDone = false, psVars.triggered = false;
 					psVars.outputBin = '', psVars.errorBin = '';
 
-					setParams(command, cb, options);
 					options.id = id;
 					options.existingSession = true;
+					setParams(command, cb, options);
 					qCommand(command, { ...options });
 				}
 
@@ -535,7 +536,8 @@ const Win = {
 						setTimeout(() => {
 							if (typeof callback == 'function' && command.length > 1) callback(psVars.self.out, psVars.self.err);
 							else if (typeof callback == 'function') callback(psVars.self.out.toString(), psVars.self.err.toString());
-							if (!(options && options.keepAlive == true && options.existingSession == true)) {
+							
+							if (!(options && (options.existingSession == true || options.keepAlive == true))) {
 								child.stdin.end();
 
 								psVars.self = { out: [], err: [] };
