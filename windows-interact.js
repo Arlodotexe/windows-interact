@@ -372,6 +372,8 @@ const Win = {
 			if (options && options.keepAlive && !options.id) Win.error('To keep a PowerShell session active, you must assign it an ID')
 			else if (options && options.keepAlive === true && options.id !== undefined) id = options.id;
 
+			callback = once(callback);
+
 			function getPowerShellSession(cb) {
 				for (let i in psVars.powerShellSessions) {
 					if (psVars.powerShellSessions[i].id == options.id) {
@@ -384,7 +386,7 @@ const Win = {
 
 			function setParams(cmd, cb, opts) {
 				command = cmd;
-				callback = cb;
+				callback = once(cb);
 				options = opts;
 			}
 
@@ -419,10 +421,11 @@ const Win = {
 
 				function pushOutput() {
 					if (psVars.outputBin !== '\n' && psVars.outputBin !== '\r' && psVars.outputBin !== '\r\n' && psVars.outputBin !== '') {
-						psVars.self.out.push(psVars.outputBin.trim());
+						psVars.self.out.push(replaceAll(psVars.outputBin, 'End Win.PowerShell() command', ''));
 					}
 
 					if (psVars.outputBin.toString().trim() !== '' && psVars.commandq.length > 0 && !(psVars.commandq[0].options && psVars.commandq[0].options.noLog === true)) {
+						psVars.outputBin = replaceAll(psVars.outputBin, 'End Win.PowerShell() command', '');
 						Win.log((psVars.commandq.length > 0 && (psVars.commandq[0].options && psVars.commandq[0].options.keepAlive && psVars.commandq[0].options.id) ? 'PowerShell session "' + psVars.commandq[0].options.id + '":\n' : '') + psVars.outputBin.toString().trim());
 					}
 
@@ -465,7 +468,7 @@ const Win = {
 
 				function runNextInQ() {
 					if (psVars.commandq.length > 0) {
-						child.stdin.write(`${psVars.commandq[0].command}\r\n`);
+						child.stdin.write(`${psVars.commandq[0].command + '; write-host "End Win.PowerShell() command"'}\r\n`);
 					}
 				}
 
@@ -483,7 +486,7 @@ const Win = {
 						for (let i in psVars.powerShellSessions) {
 							if (psVars.powerShellSessions[i].id == options.id) {
 								setTimeout(() => {
-									psVars.powerShellSessions[i].child.stdin.write(`${psVars.commandq[0].command}\r\n`);
+									psVars.powerShellSessions[i].child.stdin.write(`${psVars.commandq[0].command  + '; write-host "End Win.PowerShell() command"'}\r\n`);
 								}, 800);
 								break;
 							}
