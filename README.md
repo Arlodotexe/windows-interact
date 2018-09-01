@@ -34,7 +34,7 @@ New in version (1.1.8):
    - `keepAlive` - Do not end the child process when the command(s) are completed
    - `ID` - Assign an identity to this PowerShell session in order to issue a new command or end it at a later time.
 
- What's changed:
+ What's changed: 
  - Tons of bug fixes, maybe a few new bugs I haven't found yet (Report them for me? Thanks!)
  - The appManager has been refactored to allow naming an app with any name when registering
  - Fixes a lot of commands that would fail if your directory had a space in it
@@ -44,8 +44,9 @@ New in version (1.1.8):
  - LOTS of fixes to how `Win.PowerShell()` collects output and errors when using multiple commands. ~95% quirk-free! Still working on it, but it's _much_ better than last version.
  
  What's next: 
- - There will be a lot of refactoring coming soon, this project is getting massive and its time to split it up a little
-  - Planning on adding `Win.get.audioDevices.output.isPlaying`, but it the direct code only works from external scripts, not from Windows-interact itself. This will be coming soon!
+ - There will be a lot of refactoring coming soon, this project is getting massive and its time to split it up a little.
+ - Most or all methods will be converted to Promises instead of callbacks
+ - Planning on adding `Win.get.audioDevices.output.isPlaying`, but it the direct code only works from external scripts, not from Windows-interact itself. This will be coming soon!
  - Planning on a categories for appManager, which would allow for group launching & killing, or doing something generic whenever you would launch any app listed in that category.
  - Planning on removing dependency on requestify, perhaps building my own wrapper for nodes' native request methods with zero dependencies
  - I'm still recovering from a layoff, so development isn't as active as it could be. But I assure you, development is still alive and kicking :)
@@ -805,8 +806,10 @@ chain();
 
 // Super simple self-executing async function
 (async()=>{
-    if(await Win.prompt('Do you like Pie?')) {
+    if(await Win.prompt('Do you like Pie?') == 'Yes') {
         await Win.alert('Me too!');
+    } else {
+        Win.alert('More for me');
     }
 })();
 

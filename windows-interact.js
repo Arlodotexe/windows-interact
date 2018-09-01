@@ -784,18 +784,27 @@ const Win = {
 	},
 	process: {
 		getPid: function(processName, callback) {
-			Win.PowerShell('get-process -ProcessName "' + replaceAll(processName, '.exe', '') + '" | Format-Table id', (stdout, stderr) => {
-				stdout = replaceAll(stdout, 'Id', '');
-				stdout = replaceAll(stdout, '--', '');
-				stdout = replaceAll(stdout, '\r', '');
-				stdout = stdout.trim();
-				stdout = stdout.split('\n');
-				stdout = stdout.filter(String);
-				callback((!stdout.length ? false : stdout));
-			}, { noLog: true, suppressErrors: true });
+			return new Promise(resolve => {
+				Win.PowerShell('get-process -ProcessName "' + replaceAll(processName, '.exe', '') + '" | Format-Table id', (stdout, stderr) => {
+					stdout = replaceAll(stdout, 'Id', '');
+					stdout = replaceAll(stdout, '--', '');
+					stdout = replaceAll(stdout, '\r', '');
+					stdout = stdout.trim();
+					stdout = stdout.split('\n');
+					stdout = stdout.filter(String);
+					if (callback) callback((!stdout.length ? false : stdout));
+					resolve((!stdout.length ? false : stdout));
+				}, { noLog: true, suppressErrors: true });
+			});
 		},
 		kill: function(nameOrPid) {
-			if (nameOrPid != '' && nameOrPid != undefined && nameOrPid != null) Win.cmd('taskkill /F /IM "' + nameOrPid + '"');
+			return new Promise(resolve => {
+				if (nameOrPid != '' && nameOrPid != undefined && nameOrPid != null) {
+					Win.cmd('taskkill /F /IM "' + nameOrPid + '"', () => {
+						resolve();
+					});
+				}
+			});
 		},
 		onKill: function(appName, callback) {
 			Win.PowerShell('Wait-Process -Name ' + appName, function(stdout, stderr) {
@@ -810,44 +819,57 @@ const Win = {
 			}, { noLog: true, suppressErrors: true });
 		},
 		getWindowTitle: function(processName, callback) {
-			Win.PowerShell('get-process "' + replaceAll(processName, '.exe', '') + '" | select MainWindowTitle', function(stdout) {
-				output = '' + stdout;
-				output = replaceAll(output, 'MainWindowTitle', '');
-				output = replaceAll(output, '---------------', '');
-				output = output.trim();
-				if (output == '') output = false;
-				callback(output);
-			}, { noLog: true, suppressErrors: true });
+			return new Promise(resolve => {
+				Win.PowerShell('get-process "' + replaceAll(processName, '.exe', '') + '" | select MainWindowTitle', function(stdout) {
+					output = '' + stdout;
+					output = replaceAll(output, 'MainWindowTitle', '');
+					output = replaceAll(output, '---------------', '');
+					output = output.trim();
+					if (output == '') output = false;
+					if (callback) callback(output);
+					resolve(output);
+				}, { noLog: true, suppressErrors: true });
+			});
 		},
 		getPidByWindowTitle: function(windowTitle, callback) {
-			Win.PowerShell('get-process | select ID, MainWindowTitle', stdout => {
-				if (stdout.includes(windowTitle)) {
+			return new Promise(resolve => {
+				Win.PowerShell('get-process | select ID, MainWindowTitle', stdout => {
+					if (stdout.includes(windowTitle)) {
 
-					stdout = replaceAll(stdout, ',', '');
-					stdout = stdout.split('\r\n');
-					for (let i in stdout) {
-						if (stdout[i].includes(windowTitle)) {
-							if (typeof callback == 'function') callback(stdout[i].replace(/[^0-9]/g, ""));
+						stdout = replaceAll(stdout, ',', '');
+						stdout = stdout.split('\r\n');
+						for (let i in stdout) {
+							if (stdout[i].includes(windowTitle)) {
+								resolve(stdout[i].replace(/[^0-9]/g, ""));
+								if (typeof callback == 'function') callback(stdout[i].replace(/[^0-9]/g, ""));
+							}
+						}
+					} else {
+						Win.error('Window title not found');
+						if (typeof callback == "function") {
+							callback(undefined);
+							resolve(undefined);
 						}
 					}
-				} else {
-					Win.error('Window title not found');
-					if (typeof callback == "function") {
-
-					}
-				}
-			}, { noLog: true, suppressErrors: true });
+				}, { noLog: true, suppressErrors: true });
+			});
 		},
 		isRunning: function(processName, callback) {
-			try {
-				Win.PowerShell('get-process "' + processName + '" | select ProcessName', (stdout) => {
-					if (stdout.includes(processName)) callback(true);
-					else callback(false);
-				});
-			} catch (error) {
-				Win.error(error);
-				callback(false);
-			}
+			return new Promise(resolve, reject => {
+				try {
+					Win.PowerShell('get-process "' + processName + '" | select ProcessName', (stdout) => {
+						if (stdout.includes(processName)) {
+							callback(true); resolve(true);
+						} else {
+							callback(false); resolve(false);
+						}
+					}, { noLog: true, suppressErrors: true });
+				} catch (error) {
+					Win.error(error);
+					callback(false);
+					reject(error);
+				}
+			});
 		}
 	},
 	get: {

@@ -14,7 +14,7 @@ New in this version:
     - Check/Set default device
     - All of the above are available for input AND output devices!
 
- What's changed:
+ What's changed: 
  - Dependency on robot.js has been removed. Huzzah!
  - Removed `Win.Cortana()`. This hasn't been working on slower machines (my bad) and would require a massive amount of work to do properly. Likely to return in a future update.
  - `Win.pauseMedia()` is now `Win.toggleMediaPlayback()`
