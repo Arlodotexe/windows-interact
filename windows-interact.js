@@ -15,10 +15,6 @@ let psVars = {
 	errorBin: ''
 };
 
-setInterval(_ => {
-/* 	console.log('COMMANDQ: ', psVars.commandq)
- */}, 800)
-
 function endsWith(search, suffix) {
 	return search.indexOf(suffix, search.length - suffix.length) !== -1;
 };

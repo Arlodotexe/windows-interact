@@ -23,16 +23,16 @@ With `windows-interact`, NodeJS gains the following functionality:
 
 ## Current development status
 
-I am working on fixing one last major bug with the new PowerShell session manager. After this, 1.1.8 should be ready for primetime
+New release **soon**! I have been looking forward to this for a long time, becaus this release bring the [PowerShell session manager](https://github.com/Arlodotexe/windows-interact#winpowershell)! More advanced than [node-powershell](https://www.npmjs.com/package/node-powershell), with automatic output collection and the ability to run multiple command in succession by passing in array. 
 
 New in version (1.1.8): 
- - Added `Win.process.getPidByWindowTitle()`
  - `Win.PowerShell()` now has a built in session manager!
    - `Win.PowerShell.addCommand()` to issue a new command
    -  `Win.PowerShell.end()` to end a session
  - New options for `Win.PowerShell()`'s `options` parameter: 
    - `keepAlive` - Do not end the child process when the command(s) are completed
    - `ID` - Assign an identity to this PowerShell session in order to issue a new command or end it at a later time.
+ - Added `Win.process.getPidByWindowTitle()`
 
  What's changed: 
  - Tons of bug fixes, maybe a few new bugs I haven't found yet (Report them for me? Thanks!)
@@ -45,7 +45,9 @@ New in version (1.1.8):
  
  Known issues: 
  - `Win.PowerShell()`:
-   - If the first command does not have any output or errors (such as `Start-Sleep` or assigning a variable with `$var = "something"`), the callback will never be called. This is because Win.PowerShell waits for output to stop being collected for a certain amount of time so it can get the output for only a single command, so if a command never gives any output, it will never know that a command has finished.
+   - Using `Start-Sleep` with any value greater than 800ms will cause some very odd issues with the internals of `Win.PowerShell()`. This is because 800ms is the extra time that each command is manually seperated to better discern output. This will be fixed in the next update, but for now, avoid using `Start-Sleep` if possible
+ - `Win.notify()`:
+   - `notify` is broken on Windows 10 insider build 17746. This may fix itself, but if not, it will be fixed manually
 
  What's next: 
  - There will be a lot of refactoring coming soon, this project is getting massive and its time to split it up a little.
