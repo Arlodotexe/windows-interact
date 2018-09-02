@@ -590,6 +590,20 @@ const Win = {
 			});
 		}
 
+		fn.isSessionActive = function(id, callback) {
+			if (psVars.powerShellSessions.length > 0) {
+				for (let i in psVars.powerShellSessions) {
+					if (psVars.powerShellSessions[i].id == id) {
+						callback(true);
+					} else if (i = psVars.powerShellSessions.length) {
+						callback(false);
+					}
+				}
+			} else {
+				callback(false);
+			}
+		}
+
 		fn.endSession = function(id, callback) {
 			for (let i in psVars.powerShellSessions) {
 				if (psVars.powerShellSessions[i].id == id) {
@@ -709,61 +723,73 @@ const Win = {
 					}
 				}
 
-				Win.appManager.appWatcher = function() {
-					Win.PowerShell('get-process "' + apps.join('", "') + '" | select ProcessName, MainWindowTitle', (stdout) => {
-						for (let i in apps) {
-							let appName = apps[i];
-							if (stdout.includes(appName)) {
-								setIsRunning(appName, true);
-								setTimeout(() => {
-									setWasRunning(appName, true);
-								}, (Win.prefs.appManagerRefreshInterval ? Win.prefs.appManagerRefreshInterval / 2 : 2500));
-							} else {
-								setIsRunning(appName, false);
-								setTimeout(() => {
-									setWasRunning(appName, false);
-								}, (Win.prefs.appManagerRefreshInterval ? Win.prefs.appManagerRefreshInterval / 2 : 2500));
-							}
-
-							if (!getIsRunning(appName) && getWasRunning(appName) && Win.appManager.registeredApps[appName].onKill) {
-								Win.appManager.registeredApps[getNameByProcessName(appName)].onKill();
-							}
-							if (!getIsRunning(appName) && getWasRunning(appName)) {
-								for (let i in groups) {
-									if (groups[i].apps.includes(getNameByProcessName(appName)) && groups[i].onKill) {
-										groups[i].onKill();
-									}
-								}
-							}
-
-							if (!registrationComplete) registrationComplete = true;
-
-							if (registrationComplete && getIsRunning(appName) && !getWasRunning(appName) && Win.appManager.registeredApps[getNameByProcessName(appName)].onLaunch) {
-								Win.appManager.registeredApps[getNameByProcessName(appName)].onLaunch();
-							}
-
-							if (registrationComplete && getIsRunning(appName) && !getWasRunning(appName)) {
-								for (let i in groups) {
-									if (groups[i].apps.includes(getNameByProcessName(appName)) && groups[i].onLaunch) {
-										groups[i].onLaunch();
-									}
-								}
-							}
-
-							windowTitle = stdout.substr(stdout.lastIndexOf('\n' + appName));
-							windowTitle = windowTitle.substring(0, windowTitle.indexOf('\r'));
-							windowTitle = replaceAll(windowTitle, appName, '').trim();
-							if (windowTitle == '') windowTitle = null;
-
-							for (let i in Win.appManager.registeredApps) {
-								if (Win.appManager.registeredApps[i].path.includes(appName)) {
-									return Win.appManager.registeredApps[i].windowTitle = windowTitle;
-								}
-							}
-							Win.appManager.registeredApps[appName].windowTitle = windowTitle;
+				function appWatchProcessing(stdout) {
+					for (let i in apps) {
+						let appName = apps[i];
+						if (stdout.includes(appName)) {
+							setIsRunning(appName, true);
+							setTimeout(() => {
+								setWasRunning(appName, true);
+							}, (Win.prefs.appManagerRefreshInterval ? Win.prefs.appManagerRefreshInterval / 2 : 2500));
+						} else {
+							setIsRunning(appName, false);
+							setTimeout(() => {
+								setWasRunning(appName, false);
+							}, (Win.prefs.appManagerRefreshInterval ? Win.prefs.appManagerRefreshInterval / 2 : 2500));
 						}
 
-					}, { noLog: true, suppressErrors: true });
+						if (!getIsRunning(appName) && getWasRunning(appName) && Win.appManager.registeredApps[appName].onKill) {
+							Win.appManager.registeredApps[getNameByProcessName(appName)].onKill();
+						}
+						if (!getIsRunning(appName) && getWasRunning(appName)) {
+							/* for (let i in groups) {
+								if (groups[i].apps.includes(getNameByProcessName(appName)) && groups[i].onKill) {
+									groups[i].onKill();
+								}
+							} */
+						}
+
+						if (!registrationComplete) registrationComplete = true;
+
+						if (registrationComplete && getIsRunning(appName) && !getWasRunning(appName) && Win.appManager.registeredApps[getNameByProcessName(appName)].onLaunch) {
+							Win.appManager.registeredApps[getNameByProcessName(appName)].onLaunch();
+						}
+
+						if (registrationComplete && getIsRunning(appName) && !getWasRunning(appName)) {
+							/* for (let i in groups) {
+								if (groups[i].apps.includes(getNameByProcessName(appName)) && groups[i].onLaunch) {
+									groups[i].onLaunch();
+								}
+							} */
+						}
+
+						windowTitle = stdout.substr(stdout.lastIndexOf('\n' + appName));
+						windowTitle = windowTitle.substring(0, windowTitle.indexOf('\r'));
+						windowTitle = replaceAll(windowTitle, appName, '').trim();
+						if (windowTitle == '') windowTitle = null;
+
+						for (let i in Win.appManager.registeredApps) {
+							if (Win.appManager.registeredApps[i].path.includes(appName)) {
+								return Win.appManager.registeredApps[i].windowTitle = windowTitle;
+							}
+						}
+						Win.appManager.registeredApps[appName].windowTitle = windowTitle;
+					}
+				}
+
+				Win.appManager.appWatcher = function() {
+					Win.PowerShell.isSessionActive('wi-appWatcher', result => {
+						if (!result) {
+							Win.PowerShell('get-process "' + apps.join('", "') + '" | select ProcessName, MainWindowTitle', (stdout) => {
+								appWatchProcessing(stdout);
+							}, { noLog: true, suppressErrors: true, keepAlive: true, id: 'wi-appWatcher' });
+						} else {
+							Win.PowerShell.newCommand('get-process "' + apps.join('", "') + '" | select ProcessName, MainWindowTitle', (stdout) => {
+								appWatchProcessing(stdout);
+							}, { noLog: true, suppressErrors: true, keepAlive: true, id: 'wi-appWatcher' });
+						}
+					});
+
 
 					setTimeout(() => {
 						Win.appManager.appWatcher();
