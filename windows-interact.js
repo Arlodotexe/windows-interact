@@ -15,6 +15,8 @@ let psVars = {
 	errorBin: ''
 };
 
+let apps = [], groups = [];
+
 function endsWith(search, suffix) {
 	return search.indexOf(suffix, search.length - suffix.length) !== -1;
 };
@@ -482,7 +484,7 @@ const Win = {
 						for (let i in psVars.powerShellSessions) {
 							if (psVars.powerShellSessions[i].id == options.id) {
 								setTimeout(() => {
-									psVars.powerShellSessions[i].child.stdin.write(`${psVars.commandq[0].command  + '; write-host "End Win.PowerShell() command"'}\r\n`);
+									psVars.powerShellSessions[i].child.stdin.write(`${psVars.commandq[0].command + '; write-host "End Win.PowerShell() command"'}\r\n`);
 								}, 800);
 								break;
 							}
@@ -535,7 +537,7 @@ const Win = {
 						setTimeout(() => {
 							if (typeof callback == 'function' && command.length > 1) callback(psVars.self.out, psVars.self.err);
 							else if (typeof callback == 'function') callback(psVars.self.out.toString(), psVars.self.err.toString());
-							
+
 							if (!(options && (options.existingSession == true || options.keepAlive == true))) {
 								child.stdin.end();
 
@@ -632,123 +634,156 @@ const Win = {
 	},
 	appManager: {
 		registeredApps: {},
-		register: function(obj) {
-			let apps = [];
-			let registrationComplete = false;
+		register: (function() {
 
-			Object.entries(obj).forEach(([appName, props]) => {
-				if (appName == undefined) Win.error('Name not defined for registered app. You need to define a name and path to the application.');
-				else if (props.path == undefined && appName) Win.error('Path not defined for registered app: ' + appName);
+			let fn = function(obj) {
+				let registrationComplete = false;
 
-				props.id = Object.keys(Win.appManager.registeredApps).length + 1;
-				Win.appManager.registeredApps[appName] = props;
-				Win.appManager.registeredApps[appName].name = appName;
+				Object.entries(obj).forEach(([appName, props]) => {
+					if (appName == undefined) Win.error('Name not defined for registered app. You need to define a name and path to the application.');
+					else if (props.path == undefined && appName) Win.error('Path not defined for registered app: ' + appName);
 
-				//Handle and parse app path
-				let appPath = Win.appManager.registeredApps[appName].path;
-				if (!(appPath.slice(-1) == '"' && appPath.charAt(0) == '"')) appPath = '"' + appPath + '"';
-				Win.appManager.registeredApps[appName].path = appPath;
+					props.id = Object.keys(Win.appManager.registeredApps).length + 1;
+					Win.appManager.registeredApps[appName] = props;
+					Win.appManager.registeredApps[appName].name = appName;
 
-				//Handle and parse process name
-				let processName = appPath.substr(appPath.lastIndexOf(`\\\\`));
-				processName = replaceAll(processName, '\\\\', '');
-				processName = replaceAll(processName, '"', '');
-				Win.appManager.registeredApps[appName].processName = processName;
+					//Handle and parse app path 
+					let appPath = Win.appManager.registeredApps[appName].path;
+					if (!(appPath.slice(-1) == '"' && appPath.charAt(0) == '"')) appPath = '"' + appPath + '"';
+					Win.appManager.registeredApps[appName].path = appPath;
 
-				apps.push(replaceAll(processName, '.exe', ''));
-			});
+					//Handle and parse process name 
+					let processName = appPath.substr(appPath.lastIndexOf(`\\\\`));
+					processName = replaceAll(processName, '\\\\', '');
+					processName = replaceAll(processName, '"', '');
+					Win.appManager.registeredApps[appName].processName = processName;
 
-			function setIsRunning(processName, bool) {
-				for (let i in Win.appManager.registeredApps) {
-					if (Win.appManager.registeredApps[i].path.includes(processName)) {
-						Win.appManager.registeredApps[i].isRunning = bool;
-					} else if (i == Win.appManager.registeredApps.length) {
-						Win.appManager.registeredApps[i].isRunning = null;
-					}
-				}
-			}
+					apps.push(replaceAll(processName, '.exe', ''));
+				});
 
-			function setWasRunning(processName, bool) {
-				for (let i in Win.appManager.registeredApps) {
-					if (Win.appManager.registeredApps[i].path.includes(processName)) {
-						Win.appManager.registeredApps[i].wasRunning = bool;
-					} else if (i == Win.appManager.registeredApps.length) {
-						Win.appManager.registeredApps[i].wasRunning = null;
-					}
-				}
-			}
-
-			function getIsRunning(processName) {
-				for (let i in Win.appManager.registeredApps) {
-					if (Win.appManager.registeredApps[i].path.includes(processName) && Win.appManager.registeredApps[i].isRunning !== undefined) {
-						return Win.appManager.registeredApps[i].isRunning;
-					} else if (i == Win.appManager.registeredApps.length) {
-						return false;
-					}
-				}
-			}
-
-			function getWasRunning(processName) {
-				for (let i in Win.appManager.registeredApps) {
-					if (Win.appManager.registeredApps[i].path.includes(processName) && Win.appManager.registeredApps[i].wasRunning !== undefined) {
-						return Win.appManager.registeredApps[i].wasRunning;
-					} else if (i == Win.appManager.registeredApps.length) {
-						return false;
-					}
-				}
-			}
-
-			function getNameByProcessName(processName) {
-				for (let i in Win.appManager.registeredApps) {
-					if (Win.appManager.registeredApps[i].path.includes(processName)) {
-						return Win.appManager.registeredApps[i].name.toString();
-					}
-				}
-			}
-
-			Win.appManager.appWatcher = function() {
-				Win.PowerShell('get-process "' + apps.join('", "') + '" | select ProcessName, MainWindowTitle', (stdout) => {
-					for (let i in apps) {
-						let appName = apps[i];
-						if (stdout.includes(appName)) {
-							setIsRunning(appName, true);
-							setTimeout(() => {
-								setWasRunning(appName, true);
-							}, (Win.prefs.appManagerRefreshInterval ? Win.prefs.appManagerRefreshInterval / 2 : 2500));
-						} else {
-							setIsRunning(appName, false);
-							setTimeout(() => {
-								setWasRunning(appName, false);
-							}, (Win.prefs.appManagerRefreshInterval ? Win.prefs.appManagerRefreshInterval / 2 : 2500));
+				function setIsRunning(processName, bool) {
+					for (let i in Win.appManager.registeredApps) {
+						if (Win.appManager.registeredApps[i].path.includes(processName)) {
+							Win.appManager.registeredApps[i].isRunning = bool;
+						} else if (i == Win.appManager.registeredApps.length) {
+							Win.appManager.registeredApps[i].isRunning = null;
 						}
+					}
+				}
 
-						if (!getIsRunning(appName) && getWasRunning(appName) && Win.appManager.registeredApps[appName].onKill) Win.appManager.registeredApps[getNameByProcessName(appName)].onKill();
-						if (!registrationComplete) registrationComplete = true;
-						if (registrationComplete && getIsRunning(appName) && !getWasRunning(appName) && Win.appManager.registeredApps[getNameByProcessName(appName)].onLaunch) Win.appManager.registeredApps[getNameByProcessName(appName)].onLaunch();
+				function setWasRunning(processName, bool) {
+					for (let i in Win.appManager.registeredApps) {
+						if (Win.appManager.registeredApps[i].path.includes(processName)) {
+							Win.appManager.registeredApps[i].wasRunning = bool;
+						} else if (i == Win.appManager.registeredApps.length) {
+							Win.appManager.registeredApps[i].wasRunning = null;
+						}
+					}
+				}
 
-						windowTitle = stdout.substr(stdout.lastIndexOf('\n' + appName));
-						windowTitle = windowTitle.substring(0, windowTitle.indexOf('\r'));
-						windowTitle = replaceAll(windowTitle, appName, '').trim();
-						if (windowTitle == '') windowTitle = null;
+				function getIsRunning(processName) {
+					for (let i in Win.appManager.registeredApps) {
+						if (Win.appManager.registeredApps[i].path.includes(processName) && Win.appManager.registeredApps[i].isRunning !== undefined) {
+							return Win.appManager.registeredApps[i].isRunning;
+						} else if (i == Win.appManager.registeredApps.length) {
+							return false;
+						}
+					}
+				}
 
-						for (let i in Win.appManager.registeredApps) {
-							if (Win.appManager.registeredApps[i].path.includes(appName)) {
-								return Win.appManager.registeredApps[i].windowTitle = windowTitle;
+				function getWasRunning(processName) {
+					for (let i in Win.appManager.registeredApps) {
+						if (Win.appManager.registeredApps[i].path.includes(processName) && Win.appManager.registeredApps[i].wasRunning !== undefined) {
+							return Win.appManager.registeredApps[i].wasRunning;
+						} else if (i == Win.appManager.registeredApps.length) {
+							return false;
+						}
+					}
+				}
+
+				function getNameByProcessName(processName) {
+					for (let i in Win.appManager.registeredApps) {
+						if (Win.appManager.registeredApps[i].path.includes(processName)) {
+							return Win.appManager.registeredApps[i].name.toString();
+						}
+					}
+				}
+
+				Win.appManager.appWatcher = function() {
+					Win.PowerShell('get-process "' + apps.join('", "') + '" | select ProcessName, MainWindowTitle', (stdout) => {
+						for (let i in apps) {
+							let appName = apps[i];
+							if (stdout.includes(appName)) {
+								setIsRunning(appName, true);
+								setTimeout(() => {
+									setWasRunning(appName, true);
+								}, (Win.prefs.appManagerRefreshInterval ? Win.prefs.appManagerRefreshInterval / 2 : 2500));
+							} else {
+								setIsRunning(appName, false);
+								setTimeout(() => {
+									setWasRunning(appName, false);
+								}, (Win.prefs.appManagerRefreshInterval ? Win.prefs.appManagerRefreshInterval / 2 : 2500));
 							}
+
+							if (!getIsRunning(appName) && getWasRunning(appName) && Win.appManager.registeredApps[appName].onKill) {
+								Win.appManager.registeredApps[getNameByProcessName(appName)].onKill();
+							}
+							if (!getIsRunning(appName) && getWasRunning(appName)) {
+								for (let i in groups) {
+									if (groups[i].apps.includes(getNameByProcessName(appName)) && groups[i].onKill) {
+										groups[i].onKill();
+									}
+								}
+							}
+
+							if (!registrationComplete) registrationComplete = true;
+
+							if (registrationComplete && getIsRunning(appName) && !getWasRunning(appName) && Win.appManager.registeredApps[getNameByProcessName(appName)].onLaunch) {
+								Win.appManager.registeredApps[getNameByProcessName(appName)].onLaunch();
+							}
+
+							if (registrationComplete && getIsRunning(appName) && !getWasRunning(appName)) {
+								for (let i in groups) {
+									if (groups[i].apps.includes(getNameByProcessName(appName)) && groups[i].onLaunch) {
+										groups[i].onLaunch();
+									}
+								}
+							}
+
+							windowTitle = stdout.substr(stdout.lastIndexOf('\n' + appName));
+							windowTitle = windowTitle.substring(0, windowTitle.indexOf('\r'));
+							windowTitle = replaceAll(windowTitle, appName, '').trim();
+							if (windowTitle == '') windowTitle = null;
+
+							for (let i in Win.appManager.registeredApps) {
+								if (Win.appManager.registeredApps[i].path.includes(appName)) {
+									return Win.appManager.registeredApps[i].windowTitle = windowTitle;
+								}
+							}
+							Win.appManager.registeredApps[appName].windowTitle = windowTitle;
 						}
-						Win.appManager.registeredApps[appName].windowTitle = windowTitle;
-					}
-				}, { noLog: true, suppressErrors: true });
 
-				setTimeout(() => {
-					Win.appManager.appWatcher();
-				}, (Win.prefs.appManagerRefreshInterval ? Win.prefs.appManagerRefreshInterval : 3000));
+					}, { noLog: true, suppressErrors: true });
+
+					setTimeout(() => {
+						Win.appManager.appWatcher();
+					}, (Win.prefs.appManagerRefreshInterval ? Win.prefs.appManagerRefreshInterval : 3000));
+
+				};
+				Win.appManager.appWatcher();
+			}
 
 
+			fn.group = function(obj) {
+				Object.entries(obj).forEach(([groupName, props]) => {
+					let entry = new Object;
+					entry[groupName] = props;
+					groups.push(entry);
+				});
 			};
-			Win.appManager.appWatcher();
 
-		},
+			return fn;
+		})(),
 		launch: function(appName) {
 			if (!Win.appManager.registeredApps[appName]) {
 				Win.error('Unable to launch requested application. The requested app is either not registered or misspelled');
