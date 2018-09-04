@@ -396,32 +396,40 @@ const Win = {
 	PowerShell: (function() {
 		let fn = function(command, callback, options) {
 
+
+			const spawn = require("child_process").spawn;
+			const child = spawn("powershell.exe", ["-Command", "-"]);
+			child.stdin.setEncoding('utf-8');
+
 			if (options && options.keepAlive && !options.id) Win.error('To keep a PowerShell session active, you must assign it an ID')
 			else if (options && options.keepAlive === true && options.id !== undefined) id = options.id;
 
 			callback = once(callback);
 
-			function getPowerShellSession(cb) {
+			function getPowerShellSession(child) {
 				for (let i in psVars.powerShellSessions) {
-					if (psVars.powerShellSessions[i].id == options.id) {
-						cb(psVars.powerShellSessions[i]);
+					if (typeof child == 'object' && psVars.powerShellSessions[i].child.pid == child.pid) {
+						return (psVars.powerShellSessions[i]);
 					} else if (i == psVars.powerShellSessions.length) {
-						cb();
+						return (undefined);
 					}
 				}
 			}
 
-			function setParams(cmd, cb, opts) {
+			function getCommandq(chld) {
+				if (chld == undefined) chld = child;
+				return getPowerShellSession(chld).commandq;
+			}
+
+			function setParams(cmd, cb, opts, chld) {
 				command = cmd;
 				callback = once(cb);
 				options = opts;
+				if (chld) child = chld;
 			}
 
 			try {
-				const spawn = require("child_process").spawn;
-				const child = spawn("powershell.exe", ["-Command", "-"]);
-				child.stdin.setEncoding('utf-8');
-
+				let outputTime, errTime;
 				if (typeof command == 'string') command = [command];
 
 				function keepAlive(data) {
@@ -433,81 +441,102 @@ const Win = {
 							id: data.options.id,
 							end: end,
 							newCommand: newCommand,
-							results: { output: psVars.self.out, errors: psVars.self.err }
+							results: { output: getPowerShellSession(child).out, errors: getPowerShellSession(child).err }
 						});
 					}
 				}
 
 				function collectOutput(data) {
-					if (data.toString() !== '') psVars.commandq[0].outputBin = psVars.commandq[0].outputBin + data.toString();
+					clearInterval(outputTime);
+					if (data.toString() !== '') getCommandq()[0].outputBin = getCommandq()[0].outputBin + data.toString();
+
+					outputTime = setTimeout(() => {
+						pushOutput();
+					}, 500);
 				}
 
 				function collectErrors(data) {
-					if (data.toString() !== '') psVars.commandq[0].errorBin = psVars.commandq[0].errorBin + data.toString();
+					clearInterval(errTime)
+					if (data.toString() !== '') getCommandq()[0].errorBin = getCommandq()[0].errorBin + data.toString();
+
+					errTime = setTimeout(() => {
+						pushErrors();
+					}, 700);
 				}
 
 				function pushOutput() {
-					psVars.self.out.push(replaceAll(psVars.commandq[0].outputBin, 'End Win.PowerShell() command\n', ''));
+					getCommandq(child)[0].outputBin = replaceAll(getCommandq(child)[0].outputBin, 'End Win.PowerShell() command\n', '');
 
-					if (psVars.commandq[0].outputBin.toString().trim() !== '' && psVars.commandq.length > 0 && !(psVars.commandq[0].options && psVars.commandq[0].options.noLog === true)) {
-						psVars.commandq[0].outputBin = replaceAll(psVars.commandq[0].outputBin, 'End Win.PowerShell() command\n', '');
-						Win.log((psVars.commandq.length > 0 && (psVars.commandq[0].options && psVars.commandq[0].options.keepAlive && psVars.commandq[0].options.id) ? '\x1b[33mPowerShell session "' + psVars.commandq[0].options.id + '":\x1b[0m\n' : '') + psVars.commandq[0].outputBin.toString().trim());
+					getPowerShellSession(child).out.push(getCommandq()[0].outputBin);
+
+					if (getCommandq()[0].outputBin.toString().trim() !== '' && getCommandq().length > 0 && !(getCommandq()[0].options && getCommandq()[0].options.noLog === true)) {
+						getCommandq()[0].outputBin = replaceAll(getCommandq()[0].outputBin, 'End Win.PowerShell() command\n', '');
+						Win.log((getCommandq().length > 0 && (getCommandq()[0].options && getCommandq()[0].options.keepAlive && getCommandq()[0].options.id) ? '\x1b[33mPowerShell session "' + getCommandq()[0].options.id + '":\x1b[0m\n' : '') + getCommandq()[0].outputBin.toString().trim());
 					}
 
-					psVars.commandq[0].outputBin = '';
 					pushErrors();
-
-					(once(checkIfDone()))();
 				}
 
 				function pushErrors() {
-					if (psVars.commandq[0].errorBin == '') {
-						psVars.self.err.push(psVars.commandq[0].errorBin);
-					} else if (psVars.commandq[0].errorBin.trim() !== '\n' && psVars.commandq[0].errorBin.trim() !== '\r' && psVars.commandq[0].errorBin.trim() !== '\r\n') {
-						psVars.self.err.push(psVars.commandq[0].errorBin.toString().trim());
-						if (psVars.commandq[0].errorBin.toString().trim() !== '' && psVars.commandq.length > 0 && !(psVars.commandq[0].options && psVars.commandq[0].options.suppressErrors == true)) {
-							Win.error(psVars.commandq[0].errorBin.toString());
+					if (getCommandq()[0].errorBin == '') {
+						getPowerShellSession(child).err.push(getCommandq()[0].errorBin);
+					} else if (getCommandq()[0].errorBin.trim() !== '\n' && getCommandq()[0].errorBin.trim() !== '\r' && getCommandq()[0].errorBin.trim() !== '\r\n') {
+						getPowerShellSession(child).err.push(getCommandq()[0].errorBin.toString().trim());
+						if (getCommandq()[0].errorBin.toString().trim() !== '' && getCommandq().length > 0 && !(getCommandq()[0].options && getCommandq()[0].options.suppressErrors == true)) {
+							Win.error(getCommandq()[0].errorBin.toString());
 						}
 					}
-					psVars.commandq[0].errorBin = '';
+					getCommandq()[0].errorBin = '';
 
-					if (psVars.commandq[0] && psVars.commandq[0].options && psVars.commandq[0].options.id && options.keepAlive == true && options.existingSession == undefined) {
-						(once(keepAlive(psVars.commandq[0])))();
+					if (getCommandq()[0] && getCommandq()[0].options && getCommandq()[0].options.id && getCommandq()[0].options.keepAlive == true && getCommandq()[0].options.existingSession == undefined) {
+						(once(keepAlive(getCommandq()[0])))();
 					}
 
-					(once(checkIfDone()))();
+					checkIfDone(child);
 
-					shiftQ();
-					runNextInQ();
+					setTimeout(() => {
+						shiftQ();
+						runNextInQ();
+					}, 800);
 				}
 
 				function shiftQ() {
-					psVars.commandq.shift();
+					getPowerShellSession(child).commandq.shift();
 				}
 
 				function runNextInQ() {
-					if (psVars.commandq.length > 0) {
-						rebounce(() => {
-							child.stdin.write(`${psVars.commandq[0].command + '; write-host "End Win.PowerShell() command"'}\r\n`);
-						}, 800);
+					if (getCommandq().length > 0) {
+						child.stdin.write(`${getCommandq()[0].command + '; write-host "End Win.PowerShell() command";Start-Sleep -m 200;'}\r\n`);
 					}
 				}
 
 				shiftQ = debounce(shiftQ, 800, true);
 				runNextInQ = debounce(runNextInQ, 800, true);
 
-
 				function qCommand(command, options) {
-					psVars.commandq.push({ command: command, options: options, child: child, outputBin: '', errorBin: '' });
-					if (psVars.commandq.length == 1 && psVars.triggered == false && !(options && options.id && options.existingSession)) {
-						psVars.triggered = true;
+					if (getPowerShellSession(child) == undefined) {
+						psVars.powerShellSessions.push({
+							commandq: [{ command: command, options: options, outputBin: '', errorBin: '' }],
+							initialOptions: options,
+							out: [],
+							err: [],
+							child: child,
+							triggered: false,
+							checkingIfDone: false
+						});
+					} else {
+						getPowerShellSession(child).commandq.push({ command: command, options: options, outputBin: '', errorBin: '' });
+					}
+
+					if (getCommandq().length == 1 && getPowerShellSession(child).triggered == false && !(options && options.id && options.existingSession)) {
+						getPowerShellSession(child).triggered = true;
 						runNextInQ();
 					} else if (options && options.id && options.existingSession) {
 						// This is a new command for an existing session
 						for (let i in psVars.powerShellSessions) {
 							if (psVars.powerShellSessions[i].id == options.id) {
 								rebounce(() => {
-									psVars.powerShellSessions[i].child.stdin.write(`${psVars.commandq[0].command + '; write-host "End Win.PowerShell() command"'}\r\n`);
+									psVars.powerShellSessions[i].child.stdin.write(`${getCommandq()[0].command + '; write-host "End Win.PowerShell() command"'}\r\n`);
 								}, 800);
 								break;
 							}
@@ -515,15 +544,12 @@ const Win = {
 					}
 				}
 
-				collectOutputUntilDelay = postbounce(collectOutput, 800, pushOutput);
-				collectErrorsUntilDelay = postbounce(collectErrors, 800, pushErrors);
-
 				child.stdout.on("data", data => {
-					collectOutputUntilDelay(data);
+					collectOutput(data);
 				});
 
 				child.stderr.on("data", data => {
-					collectErrorsUntilDelay(data);
+					collectErrors(data);
 				});
 
 				function end(cb) {
@@ -540,8 +566,8 @@ const Win = {
 					}
 					if (options == undefined || (options && !options.id)) Win.error('The options parameter and value "id" is required for new commands');
 					psVars.self = { out: [], err: [] };
-					psVars.checkingIfDone = false, psVars.triggered = false;
-					//psVars.commandq[0].outputBin = '', psVars.commandq[0].errorBin = '';
+					getPowerShellSession(child).checkingIfDone = false, getPowerShellSession(child).triggered = false;
+					//getCommandq()[0].outputBin = '', getCommandq()[0].errorBin = '';
 					// DEAL WITH THIS
 
 					options.existingSession = true;
@@ -555,31 +581,41 @@ const Win = {
 					qCommand(command[i], options);
 				}
 
-				function checkIfDone() {
-					if (psVars.commandq.length === 0 && psVars.checkingIfDone === false) {
-						psVars.checkingIfDone = true;
+				function checkIfDone(child) {
+					if (getCommandq().length === 0 && typeof child == 'object' && getPowerShellSession(child).checkingIfDone === false) {
+						getPowerShellSession(child).checkingIfDone = true;
+						setTimeout(() => {
+							if (typeof callback == 'function' && (getPowerShellSession(child).out.length > 1 || getPowerShellSession(child).err.length > 1)) callback(getPowerShellSession(child).out, getPowerShellSession(child).err);
+							else if (typeof callback == 'function') callback(getPowerShellSession(child).out.toString(), getPowerShellSession(child).err.toString());
 
-						if (typeof callback == 'function' && command.length > 1) callback(psVars.self.out, psVars.self.err);
-						else if (typeof callback == 'function') callback(psVars.self.out.toString(), psVars.self.err.toString());
-
-						if (!(options && (options.existingSession == true || options.keepAlive == true))) {
-							child.stdin.end();
-
-							psVars.self = { out: [], err: [] };
-							psVars.checkingIfDone = false, psVars.triggered = false;
-						} else {
-							psVars.checkingIfDone = false;
-						}
+							if (!(getPowerShellSession(child).initialOptions && (getPowerShellSession(child).initialOptions.existingSession == true || getPowerShellSession(child).initialOptions.keepAlive == true))) {
+								getPowerShellSession(child).child.stdin.end();
+								for (let i in psVars.powerShellSessions) {
+									if (psVars.powerShellSessions[i].child.pid == child.pid) {
+										psVars.powerShellSessions.splice([i], 1);
+										return;
+									} else if(i == psVars.powerShellSessions.length) {
+										Win.log('Could not find a session to remove. This is likely a problem with Windows-Interact. Please report this as a new issue on github (Thanks!)', {colour: 'yellow'})
+									}
+								}
+								getPowerShellSession(child).checkingIfDone = false, getPowerShellSession(child).triggered = false;
+							} else {
+								getPowerShellSession(child).checkingIfDone = false;
+							}
+						}, 0);
 
 
 					} else {
 						setTimeout(() => {
-							checkIfDone();
-						}, 50);
+							checkIfDone(child);
+						}, 500);
 					}
 				}
+
+
 			} catch (err) {
-				Win.error(err);
+				console.trace(err)
+				//Win.error(err);
 			}
 		}
 
