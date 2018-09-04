@@ -33,6 +33,11 @@ function countStringOccurences(string, query) {
 	return (string.match(new RegExp(query, 'g')) || []).length;
 }
 
+function regexIndexOf(str, regex, startpos) {
+    var indexOf = str.substring(startpos || 0).search(regex);
+    return (indexOf >= 0) ? (indexOf + (startpos || 0)) : indexOf;
+}
+
 String.prototype.replaceAll = function(t, e, n) {
 	let r = "" + this, g = "", l = r, s = 0, h = -1
 	for (n && (t = t.toLowerCase(), l = r.toLowerCase()); (h = l.indexOf(t)) > -1;)g += r.substring(s, s + h) + e, l = l.substring(h + t.length, l.length), s += h + t.length;
@@ -742,11 +747,13 @@ const Win = {
 							Win.appManager.registeredApps[getNameByProcessName(appName)].onKill();
 						}
 						if (!getIsRunning(appName) && getWasRunning(appName)) {
-							/* for (let i in groups) {
-								if (groups[i].apps.includes(getNameByProcessName(appName)) && groups[i].onKill) {
-									groups[i].onKill();
-								}
-							} */
+							for (let i in groups) {
+								Object.entries(groups[i]).forEach(([groupName, props]) => {
+									if (groups[i][groupName].apps.includes(getNameByProcessName(appName)) && groups[i][groupName].onKill) {
+										if (groups[i][groupName].onKill !== undefined) groups[i][groupName].onKill();
+									}
+								});
+							}
 						}
 
 						if (!registrationComplete) registrationComplete = true;
@@ -756,24 +763,22 @@ const Win = {
 						}
 
 						if (registrationComplete && getIsRunning(appName) && !getWasRunning(appName)) {
-							/* for (let i in groups) {
-								if (groups[i].apps.includes(getNameByProcessName(appName)) && groups[i].onLaunch) {
-									groups[i].onLaunch();
-								}
-							} */
-						}
-
-						windowTitle = stdout.substr(stdout.lastIndexOf('\n' + appName));
-						windowTitle = windowTitle.substring(0, windowTitle.indexOf('\r'));
-						windowTitle = replaceAll(windowTitle, appName, '').trim();
-						if (windowTitle == '') windowTitle = null;
-
-						for (let i in Win.appManager.registeredApps) {
-							if (Win.appManager.registeredApps[i].path.includes(appName)) {
-								return Win.appManager.registeredApps[i].windowTitle = windowTitle;
+							for (let i in groups) {
+								Object.entries(groups[i]).forEach(([groupName, props]) => {
+									if (groups[i][groupName].apps.includes(getNameByProcessName(appName)) && groups[i][groupName].onLaunch) {
+										if (groups[i][groupName].onLaunch !== undefined) groups[i][groupName].onLaunch();
+									}
+								});
 							}
 						}
-						Win.appManager.registeredApps[appName].windowTitle = windowTitle;
+
+						windowTitle = replaceAll(stdout, '\r\nProcessName', '');
+						windowTitle = replaceAll(windowTitle, 'MainWindowTitle', '');
+						windowTitle = windowTitle.replace(/(-{5,})/g, '');
+						windowTitle = windowTitle.replace(/(\w+)([^\w]\s{2})/g, '');
+						windowTitle = windowTitle.trim();
+
+						Win.appManager.registeredApps[getNameByProcessName(appName)].windowTitle = windowTitle;
 					}
 				}
 
