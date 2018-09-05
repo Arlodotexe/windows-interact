@@ -404,17 +404,18 @@ const Win = {
 			if (options && options.keepAlive && !options.id) Win.error('To keep a PowerShell session active, you must assign it an ID')
 			else if (options && options.keepAlive === true && options.id !== undefined) id = options.id;
 
-			callback = once(callback);
+			//callback = once(callback);
 
-			function getPowerShellSession(child) {
-				if (child == undefined) {
-					return undefined;
+			function getPowerShellSession(chld) {
+				if (chld == undefined) {
+					Win.log('Child is not defined!', { colour: red });
+					chld = child;
 				}
 				for (let i in psVars.powerShellSessions) {
-					//console.log(psVars.powerShellSessions[i])
-					if (typeof child == 'object' &&  psVars.powerShellSessions[i].child.pid == child.pid) {
+					if (typeof child == 'object' && psVars.powerShellSessions[i].child.pid == child.pid) {
 						return (psVars.powerShellSessions[i]);
 					} else if (i == psVars.powerShellSessions.length) {
+						Win.log('Couldn\'t get a powershell session', { colour: red });
 						return (undefined);
 					}
 				}
@@ -422,6 +423,7 @@ const Win = {
 
 			function getCommandq(chld) {
 				if (chld == undefined) chld = child;
+				if (chld == undefined) Win.log('Child is not defined (commandq)', { colour: 'red' })
 				return getPowerShellSession(chld).commandq;
 			}
 
@@ -429,31 +431,12 @@ const Win = {
 				command = cmd;
 				callback = once(cb);
 				options = opts;
-				if (chld) child = chld;
+				child = chld;
 			}
 
 			try {
 				let outputTime, errTime;
 				if (typeof command == 'string') command = [command];
-
-				function keepAlive(data) {
-					
-					if (data && data.options && data.options.keepAlive == true && data.options.id !== undefined) {
-						if (isVerbose('PowerShell')) Win.log('PowerShell process is being kept alive. ID: "' + data.options.id + '"', { colour: 'yellow' });
-
-						psVars.powerShellSessions.push({
-							commandq: [{ command: data.command, options: data.options, outputBin: '', errorBin: '' }],
-							initialOptions: data.options,
-							end: end,
-							newCommand: newCommand,
-							out: [],
-							err: [],
-							child: data.child,
-							triggered: false,
-							checkingIfDone: false
-						});
-					}
-				}
 
 				function collectOutput(data) {
 					clearInterval(outputTime);
@@ -474,7 +457,6 @@ const Win = {
 				}
 
 				function pushOutput() {
-					console.log(getCommandq(child)[0])
 					getCommandq(child)[0].outputBin = replaceAll(getCommandq(child)[0].outputBin, 'End Win.PowerShell() command\n', '');
 
 					getPowerShellSession(child).out.push(getCommandq()[0].outputBin);
@@ -498,10 +480,6 @@ const Win = {
 					}
 					getCommandq()[0].errorBin = '';
 
-					if (getCommandq()[0] && getCommandq()[0].options && getCommandq()[0].options.id && getCommandq()[0].options.keepAlive == true && getCommandq()[0].options.existingSession == undefined) {
-						(once(keepAlive(getPowerShellSession(child))))();
-					}
-
 					checkIfDone(child);
 
 					setTimeout(() => {
@@ -524,10 +502,44 @@ const Win = {
 				runNextInQ = debounce(runNextInQ, 800, true);
 
 				function qCommand(command, options) {
-					if (getPowerShellSession(child) == undefined) {
+					if (options && options.id && options.existingSession == true) {
+						// If this is for an existing session, find and push it to that session's commandq
+						for (let i in psVars.powerShellSessions) {
+							if (psVars.powerShellSessions[i].id == options.id) {
+								child = psVars.powerShellSessions.child;
+								setTimeout(() => {
+									psVars.powerShellSessions[i].commandq.push({ command: command, options: options, outputBin: '', errorBin: '' })
+								}, 800);
+								break;
+							}
+						}
+					}
+					else if (options && options.id && options.keepAlive == true && options.existingSession == undefined) {
+						// If this is for a new session that needs to be kept alive, push it (but with different properties)
+
+						(once(() => {
+							if (isVerbose('PowerShell')) Win.log('PowerShell process is being kept alive. ID: "' + options.id + '"', { colour: 'yellow' });
+
+							psVars.powerShellSessions.push({
+								commandq: [{ command: command, options: options, outputBin: '', errorBin: '' }],
+								callback: callback,
+								initialOptions: options,
+								end: end,
+								newCommand: newCommand,
+								out: [],
+								err: [],
+								child: child,
+								triggered: false,
+								checkingIfDone: false
+							});
+						}))();
+
+					} else if (getPowerShellSession(child) == undefined && !(options && options.keepAlive == true && options.id !== undefined)) {
+						// If the session is not stored and it is not going to be kept alive, push it
 						psVars.powerShellSessions.push({
 							commandq: [{ command: command, options: options, outputBin: '', errorBin: '' }],
 							initialOptions: options,
+							callback: callback,
 							out: [],
 							err: [],
 							child: child,
@@ -535,22 +547,24 @@ const Win = {
 							checkingIfDone: false
 						});
 					} else {
-						getPowerShellSession(child).commandq.push({ command: command, options: options, outputBin: '', errorBin: '' });
+						// Otherwise, this is a normal command with no options, push the command to the Q for this session
+						getCommandq(child).push({ command: command, options: options, outputBin: '', errorBin: '' });
 					}
 
-					if (getCommandq().length == 1 && getPowerShellSession(child).triggered == false && !(options && options.id && options.existingSession)) {
-						getPowerShellSession(child).triggered = true;
-						runNextInQ();
-					} else if (options && options.id && options.existingSession) {
-						// This is a new command for an existing session
+					if (options && options.id && options.existingSession) {
+						// Write this new command to an existing session
 						for (let i in psVars.powerShellSessions) {
 							if (psVars.powerShellSessions[i].id == options.id) {
-								rebounce(() => {
+								setTimeout(() => {
 									psVars.powerShellSessions[i].child.stdin.write(`${getCommandq()[0].command + '; write-host "End Win.PowerShell() command"'}\r\n`);
 								}, 800);
 								break;
 							}
 						}
+					} else if (getCommandq(child).length == 1 && getPowerShellSession(child).triggered == false && !(options && options.id && options.existingSession)) {
+						// Trigger the Q if this is the first command and this isn't for an existing session
+						getPowerShellSession(child).triggered = true;
+						runNextInQ();
 					}
 				}
 
@@ -562,11 +576,11 @@ const Win = {
 					collectErrors(data);
 				});
 
-				function end(cb) {
+				function end(cb, options, child) {
 					child.on('exit', () => {
 						if (typeof cb == 'function') cb();
+						if (!(options && options.noLog === true)) Win.log(`Ended PowerShell session "${options.id}"`);
 					});
-					if (!(options && options.noLog)) Win.log(`Ended PowerShell session "${options.id}"`);
 					child.stdin.end();
 				}
 
@@ -580,13 +594,13 @@ const Win = {
 
 					for (let i in psVars.powerShellSessions) {
 						if (psVars.powerShellSessions[i].initialOptions.id == options.id) {
-							child = psVars.powerShellSessions[i].child;
+							setParams(command, cb, options, psVars.powerShellSessions[i].child);
 						} else if (i == psVars.powerShellSessions.length) {
+							Win.log('Could not find existing powershell session, even though it should exist and was found previously. This is a problem with Win.PowerShell, please report an issue with details about your setup on GitHub');
 							return (undefined);
 						}
 					}
 
-					setParams(command, cb, child, options);
 					for (let i in command) {
 						qCommand(command, { ...options });
 					}
@@ -597,20 +611,28 @@ const Win = {
 				}
 
 				function checkIfDone(child) {
-					if (getCommandq().length === 0 && typeof child == 'object' && getPowerShellSession(child).checkingIfDone === false) {
+					if (getPowerShellSession(child) && getPowerShellSession(child).commandq.length === 0 && typeof child == 'object' && getPowerShellSession(child).checkingIfDone === false) {
 						getPowerShellSession(child).checkingIfDone = true;
 						setTimeout(() => {
-							if (typeof callback == 'function' && (getPowerShellSession(child).out.length > 1 || getPowerShellSession(child).err.length > 1)) callback(getPowerShellSession(child).out, getPowerShellSession(child).err);
-							else if (typeof callback == 'function') callback(getPowerShellSession(child).out.toString(), getPowerShellSession(child).err.toString());
+
+
+							for (let i in psVars.powerShellSessions) {
+								if (psVars.powerShellSessions[i].child.pid == child.pid) {
+									callback = psVars.powerShellSessions[i].callback;
+									if (typeof callback == 'function' && (getPowerShellSession(child).out.length > 1 || getPowerShellSession(child).err.length > 1)) callback(getPowerShellSession(child).out, getPowerShellSession(child).err);
+									else if (typeof callback == 'function') callback(getPowerShellSession(child).out.toString(), getPowerShellSession(child).err.toString());
+								}
+							}
 
 							if (!(getPowerShellSession(child).initialOptions && (getPowerShellSession(child).initialOptions.existingSession == true || getPowerShellSession(child).initialOptions.keepAlive == true))) {
+
 								getPowerShellSession(child).child.stdin.end();
 								for (let i in psVars.powerShellSessions) {
 									if (psVars.powerShellSessions[i].child.pid == child.pid) {
 										psVars.powerShellSessions.splice([i], 1);
 										return;
-									} else if(i == psVars.powerShellSessions.length) {
-										Win.log('Could not find a session to remove. This is likely a problem with Windows-Interact. Please report this as a new issue on github (Thanks!)', {colour: 'yellow'})
+									} else if (i == psVars.powerShellSessions.length) {
+										Win.log('Could not find a session to remove. This is likely a problem with Windows-Interact. Please report this as a new issue on github (Thanks!)', { colour: 'yellow' })
 									}
 								}
 								getPowerShellSession(child).checkingIfDone = false, getPowerShellSession(child).triggered = false;
@@ -638,40 +660,39 @@ const Win = {
 
 			tryForUntil(10, 1500, `(function() {
 				for (let i in psVars.powerShellSessions) {
-					if (psVars.powerShellSessions[i].initialOptions.id == ${options.id}) {
+					if (psVars.powerShellSessions[i].initialOptions.id == "${options.id}") {
 						return true;
 					} else if (i == psVars.powerShellSessions.length - 1) {
 						return false;
 					}
 				}
 			})()`, () => {
-				if ((function() {
-					for (let i in psVars.powerShellSessions) {
-						if (psVars.powerShellSessions[i].initialOptions.id == options.id) {
-							return true;
-						} else if (i == psVars.powerShellSessions.length - 1) {
-							return false;
-						}
-					}
-				})()) {
-					(once(() => {
-						for (let i = 0; i < psVars.powerShellSessions.length; i++) {
-							if (psVars.powerShellSessions[i].initialOptions.id = options.id) {
-
-								// This needs to be completely redone
-								psVars.powerShellSessions[i].newCommand(command, callback, options);
-								i = psVars.powerShellSessions.length;
+					if ((function() {
+						for (let i in psVars.powerShellSessions) {
+							if (psVars.powerShellSessions[i].initialOptions.id == options.id) {
+								return true;
+							} else if (i == psVars.powerShellSessions.length - 1) {
+								return false;
 							}
 						}
-					}))();
-				} else {
-					if (isVerbose('PowerShell')) Win.log('Could not find PowerShell session "' + options.id + '". Retrying...', { colour: 'yellow' });
-				}
-			}, () => {
-				if (isVerbose('PowerShell')) Win.log('No PowerShell sessions are alive', { colour: 'yellow' });
-			}, () => {
-				//if (isVerbose('PowerShell')) Win.log(`PowerShell session "${options.id}" found!`, { colour: 'yellow' });
-			});
+					})()) {
+						(once(() => {
+							for (let i = 0; i < psVars.powerShellSessions.length; i++) {
+								if (psVars.powerShellSessions[i].initialOptions.id = options.id) {
+
+									psVars.powerShellSessions[i].newCommand(command, callback, options);
+									i = psVars.powerShellSessions.length;
+								}
+							}
+						}))();
+					} else {
+						if (isVerbose('PowerShell')) Win.log('Could not find PowerShell session "' + options.id + '". Retrying...', { colour: 'yellow' });
+					}
+				}, () => {
+					if (isVerbose('PowerShell')) Win.log('No PowerShell sessions are alive', { colour: 'yellow' });
+				}, () => {
+					//if (isVerbose('PowerShell')) Win.log(`PowerShell session "${options.id}" found!`, { colour: 'yellow' });
+				});
 		}
 
 		fn.isSessionActive = function(id, callback) {
@@ -691,7 +712,7 @@ const Win = {
 		fn.endSession = function(id, callback) {
 			for (let i in psVars.powerShellSessions) {
 				if (psVars.powerShellSessions[i].id == id) {
-					psVars.powerShellSessions[i].end(callback);
+					psVars.powerShellSessions[i].end(callback, psVars.powerShellSessions[i].initialOptions, psVars.powerShellSessions[i].child);
 				}
 			}
 		}

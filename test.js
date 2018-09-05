@@ -44,23 +44,28 @@ Win.appManager.register.group({
 }); */
 
 
-let com = `get-process "notepad" | select ProcessName, MainWindowTitle`;
+let com = `get-process "Code" | select ProcessName, MainWindowTitle`;
 
-Win.PowerShell('get-process "notepad" | select ProcessName, MainWindowTitle', result => {
-    console.log('result ', result);
+Win.PowerShell('get-process "notepad" | select ProcessName, MainWindowTitle', (result, err) => {
+    console.log('result ', result, err);
 }, { noLog: true, id: 'test', suppressErrors: false, keepAlive: true });
 
+Win.PowerShell.newCommand('write-host "Hello world', (result, err) => {
+    console.log('newCommand: ', result, err);
+}, { id: 'test' });
 
-
-// TryforUntil is broken now that every session is pushed to psVars.PowerShellSessions
-
-Win.PowerShell.newCommand(com, result => {
-    console.log(result);
-}, { noLog: true, id: 'test' });
-
+setTimeout(() => {
+    
+}, 2000);
+ /* 
 Win.PowerShell('ls', result => {
     console.log('result 2 ', result);
-}, { noLog: true, id: 'test2', suppressErrors: true, keepAlive: false });
+}, { noLog: true, id: 'test2', suppressErrors: true, keepAlive: false }); */
+
+
+setTimeout(() => {
+    Win.PowerShell.endSession('test')
+}, 4000);
 
 /*
 setTimeout(() => {
