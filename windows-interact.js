@@ -398,7 +398,7 @@ const Win = {
 
 
 			const spawn = require("child_process").spawn;
-			const child = spawn("powershell.exe", ["-Command", "-"]);
+			let child = spawn("powershell.exe", ["-Command", "-"]);
 			child.stdin.setEncoding('utf-8');
 
 			if (options && options.keepAlive && !options.id) Win.error('To keep a PowerShell session active, you must assign it an ID')
@@ -407,8 +407,12 @@ const Win = {
 			callback = once(callback);
 
 			function getPowerShellSession(child) {
+				if (child == undefined) {
+					return undefined;
+				}
 				for (let i in psVars.powerShellSessions) {
-					if (typeof child == 'object' && psVars.powerShellSessions[i].child.pid == child.pid) {
+					//console.log(psVars.powerShellSessions[i])
+					if (typeof child == 'object' &&  psVars.powerShellSessions[i].child.pid == child.pid) {
 						return (psVars.powerShellSessions[i]);
 					} else if (i == psVars.powerShellSessions.length) {
 						return (undefined);
@@ -433,15 +437,20 @@ const Win = {
 				if (typeof command == 'string') command = [command];
 
 				function keepAlive(data) {
+					
 					if (data && data.options && data.options.keepAlive == true && data.options.id !== undefined) {
 						if (isVerbose('PowerShell')) Win.log('PowerShell process is being kept alive. ID: "' + data.options.id + '"', { colour: 'yellow' });
+
 						psVars.powerShellSessions.push({
-							command: data.command,
-							child: data.child,
-							id: data.options.id,
+							commandq: [{ command: data.command, options: data.options, outputBin: '', errorBin: '' }],
+							initialOptions: data.options,
 							end: end,
 							newCommand: newCommand,
-							results: { output: getPowerShellSession(child).out, errors: getPowerShellSession(child).err }
+							out: [],
+							err: [],
+							child: data.child,
+							triggered: false,
+							checkingIfDone: false
 						});
 					}
 				}
@@ -465,6 +474,7 @@ const Win = {
 				}
 
 				function pushOutput() {
+					console.log(getCommandq(child)[0])
 					getCommandq(child)[0].outputBin = replaceAll(getCommandq(child)[0].outputBin, 'End Win.PowerShell() command\n', '');
 
 					getPowerShellSession(child).out.push(getCommandq()[0].outputBin);
@@ -489,7 +499,7 @@ const Win = {
 					getCommandq()[0].errorBin = '';
 
 					if (getCommandq()[0] && getCommandq()[0].options && getCommandq()[0].options.id && getCommandq()[0].options.keepAlive == true && getCommandq()[0].options.existingSession == undefined) {
-						(once(keepAlive(getCommandq()[0])))();
+						(once(keepAlive(getPowerShellSession(child))))();
 					}
 
 					checkIfDone(child);
@@ -565,13 +575,18 @@ const Win = {
 						command = [command];
 					}
 					if (options == undefined || (options && !options.id)) Win.error('The options parameter and value "id" is required for new commands');
-					psVars.self = { out: [], err: [] };
-					getPowerShellSession(child).checkingIfDone = false, getPowerShellSession(child).triggered = false;
-					//getCommandq()[0].outputBin = '', getCommandq()[0].errorBin = '';
-					// DEAL WITH THIS
 
 					options.existingSession = true;
-					setParams(command, cb, options);
+
+					for (let i in psVars.powerShellSessions) {
+						if (psVars.powerShellSessions[i].initialOptions.id == options.id) {
+							child = psVars.powerShellSessions[i].child;
+						} else if (i == psVars.powerShellSessions.length) {
+							return (undefined);
+						}
+					}
+
+					setParams(command, cb, child, options);
 					for (let i in command) {
 						qCommand(command, { ...options });
 					}
@@ -621,10 +636,18 @@ const Win = {
 
 		fn.newCommand = function(command, callback, options) {
 
-			tryForUntil(10, 1500, 'psVars.powerShellSessions.length > 0', () => {
+			tryForUntil(10, 1500, `(function() {
+				for (let i in psVars.powerShellSessions) {
+					if (psVars.powerShellSessions[i].initialOptions.id == ${options.id}) {
+						return true;
+					} else if (i == psVars.powerShellSessions.length - 1) {
+						return false;
+					}
+				}
+			})()`, () => {
 				if ((function() {
 					for (let i in psVars.powerShellSessions) {
-						if (psVars.powerShellSessions[i].id == options.id) {
+						if (psVars.powerShellSessions[i].initialOptions.id == options.id) {
 							return true;
 						} else if (i == psVars.powerShellSessions.length - 1) {
 							return false;
@@ -633,7 +656,9 @@ const Win = {
 				})()) {
 					(once(() => {
 						for (let i = 0; i < psVars.powerShellSessions.length; i++) {
-							if (psVars.powerShellSessions[i].id = options.id) {
+							if (psVars.powerShellSessions[i].initialOptions.id = options.id) {
+
+								// This needs to be completely redone
 								psVars.powerShellSessions[i].newCommand(command, callback, options);
 								i = psVars.powerShellSessions.length;
 							}
