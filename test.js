@@ -46,19 +46,20 @@ Win.appManager.register.group({
 
 let com = `get-process "Code" | select ProcessName, MainWindowTitle`;
 
-Win.PowerShell('get-process "notepad" | select ProcessName, MainWindowTitle', (result, err) => {
-    console.log('Hellow')
-    console.log('result ', result, err);
+Win.PowerShell(['get-process "notepad" | select ProcessName, MainWindowTitle'], (result, err) => {
+    console.log('\n')
+    console.log('result ', result);
 }, { noLog: true, id: 'test', suppressErrors: false, keepAlive: true });
 
 
-Win.PowerShell.newCommand(`$wshell = New-Object -ComObject Wscript.Shell
-$wshell.Popup("Hello World",0,"Node")`, (result, err) => {
-    console.log('newCommand: ', result, err);
-}, { id: 'test', noLog: true });
-setTimeout(() => {
+// Current mission: Callback and command from initial command is getting used for newCommands, except when timed further apart. Then it errors
+
+ setTimeout(() => {
+    Win.PowerShell.newCommand(com, (result, err) => {
+        console.log('newCommand: ', result, err);
+    }, { id: 'test', noLog: true });
     
-}, 2000);
+}, 2000); 
  /* 
 Win.PowerShell('ls', result => {
     console.log('result 2 ', result);
