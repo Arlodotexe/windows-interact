@@ -47,13 +47,15 @@ Win.appManager.register.group({
 let com = `get-process "Code" | select ProcessName, MainWindowTitle`;
 
 Win.PowerShell('get-process "notepad" | select ProcessName, MainWindowTitle', (result, err) => {
+    console.log('Hellow')
     console.log('result ', result, err);
 }, { noLog: true, id: 'test', suppressErrors: false, keepAlive: true });
 
-Win.PowerShell.newCommand('write-host "Hello world', (result, err) => {
-    console.log('newCommand: ', result, err);
-}, { id: 'test' });
 
+Win.PowerShell.newCommand(`$wshell = New-Object -ComObject Wscript.Shell
+$wshell.Popup("Hello World",0,"Node")`, (result, err) => {
+    console.log('newCommand: ', result, err);
+}, { id: 'test', noLog: true });
 setTimeout(() => {
     
 }, 2000);

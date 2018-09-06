@@ -408,7 +408,7 @@ const Win = {
 
 			function getPowerShellSession(chld) {
 				if (chld == undefined) {
-					Win.log('Child is not defined!', { colour: red });
+					Win.log('Child is not defined!', { colour: 'red' });
 					chld = child;
 				}
 				for (let i in psVars.powerShellSessions) {
@@ -440,7 +440,9 @@ const Win = {
 
 				function collectOutput(data) {
 					clearInterval(outputTime);
-					if (data.toString() !== '') getCommandq()[0].outputBin = getCommandq()[0].outputBin + data.toString();
+
+					//if(getPowerShellSession(child).commandq[0] == undefined) console.log(getPowerShellSession(child))
+					if (data.toString() !== '') getPowerShellSession(child).commandq[0].outputBin = getPowerShellSession(child).commandq[0].outputBin + data.toString();
 
 					outputTime = setTimeout(() => {
 						pushOutput();
@@ -448,18 +450,18 @@ const Win = {
 				}
 
 				function collectErrors(data) {
-					clearInterval(errTime)
-					if (data.toString() !== '') getCommandq()[0].errorBin = getCommandq()[0].errorBin + data.toString();
+					clearInterval(errTime);
+					if (data.toString() !== '') getCommandq(child)[0].errorBin = getCommandq(child)[0].errorBin + data.toString();
 
 					errTime = setTimeout(() => {
 						pushErrors();
-					}, 700);
+					}, 500);
 				}
 
 				function pushOutput() {
-					getCommandq(child)[0].outputBin = replaceAll(getCommandq(child)[0].outputBin, 'End Win.PowerShell() command\n', '');
+					getPowerShellSession(child).commandq[0].outputBin = replaceAll(getCommandq(child)[0].outputBin, 'End Win.PowerShell() command\n', '');
 
-					getPowerShellSession(child).out.push(getCommandq()[0].outputBin);
+					getPowerShellSession(child).out.push(getCommandq(child)[0].outputBin);
 
 					if (getCommandq()[0].outputBin.toString().trim() !== '' && getCommandq().length > 0 && !(getCommandq()[0].options && getCommandq()[0].options.noLog === true)) {
 						getCommandq()[0].outputBin = replaceAll(getCommandq()[0].outputBin, 'End Win.PowerShell() command\n', '');
@@ -504,13 +506,15 @@ const Win = {
 				function qCommand(command, options) {
 					if (options && options.id && options.existingSession == true) {
 						// If this is for an existing session, find and push it to that session's commandq
+
 						for (let i in psVars.powerShellSessions) {
-							if (psVars.powerShellSessions[i].id == options.id) {
-								child = psVars.powerShellSessions.child;
+							if (psVars.powerShellSessions[i].initialOptions.id == options.id) {
+								child = psVars.powerShellSessions[i].child;
 								setTimeout(() => {
-									psVars.powerShellSessions[i].commandq.push({ command: command, options: options, outputBin: '', errorBin: '' })
-								}, 800);
-								break;
+									psVars.powerShellSessions[i].commandq.push({ command: command, options: options, outputBin: '', errorBin: '' });
+								}, 400);
+							} else if (i == psVars.powerShellSessions.length - 1) {
+								Win.log(`Could not find PowerShell session ${options.id} while attempting to push to the command queue`, { colour: 'red' })
 							}
 						}
 					}
@@ -522,13 +526,13 @@ const Win = {
 
 							psVars.powerShellSessions.push({
 								commandq: [{ command: command, options: options, outputBin: '', errorBin: '' }],
-								callback: callback,
 								initialOptions: options,
-								end: end,
-								newCommand: newCommand,
+								callback: callback,
 								out: [],
 								err: [],
 								child: child,
+								end: end,
+								newCommand: newCommand,
 								triggered: false,
 								checkingIfDone: false
 							});
@@ -551,16 +555,49 @@ const Win = {
 						getCommandq(child).push({ command: command, options: options, outputBin: '', errorBin: '' });
 					}
 
-					if (options && options.id && options.existingSession) {
+					if (options && options.id !== undefined && options.existingSession == true) {
 						// Write this new command to an existing session
-						for (let i in psVars.powerShellSessions) {
-							if (psVars.powerShellSessions[i].id == options.id) {
-								setTimeout(() => {
-									psVars.powerShellSessions[i].child.stdin.write(`${getCommandq()[0].command + '; write-host "End Win.PowerShell() command"'}\r\n`);
-								}, 800);
-								break;
+						(once(() => {
+
+
+							function waitUntil(conditions, callback, delay) {
+								function tryit() {
+									if (eval(conditions)) return true;
+									else return false;
+								}
+								if (!tryit()) {
+									setTimeout(() => {
+										tryit();
+									}, delay);
+								} else {
+									callback();
+								}
 							}
-						}
+
+							
+							waitUntil(`
+							(()=>{
+								for (let i in psVars.powerShellSessions) {
+									if (psVars.powerShellSessions[i].initialOptions.id == "${options.id}") {
+										if (psVars.powerShellSessions[i].commandq.length == 0) {
+											return true;
+										} else {
+											return false;
+										}
+									}
+								}
+							})()
+							`, () => {
+								for (let i in psVars.powerShellSessions) {
+									if (psVars.powerShellSessions[i].initialOptions.id == options.id) {
+										if (psVars.powerShellSessions[i].commandq.length === 0) {
+											psVars.powerShellSessions[i].child.stdin.write(`${command + '; write-host "End Win.PowerShell() command"'}\r\n`);
+										} 
+									}
+								}
+							}, 10);
+
+						}))();
 					} else if (getCommandq(child).length == 1 && getPowerShellSession(child).triggered == false && !(options && options.id && options.existingSession)) {
 						// Trigger the Q if this is the first command and this isn't for an existing session
 						getPowerShellSession(child).triggered = true;
@@ -611,7 +648,7 @@ const Win = {
 				}
 
 				function checkIfDone(child) {
-					if (getPowerShellSession(child) && getPowerShellSession(child).commandq.length === 0 && typeof child == 'object' && getPowerShellSession(child).checkingIfDone === false) {
+					if (getPowerShellSession(child).commandq.length === 0 && typeof child == 'object' && getPowerShellSession(child).checkingIfDone === false) {
 						getPowerShellSession(child).checkingIfDone = true;
 						setTimeout(() => {
 
