@@ -408,15 +408,12 @@ const Win = {
 
 			function getPowerShellSession(chld) {
 				if (chld == undefined) {
-					Win.log('Child is not defined!', { colour: 'red' });
+					Win.log('Child is not defined (getPowerShellSession). This is a bug with Windows-Interact, please report it along with your setup on github', { colour: 'red' });
 					chld = child;
 				}
 				for (let i in psVars.powerShellSessions) {
 					if (typeof child == 'object' && psVars.powerShellSessions[i].child.pid == child.pid) {
 						return (psVars.powerShellSessions[i]);
-					} else if (i == psVars.powerShellSessions.length) {
-						Win.log('Couldn\'t get a powershell session', { colour: red });
-						return (undefined);
 					}
 				}
 			}
@@ -441,7 +438,7 @@ const Win = {
 				function collectOutput(data) {
 					clearInterval(outputTime);
 
-					if (getPowerShellSession(child).commandq[0] == undefined) Win.log('Tried to collect output, but the command queue was empty. This is a problem with windows-interact', { colour: 'red' })
+					if (getPowerShellSession(child).commandq[0] == undefined) Win.log('Tried to collect output, but the command queue was empty. This is a bug with Windows-Interact, please report it along with your setup on github', { colour: 'red' })
 					if (data.toString() !== '') getPowerShellSession(child).commandq[0].outputBin = getPowerShellSession(child).commandq[0].outputBin + data.toString();
 
 					outputTime = setTimeout(() => {
@@ -482,7 +479,7 @@ const Win = {
 					}
 					getCommandq()[0].errorBin = '';
 
-					if (getCommandq().length == 1) checkIfDone({ child: child, callback: callback, options: getCommandq(child)[0].options, result: { out: getCommandq(child)[0].outputBin, err: getCommandq(child)[0].errorBin } });
+					if (getCommandq().length == 1) checkIfDone({ child: child, callback: callback, options: getCommandq(child)[0].options, result: { out: getPowerShellSession(child).out, err: getPowerShellSession(child).err } });
 
 					setTimeout(() => {
 						shiftQ();
@@ -504,14 +501,16 @@ const Win = {
 				runNextInQ = debounce(runNextInQ, 800, true);
 
 				function qCommand(command, options) {
-					if (options && options.id && options.existingSession == true) {
+					if (getPowerShellSession(child) !== undefined && options.existingSession !== true) {
+						// If the session already exist, no need to push a new one
+						getCommandq(child).push({ command: command, options: options, outputBin: '', errorBin: '' });
+					} else if (options && options.id && options.existingSession == true) {
 						// If this is for an existing session, find and push it to that session's commandq
 
 						// moved this down to where commands are written
 					}
 					else if (options && options.id && options.keepAlive == true && options.existingSession == undefined) {
 						// If this is for a new session that needs to be kept alive, push it (but with different properties)
-
 						psVars.powerShellSessions.push({
 							commandq: [{ command: command, options: options, outputBin: '', errorBin: '' }],
 							initialOptions: options,
@@ -535,9 +534,6 @@ const Win = {
 							triggered: false,
 							checkingIfDone: false
 						});
-					} else {
-						// Otherwise, this is a normal command with no options, push the command to the Q for this session
-						getCommandq(child).push({ command: command, options: options, outputBin: '', errorBin: '' });
 					}
 
 					if (options && options.id !== undefined && options.existingSession == true) {
@@ -664,14 +660,13 @@ const Win = {
 									Win.log('Could not find a session to remove. This is likely a problem with Windows-Interact. Please report this as a new issue on github (Thanks!)', { colour: 'yellow' })
 								}
 							}
-							getPowerShellSession(data.child).checkingIfDone = false, getPowerShellSession(data.child).triggered = false;
 						} else if (data.options.keepAlive == true && data.options.existingSession !== true) {
 							if (isVerbose('PowerShell')) Win.log('PowerShell session will be kept alive. ID: "' + options.id + '"', { colour: 'yellow' });
-							getPowerShellSession(data.child).checkingIfDone = false;
-						} else {
-							getPowerShellSession(data.child).checkingIfDone = false;
-						}
 
+						}
+						getPowerShellSession(data.child).out = [];
+						getPowerShellSession(data.child).err = [];
+						getPowerShellSession(data.child).checkingIfDone = false, getPowerShellSession(data.child).triggered = false;
 					} else {
 						setTimeout(() => {
 							checkIfDone(data);

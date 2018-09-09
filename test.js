@@ -1,5 +1,4 @@
 const Win = require('./windows-interact');
-let x = ['write-host "test"', 'write-host "Still alive?"'];
 const supplementals = require('./supplementals');
 
 Win.set.preferences({
@@ -45,8 +44,9 @@ Win.appManager.register.group({
 
 
 let com = `get-process "Code" | select ProcessName, MainWindowTitle`;
+let x = ['write-host "test"', 'write-host "Still alive?"'];
 
-Win.PowerShell(['get-process "notepad" | select ProcessName, MainWindowTitle'], (result, err) => {
+Win.PowerShell(x, (result, err) => {
     console.log('\n');
     console.log('result ', result);
 }, { noLog: true, id: 'test', suppressErrors: false, keepAlive: true });
@@ -60,7 +60,7 @@ Win.PowerShell(['get-process "notepad" | select ProcessName, MainWindowTitle'], 
 
 
 
-Win.PowerShell.newCommand(com, (result, err) => {
+Win.PowerShell.newCommand(x, (result, err) => {
     console.log('newCommand: ', result);
 }, { id: 'test', noLog: true });
 
