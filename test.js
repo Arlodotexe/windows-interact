@@ -1,4 +1,5 @@
 const Win = require('./windows-interact');
+let x = ['write-host "test"', 'write-host "Still alive?"'];
 const supplementals = require('./supplementals');
 
 Win.set.preferences({
@@ -43,10 +44,10 @@ Win.appManager.register.group({
 }); */
 
 
-let com = `get-process "Code" | select ProcessName, MainWindowTitle`;
-let x = ['write-host "test"', 'write-host "Still alive?"'];
+let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
+let note = 'get-process "notepad" | select ProcessName, MainWindowTitle';
 
-Win.PowerShell(x, (result, err) => {
+Win.PowerShell([...x, note, note, note, note], (result, err) => {
     console.log('\n');
     console.log('result ', result);
 }, { noLog: true, id: 'test', suppressErrors: false, keepAlive: true });
@@ -59,19 +60,18 @@ Win.PowerShell(x, (result, err) => {
 
 
 
-
-Win.PowerShell.newCommand(x, (result, err) => {
+Win.PowerShell.newCommand(com, (result, err) => {
     console.log('newCommand: ', result);
 }, { id: 'test', noLog: true });
+ setTimeout(() => {
+    
+}, 2000); 
 
-setTimeout(() => {
-}, 2000);
 
-
-
+ 
 Win.PowerShell('ls', result => {
     console.log('result 2 ', result);
-}, { noLog: true, id: 'test2', suppressErrors: true, keepAlive: false });
+}, { noLog: true, id: 'test2', suppressErrors: true, keepAlive: false }); 
 
 
 // Ignore this, this is for testing the audio detection

@@ -404,8 +404,6 @@ const Win = {
 			if (options && options.keepAlive && !options.id) Win.error('To keep a PowerShell session active, you must assign it an ID')
 			else if (options && options.keepAlive === true && options.id !== undefined) id = options.id;
 
-			//callback = once(callback);
-
 			function getPowerShellSession(chld) {
 				if (chld == undefined) {
 					Win.log('Child is not defined (getPowerShellSession). This is a bug with Windows-Interact, please report it along with your setup on github', { colour: 'red' });
@@ -497,9 +495,6 @@ const Win = {
 					}
 				}
 
-				//shiftQ = debounce(shiftQ, 800, true);
-				runNextInQ = debounce(runNextInQ, 800, true);
-
 				function qCommand(command, options) {
 					if (getPowerShellSession(child) !== undefined && options.existingSession !== true) {
 						// If the session already exist, no need to push a new one
@@ -568,10 +563,15 @@ const Win = {
 									if (psVars.powerShellSessions[i].initialOptions.id == options.id) {
 
 										psVars.powerShellSessions[i].commandq.push({ command: command, options: options, outputBin: '', errorBin: '' });
-
 										setParams(command, options, psVars.powerShellSessions[i].child);
+										
+										// Might be a bad place to do this
+										getPowerShellSession(psVars.powerShellSessions[i].child).out = [];
+										getPowerShellSession(psVars.powerShellSessions[i].child).err = [];
 
-										psVars.powerShellSessions[i].child.stdin.write(`${psVars.powerShellSessions[i].commandq[0].command[0] + '; write-host "End Win.PowerShell() command"'}\r\n`);
+										setTimeout(() => {
+											psVars.powerShellSessions[i].child.stdin.write(`${psVars.powerShellSessions[i].commandq[0].command[0] + '; write-host "End Win.PowerShell() command"'}\r\n`);
+										}, 700);
 
 									} else if (i == psVars.powerShellSessions.length - 1) {
 										Win.log(`Could not find PowerShell session ${options.id} while attempting to push to the command queue`, { colour: 'red' })
@@ -605,9 +605,7 @@ const Win = {
 				}
 
 				function newCommand(command, cb, options) {
-					if (!(typeof command == 'array' || typeof command == 'object')) {
-						command = [command];
-					}
+					if (typeof command == 'string') command = [command];
 
 					if (options == undefined || (options && !options.id)) Win.error('The options parameter and value "id" is required for new commands');
 
@@ -615,7 +613,10 @@ const Win = {
 					for (let i in psVars.powerShellSessions) {
 						if (psVars.powerShellSessions[i].initialOptions.keepAlive == true) {
 							if (psVars.powerShellSessions[i].initialOptions.id == options.id) {
-								// What was this here for again?
+								// Should this go here?
+								/* 
+								getPowerShellSession(psVars.powerShellSessions[i].child).out = [];
+								getPowerShellSession(psVars.powerShellSessions[i].child).err = []; */
 							} else if (i == psVars.powerShellSessions.length - 1) {
 								Win.log('Could not find existing powershell session, even though it should exist and was found previously. This is a problem with Win.PowerShell, please report an issue with details about your setup on GitHub', { colour: 'red' });
 								return (undefined);
@@ -644,8 +645,7 @@ const Win = {
 					if (getPowerShellSession(data.child).commandq.length === 0 && getPowerShellSession(data.child).checkingIfDone === false) {
 						getPowerShellSession(data.child).checkingIfDone = true;
 
-
-						if (typeof data.callback == 'function' && (getPowerShellSession(data.child).out.length > 1 || getPowerShellSession(data.child).err.length > 1)) data.callback(data.result.out, data.result.err);
+						if (typeof data.callback == 'function' && (data.result.out.length > 1 || data.result.err.length > 1)) data.callback(data.result.out, data.result.err);
 
 						else if (typeof data.callback == 'function') data.callback(data.result.out.toString(), data.result.err.toString());
 
