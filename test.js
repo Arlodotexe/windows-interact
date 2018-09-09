@@ -59,18 +59,19 @@ Win.PowerShell(['get-process "notepad" | select ProcessName, MainWindowTitle'], 
 
 
 
+
 Win.PowerShell.newCommand(com, (result, err) => {
     console.log('newCommand: ', result);
 }, { id: 'test', noLog: true });
- setTimeout(() => {
-    
-}, 2000); 
+
+setTimeout(() => {
+}, 2000);
 
 
- /* 
+
 Win.PowerShell('ls', result => {
     console.log('result 2 ', result);
-}, { noLog: true, id: 'test2', suppressErrors: true, keepAlive: false }); */
+}, { noLog: true, id: 'test2', suppressErrors: true, keepAlive: false });
 
 
 // Ignore this, this is for testing the audio detection

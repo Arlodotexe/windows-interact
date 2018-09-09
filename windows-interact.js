@@ -462,12 +462,12 @@ const Win = {
 					getPowerShellSession(child).commandq[0].outputBin = replaceAll(getCommandq(child)[0].outputBin, 'End Win.PowerShell() command\n', '');
 
 					getPowerShellSession(child).out.push(getCommandq(child)[0].outputBin);
-					
+
 					if (getCommandq()[0].outputBin.toString().trim() !== '' && getCommandq().length > 0 && !(getCommandq()[0].options && getCommandq()[0].options.noLog === true)) {
 						getCommandq()[0].outputBin = replaceAll(getCommandq()[0].outputBin, 'End Win.PowerShell() command\n', '');
 						Win.log((getCommandq().length > 0 && (getCommandq()[0].options && getCommandq()[0].options.keepAlive && getCommandq()[0].options.id) ? '\x1b[33mPowerShell session "' + getCommandq()[0].options.id + '":\x1b[0m\n' : '') + getCommandq()[0].outputBin.toString().trim());
 					}
-					
+
 					pushErrors();
 				}
 
@@ -482,7 +482,7 @@ const Win = {
 					}
 					getCommandq()[0].errorBin = '';
 
-					if (getCommandq().length == 1) checkIfDone({ child: child, callback: callback });
+					if (getCommandq().length == 1) checkIfDone({ child: child, callback: callback, options: getCommandq(child)[0].options, result: { out: getCommandq(child)[0].outputBin, err: getCommandq(child)[0].errorBin } });
 
 					setTimeout(() => {
 						shiftQ();
@@ -523,7 +523,6 @@ const Win = {
 							triggered: false,
 							checkingIfDone: false
 						});
-
 
 					} else if (getPowerShellSession(child) == undefined && !(options && options.keepAlive == true && options.id !== undefined && options.existingSession !== undefined)) {
 						// If the session is not stored and it is not going to be kept alive, push it
@@ -569,15 +568,18 @@ const Win = {
 							}
 						}, () => {
 							for (let i in psVars.powerShellSessions) {
-								if (psVars.powerShellSessions[i].initialOptions.id == options.id) {
-									psVars.powerShellSessions[i].commandq.push({ command: command, options: options, outputBin: '', errorBin: '' });
+								if (psVars.powerShellSessions[i].initialOptions.keepAlive == true) {
+									if (psVars.powerShellSessions[i].initialOptions.id == options.id) {
 
-									setParams(command, options, psVars.powerShellSessions[i].child);
+										psVars.powerShellSessions[i].commandq.push({ command: command, options: options, outputBin: '', errorBin: '' });
 
-									psVars.powerShellSessions[i].child.stdin.write(`${psVars.powerShellSessions[i].commandq[0].command[0] + '; write-host "End Win.PowerShell() command"'}\r\n`);
+										setParams(command, options, psVars.powerShellSessions[i].child);
 
-								} else if (i == psVars.powerShellSessions.length - 1) {
-									Win.log(`Could not find PowerShell session ${options.id} while attempting to push to the command queue`, { colour: 'red' })
+										psVars.powerShellSessions[i].child.stdin.write(`${psVars.powerShellSessions[i].commandq[0].command[0] + '; write-host "End Win.PowerShell() command"'}\r\n`);
+
+									} else if (i == psVars.powerShellSessions.length - 1) {
+										Win.log(`Could not find PowerShell session ${options.id} while attempting to push to the command queue`, { colour: 'red' })
+									}
 								}
 							}
 						}, 10);
@@ -614,13 +616,14 @@ const Win = {
 					if (options == undefined || (options && !options.id)) Win.error('The options parameter and value "id" is required for new commands');
 
 					options.existingSession = true;
-
 					for (let i in psVars.powerShellSessions) {
-						if (psVars.powerShellSessions[i].initialOptions.id == options.id) {
-
-						} else if (i == psVars.powerShellSessions.length - 1) {
-							Win.log('Could not find existing powershell session, even though it should exist and was found previously. This is a problem with Win.PowerShell, please report an issue with details about your setup on GitHub', { colour: 'red' });
-							return (undefined);
+						if (psVars.powerShellSessions[i].initialOptions.keepAlive == true) {
+							if (psVars.powerShellSessions[i].initialOptions.id == options.id) {
+								// What was this here for again?
+							} else if (i == psVars.powerShellSessions.length - 1) {
+								Win.log('Could not find existing powershell session, even though it should exist and was found previously. This is a problem with Win.PowerShell, please report an issue with details about your setup on GitHub', { colour: 'red' });
+								return (undefined);
+							}
 						}
 					}
 
@@ -646,9 +649,9 @@ const Win = {
 						getPowerShellSession(data.child).checkingIfDone = true;
 
 
-						if (typeof data.callback == 'function' && (getPowerShellSession(data.child).out.length > 1 || getPowerShellSession(data.child).err.length > 1)) data.callback(getPowerShellSession(data.child).out, getPowerShellSession(data.child).err);
+						if (typeof data.callback == 'function' && (getPowerShellSession(data.child).out.length > 1 || getPowerShellSession(data.child).err.length > 1)) data.callback(data.result.out, data.result.err);
 
-						else if (typeof data.callback == 'function') data.callback(getPowerShellSession(data.child).out.toString(), getPowerShellSession(data.child).err.toString());
+						else if (typeof data.callback == 'function') data.callback(data.result.out.toString(), data.result.err.toString());
 
 						if (!(getPowerShellSession(data.child).initialOptions && (getPowerShellSession(data.child).initialOptions.existingSession == true || getPowerShellSession(data.child).initialOptions.keepAlive == true))) {
 
@@ -662,15 +665,17 @@ const Win = {
 								}
 							}
 							getPowerShellSession(data.child).checkingIfDone = false, getPowerShellSession(data.child).triggered = false;
+						} else if (data.options.keepAlive == true && data.options.existingSession !== true) {
+							if (isVerbose('PowerShell')) Win.log('PowerShell session will be kept alive. ID: "' + options.id + '"', { colour: 'yellow' });
+							getPowerShellSession(data.child).checkingIfDone = false;
 						} else {
-							if (isVerbose('PowerShell')) Win.log('PowerShell process is being kept alive. ID: "' + options.id + '"', { colour: 'yellow' });
 							getPowerShellSession(data.child).checkingIfDone = false;
 						}
 
 					} else {
 						setTimeout(() => {
 							checkIfDone(data);
-						}, 500);
+						}, 10);
 					}
 				}
 
