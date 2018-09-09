@@ -497,7 +497,7 @@ const Win = {
 
 				function runNextInQ() {
 					if (getCommandq().length > 0) {
-						child.stdin.write(`${getCommandq()[0].command + '; write-host "End Win.PowerShell() command";Start-Sleep -m 200;'}\r\n`);
+						child.stdin.write(`${getCommandq()[0].command + '; write-host "End Win.PowerShell() command";'}\r\n`);
 					}
 				}
 
@@ -508,20 +508,11 @@ const Win = {
 					if (options && options.id && options.existingSession == true) {
 						// If this is for an existing session, find and push it to that session's commandq
 
-						for (let i in psVars.powerShellSessions) {
-							if (psVars.powerShellSessions[i].initialOptions.id == options.id) {
-								child = psVars.powerShellSessions[i].child;
-								setTimeout(() => {
-									psVars.powerShellSessions[i].commandq.push({ command: command, options: options, outputBin: '', errorBin: '' });
-								}, 400);
-							} else if (i == psVars.powerShellSessions.length - 1) {
-								Win.log(`Could not find PowerShell session ${options.id} while attempting to push to the command queue`, { colour: 'red' })
-							}
-						}
+						// moved this down to where commands are written
 					}
 					else if (options && options.id && options.keepAlive == true && options.existingSession == undefined) {
 						// If this is for a new session that needs to be kept alive, push it (but with different properties)
-
+						Win.log('Received command to be kept alive', { colour: 'green' });
 						(once(() => {
 							psVars.powerShellSessions.push({
 								commandq: [{ command: command, options: options, outputBin: '', errorBin: '' }],
@@ -538,6 +529,7 @@ const Win = {
 
 					} else if (getPowerShellSession(child) == undefined && !(options && options.keepAlive == true && options.id !== undefined)) {
 						// If the session is not stored and it is not going to be kept alive, push it
+						Win.log('Received normal command', { colour: 'green' });
 						psVars.powerShellSessions.push({
 							commandq: [{ command: command, options: options, outputBin: '', errorBin: '' }],
 							initialOptions: options,
@@ -553,46 +545,48 @@ const Win = {
 					}
 
 					if (options && options.id !== undefined && options.existingSession == true) {
-						// Write this new command to an existing session
-						(once(() => {
-							function waitUntil(conditions, callback, delay) {
-								function tryit() {
-									if (eval(conditions)) return true;
-									else return false;
-								}
-								if (!tryit()) {
+						// Wait for the command q to empty out, then write this new command to an existing session
+						Win.log('Received existing command', { colour: 'green' });
+
+						function when(conditions, callback, delay) {
+							function tryit() {
+								if (conditions()) callback();
+								else {
 									setTimeout(() => {
 										tryit();
 									}, delay);
-								} else {
-									callback();
 								}
 							}
+							tryit();
+						}
 
 
-							waitUntil(`
-							(()=>{
-								for (let i in psVars.powerShellSessions) {
-									if (psVars.powerShellSessions[i].initialOptions.id == "${options.id}") {
-										if (psVars.powerShellSessions[i].commandq.length == 0) {
-											return true;
-										} else {
-											return false;
-										}
+						when(() => {
+							for (let i in psVars.powerShellSessions) {
+								if (psVars.powerShellSessions[i].initialOptions.id == options.id) {
+									// Removing the second condition and change first condition length to 1 (if q is empty) and the second command works, but the first command does not. Otherwise, only first command works
+									if (psVars.powerShellSessions[i].commandq.length == 1 && psVars.powerShellSessions[i].commandq[0].command[0] == command) {
+										return true;
+									} else {
+										return false;
 									}
 								}
-							})()
-							`, () => {
-									for (let i in psVars.powerShellSessions) {
-										if (psVars.powerShellSessions[i].initialOptions.id == options.id) {
-											if (psVars.powerShellSessions[i].commandq.length === 0) {
-												psVars.powerShellSessions[i].callback = callback;
-												psVars.powerShellSessions[i].child.stdin.write(`${command + '; write-host "End Win.PowerShell() command"'}\r\n`);
-											}
-										}
-									}
-								}, 10);
-						}))();
+							}
+						}, () => {
+							for (let i in psVars.powerShellSessions) {
+								if (psVars.powerShellSessions[i].initialOptions.id == options.id) {
+									Win.log('Trying new command', { colour: 'green' });
+									psVars.powerShellSessions[i].commandq.push({ command: command, options: options, outputBin: '', errorBin: '' });
+
+									setParams(command, options, psVars.powerShellSessions[i].child);
+									psVars.powerShellSessions[i].callback = callback;
+									psVars.powerShellSessions[i].child.stdin.write(`${psVars.powerShellSessions[i].commandq[0].command[0] + '; write-host "End Win.PowerShell() command"'}\r\n`);
+								} else if (i == psVars.powerShellSessions.length - 1) {
+									Win.log(`Could not find PowerShell session ${options.id} while attempting to push to the command queue`, { colour: 'red' })
+								}
+							}
+						}, 10);
+
 
 					} else if (getCommandq(child).length == 1 && getPowerShellSession(child).triggered == false && !(options && options.id && options.existingSession)) {
 						// Trigger the Q if this is the first command and this isn't for an existing session
@@ -628,7 +622,7 @@ const Win = {
 
 					for (let i in psVars.powerShellSessions) {
 						if (psVars.powerShellSessions[i].initialOptions.id == options.id) {
-							setParams(command, options, psVars.powerShellSessions[i].child);
+
 						} else if (i == psVars.powerShellSessions.length - 1) {
 							Win.log('Could not find existing powershell session, even though it should exist and was found previously. This is a problem with Win.PowerShell, please report an issue with details about your setup on GitHub', { colour: 'red' });
 							return (undefined);
@@ -694,14 +688,14 @@ const Win = {
 		fn.newCommand = function(command, callback, options) {
 
 			tryForUntil(10, 1500, `(function() {
-				for (let i in psVars.powerShellSessions) {
-					if (psVars.powerShellSessions[i].initialOptions.id == "${options.id}") {
-						return true;
-					} else if (i == psVars.powerShellSessions.length - 1) {
-						return false;
-					}
-				}
-			})()`, () => {
+													for (let i in psVars.powerShellSessions) {
+														if (psVars.powerShellSessions[i].initialOptions.id == "${options.id}") {
+															return true;
+														} else if (i == psVars.powerShellSessions.length - 1) {
+															return false;
+														}
+													}
+												})()`, () => {
 					if ((function() {
 						for (let i in psVars.powerShellSessions) {
 							if (psVars.powerShellSessions[i].initialOptions.id == options.id) {
@@ -769,8 +763,8 @@ const Win = {
 	alert: function(message, title) {
 		return new Promise(resolve => {
 			if (message && message.trim() !== '') {
-				Win.PowerShell(`$wshell = New-Object -ComObject Wscript.Shell
-				$wshell.Popup("${message}",0,"${((!title) ? 'Node' : title)}")`, () => {
+				Win.PowerShell(`$wshell = New - Object - ComObject Wscript.Shell
+				$wshell.Popup("${message}", 0, "${((!title) ? 'Node' : title)}")`, () => {
 						resolve();
 					});
 				nircmd('infobox "' + (message) + '" "' + ((!title) ? 'Node' : title) + '"', () => {
@@ -781,7 +775,7 @@ const Win = {
 	},
 	prompt: function(message, title, placeholder) {
 		return new Promise(resolve => {
-			Win.PowerShell(`Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.Interaction]::InputBox('` + message + `' , '` + ((title) ? title : `Node`) + `' , '` + ((placeholder) ? placeholder : ``) + `')`, (response) => {
+			Win.PowerShell(`Add - Type - AssemblyName Microsoft.VisualBasic;[Microsoft.VisualBasic.Interaction]:: InputBox('` + message + `', '` + ((title) ? title : `Node`) + `', '` + ((placeholder) ? placeholder : ``) + `')`, (response) => {
 				resolve(response.trim());
 			}, { noLog: true });
 		});
@@ -1198,12 +1192,12 @@ const Win = {
 		},
 		sleep: function(delay) {
 			setTimeout(() => {
-				Win.PowerShell(['cd ' + Win.path`${__dirname}`, '\\nircmd.exe standby']);
+				Win.PowerShell(['cd ' + Win.path`${__dirname} `, '\\nircmd.exe standby']);
 			}, ((delay) ? delay : 0));
 		},
 		screenSaver: function(delay) {
 			setTimeout(() => {
-				Win.PowerShell(['cd ' + Win.path`${__dirname}`, '\\nircmd.exe screensaver']);
+				Win.PowerShell(['cd ' + Win.path`${__dirname} `, '\\nircmd.exe screensaver']);
 			}, ((delay) ? delay : 0));
 		}
 	},
@@ -1211,7 +1205,7 @@ const Win = {
 		minimize: function(processName) {
 			if (processName !== undefined) {
 				if (!processName.includes('.exe')) processName = processName + '.exe';
-				Win.PowerShell(['cd ' + Win.path`${__dirname}`, '\\nircmd.exe win min process "' + processName + '"']);
+				Win.PowerShell(['cd ' + Win.path`${__dirname} `, '\\nircmd.exe win min process "' + processName + '"']);
 			} else {
 				nircmd('win min foreground');
 			}
@@ -1239,7 +1233,7 @@ const Win = {
 			if (processName !== undefined && isNaN(height) === false && isNaN(width) === false) {
 				if (!processName.includes('.exe')) processName = processName + '.exe';
 				Win.window.restore(processName);
-				Win.PowerShell(['cd ' + Win.path`${__dirname}`, '\\nircmd.exe win setsize process "' + processName + '" x y ' + width + ' ' + height], { suppressErrors: true, noLog: true });
+				Win.PowerShell(['cd ' + Win.path`${__dirname} `, '\\nircmd.exe win setsize process "' + processName + '" x y ' + width + ' ' + height], { suppressErrors: true, noLog: true });
 			} else {
 				nircmd('win setsize foreground x y ' + width + ' ' + height, undefined, { supressErrors: true, noLog: true });
 			}
@@ -1271,12 +1265,12 @@ const Win = {
 	playAudio: function(path) {
 		path = replaceAll(path, '\\\\', '\\');
 		if (path.includes('.wav')) {
-			Win.PowerShell([`$soundplayer = New-Object Media.SoundPlayer '` + path + `'`, ` $soundplayer.Play();`], null, { keepAlive: true });
+			Win.PowerShell([`$soundplayer = New - Object Media.SoundPlayer '` + path + `'`, ` $soundplayer.Play(); `], null, { keepAlive: true });
 		} else {
-			Win.PowerShell(`Add-Type -AssemblyName presentationCore;
-			$mediaPlayer = New-Object System.Windows.Media.MediaPlayer;
-			$mediaPlayer.open("${path}");
-			$mediaPlayer.Play()`, undefined, { keepAlive: true, noLog: true });
+			Win.PowerShell(`Add - Type - AssemblyName presentationCore;
+										$mediaPlayer = New - Object System.Windows.Media.MediaPlayer;
+										$mediaPlayer.open("${path}");
+										$mediaPlayer.Play()`, undefined, { keepAlive: true, noLog: true });
 		}
 	},
 	stopAudio: function(path) {
@@ -1300,21 +1294,21 @@ const Win = {
 		}
 
 		Win.PowerShell([`
-		function Read-OpenFileDialog([string]$WindowTitle, [string]$InitialDirectory, [string]$Filter = "All files (*.*)|*.*", [switch]$AllowMultiSelect)
-		{  
-			Add-Type -AssemblyName System.Windows.Forms
-			$openFileDialog = New-Object System.Windows.Forms.OpenFileDialog
+										function Read-OpenFileDialog([string]$WindowTitle, [string]$InitialDirectory, [string]$Filter = "All files (*.*)|*.*", [switch]$AllowMultiSelect)
+		{
+								Add-Type - AssemblyName System.Windows.Forms
+			$openFileDialog = New - Object System.Windows.Forms.OpenFileDialog
 			$openFileDialog.Title = $WindowTitle
-			if (![string]::IsNullOrWhiteSpace($InitialDirectory)) { $openFileDialog.InitialDirectory = $InitialDirectory }
-			$openFileDialog.Filter = $Filter
-			if ($AllowMultiSelect) { $openFileDialog.MultiSelect = $true }
-			$openFileDialog.ShowHelp = $true	# Without this line the ShowDialog() function may hang depending on system configuration and running from console vs. ISE.
-			$openFileDialog.ShowDialog() > $null
-			if ($AllowMultiSelect) { return $openFileDialog.Filenames } else { return $openFileDialog.Filename }
-		}`,
+			if(![string]:: IsNullOrWhiteSpace($InitialDirectory)) { $openFileDialog.InitialDirectory = $InitialDirectory }
+						$openFileDialog.Filter = $Filter
+						if ($AllowMultiSelect) { $openFileDialog.MultiSelect = $true }
+						$openFileDialog.ShowHelp = $true	# Without this line the ShowDialog() function may hang depending on system configuration and running from console vs.ISE.
+							$openFileDialog.ShowDialog() > $null
+						if ($AllowMultiSelect) { return $openFileDialog.Filenames } else { return $openFileDialog.Filename }
+					} `,
 			`
-		$filePath = Read-OpenFileDialog -WindowTitle "${(windowTitle ? windowTitle : `Select a File`)}" -InitialDirectory '${(initialDirectory ? replaceAll(initialDirectory, '\\\\', '\\') : `C:\\`)}' ${(filter && filter.filtertext && filter.filterby) ? `-Filter "${filter.filtertext} (${filter.filterby})|${filter.filterby}"` : ''} ${(allowMultiSelect ? `-AllowMultiSelect` : '')}; if (![string]::IsNullOrEmpty($filePath)) { Write-Host "$filePath" } else { "No file was selected" }
-		`], result => {
+					$filePath = Read - OpenFileDialog - WindowTitle "${(windowTitle ? windowTitle : `Select a File`)}" - InitialDirectory '${(initialDirectory ? replaceAll(initialDirectory, '\\\\', '\\') : `C:\\`)}' ${(filter && filter.filtertext && filter.filterby) ? `-Filter "${filter.filtertext} (${filter.filterby})|${filter.filterby}"` : ''} ${(allowMultiSelect ? `-AllowMultiSelect` : '')}; if (![string]:: IsNullOrEmpty($filePath)) { Write - Host "$filePath" } else { "No file was selected" }
+						`], result => {
 				if (typeof callback == 'function') callback(result[0].includes('No file was selected') ? undefined : result[0]);
 			}, { noLog: true });
 	},

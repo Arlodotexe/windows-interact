@@ -47,28 +47,34 @@ Win.appManager.register.group({
 let com = `get-process "Code" | select ProcessName, MainWindowTitle`;
 
 Win.PowerShell(['get-process "notepad" | select ProcessName, MainWindowTitle'], (result, err) => {
-    console.log('\n')
+    console.log('\n');
     console.log('result ', result);
 }, { noLog: true, id: 'test', suppressErrors: false, keepAlive: true });
 
 
-// Current mission: Callback and command from initial command is getting used for newCommands, except when timed further apart. Then it errors
+// Current mission: First command is getting overwritten by second command
+// No callbacks are being called, is output even being collected?
+
+// Where the green command are showing in windows-interact.js is where I am currently investigating the problem (function qCommand)
+
+
+Win.PowerShell.newCommand(com, (result, err) => {
+    console.log('newCommand: ', result, err);
+}, { id: 'test', noLog: false });
 
  setTimeout(() => {
-    Win.PowerShell.newCommand(com, (result, err) => {
-        console.log('newCommand: ', result, err);
-    }, { id: 'test', noLog: true });
     
 }, 2000); 
+
+
  /* 
 Win.PowerShell('ls', result => {
     console.log('result 2 ', result);
 }, { noLog: true, id: 'test2', suppressErrors: true, keepAlive: false }); */
 
 
-setTimeout(() => {
-    Win.PowerShell.endSession('test')
-}, 4000);
+// Ignore this, this is for testing the audio detection
+
 
 /*
 setTimeout(() => {
