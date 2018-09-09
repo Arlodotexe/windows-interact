@@ -58,10 +58,10 @@ Win.PowerShell(['get-process "notepad" | select ProcessName, MainWindowTitle'], 
 // Where the green command are showing in windows-interact.js is where I am currently investigating the problem (function qCommand)
 
 
-Win.PowerShell.newCommand(com, (result, err) => {
-    console.log('newCommand: ', result, err);
-}, { id: 'test', noLog: false });
 
+Win.PowerShell.newCommand(com, (result, err) => {
+    console.log('newCommand: ', result);
+}, { id: 'test', noLog: true });
  setTimeout(() => {
     
 }, 2000); 
