@@ -922,7 +922,6 @@ const Win = {
 							}, { noLog: true, suppressErrors: true, keepAlive: true, id: 'wi-appWatcher' });
 						} else {
 							Win.PowerShell.newCommand('get-process "' + apps.join('", "') + '" | select ProcessName, MainWindowTitle', (stdout) => {
-								console.log(stdout)
 								appWatchProcessing(stdout);
 							}, { noLog: true, suppressErrors: true, keepAlive: true, id: 'wi-appWatcher' });
 						}
