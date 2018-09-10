@@ -39,6 +39,7 @@ New in version (1.1.8):
    - `keepAlive` - Do not end the child process when the command(s) are completed
    - `ID` - Assign an identity to this PowerShell session in order to issue a new command or end it at a later time.
  - Added `Win.process.getPidByWindowTitle()`
+ - `Win.log()` will not act more like `console.log()`. Any string that is passed as a parameter at any position will be printed back.
 
  What's changed: 
  - Tons of bug fixes
@@ -265,7 +266,7 @@ Win.log(message, {backgroundColor: 'color', color: 'color'});
 Win.log('Logged information');
 
 // Log information to the console and .txt file, with colored background and text
-Win.log('Logged information', {background: 'color', color: 'color'})
+Win.log('Logged ', 'information', {background: 'color', color: 'color'});
 
 Win.log.speak(phrase, voice, speed, options);
 // Log information to the console and .txt file, and also Win.speak() it
