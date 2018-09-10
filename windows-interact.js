@@ -276,7 +276,7 @@ function log() {
 		options = options[0];
 
 		for (let i in arguments) {
-			
+
 		}
 		let colour = '';
 		if (options && (options.colour || options.color)) {
@@ -555,7 +555,7 @@ const Win = {
 						});
 					}
 
-					if (options && options.id !== undefined && options.existingSession == true && getPowerShellSessionById(options.id) == undefined) {
+					if (options && options.id !== undefined && options.existingSession == true && getPowerShellSessionById(options.id) !== undefined) {
 						// Wait for the command q to empty out, then write this new command to an existing session
 
 						function when(conditions, callback, delay) {
@@ -600,8 +600,6 @@ const Win = {
 											psVars.powerShellSessions[i].child.stdin.write(`${psVars.powerShellSessions[i].commandq[0].command[0] + '; write-host "End Win.PowerShell() command"'}\r\n`);
 										}, 800);
 
-									} else if (i == psVars.powerShellSessions.length - 1) {
-										Win.log(`Could not find PowerShell session ${options.id} while attempting to push to the command queue`, { colour: 'red' });
 									}
 								}
 							}
@@ -637,17 +635,17 @@ const Win = {
 					if (options == undefined || (options && !options.id)) Win.error('The options parameter and value "id" is required for new commands');
 
 					options.existingSession = true;
-					for (let i in psVars.powerShellSessions) {
-						if (psVars.powerShellSessions[i].initialOptions.keepAlive == true) {
+					for (let i = 0; i < psVars.powerShellSessions + 1; i++) {
+						if (psVars.powerShellSessions[i] && psVars.powerShellSessions[i].initialOptions.keepAlive == true) {
 							if (psVars.powerShellSessions[i].initialOptions.id == options.id) {
 								// Should this go here? Probably not, it might dump the output of a running command
 								/* 
 								getPowerShellSession(psVars.powerShellSessions[i].child).out = [];
 								getPowerShellSession(psVars.powerShellSessions[i].child).err = []; */
-							} else if (i == psVars.powerShellSessions.length - 1) {
-								Win.log('Could not find existing powershell session, even though it should exist and was found previously. This is a problem with Win.PowerShell, please report an issue with details about your setup on GitHub', { colour: 'red' });
-								return (undefined);
 							}
+						} else if(psVars.powerShellSessions[i] == undefined) {
+							Win.log('Could not find existing powershell session "', options.id,'" even though it should exist and was found previously. This is a problem with Win.PowerShell, please report an issue with details about your setup on GitHub', { colour: 'red' });
+							return (undefined);
 						}
 					}
 
@@ -668,7 +666,7 @@ const Win = {
 					for (let i = 0; i < command.length; i++) {
 						if (i == command.length - 1) {
 							// Last command, should have callback attached 
-							if(options && options.callback) options.callback = once(callback);
+							if (options && options.callback) options.callback = once(callback);
 						}
 						qCommand(command[i], options);
 					}
