@@ -50,7 +50,7 @@ let note = 'get-process "notepad" | select ProcessName, MainWindowTitle';
 Win.PowerShell([...x, note, 'wr'], (result, err) => {
     console.log('\n');
     console.log('result ', result);
-}, { noLog: true, id: 'test', suppressErrors: false, keepAlive: true });
+}, { noLog: true, id: 'test', suppressErrors: true, keepAlive: true });
 
 
 Win.PowerShell.newCommand('write-host "tesT"', (result, err) => {
@@ -66,19 +66,10 @@ Win.PowerShell.newCommand('$vari = "Hello world Pt. 3"', (result, err) => {
 }, { id: 'test', noLog: true });
 
 
-Win.PowerShell.newCommand('write-host $vai', (result, err) => {
+Win.PowerShell.newCommand('write-host $vari', (result, err) => {
     console.log('newCommand 4: ', result);
 }, { id: 'test', noLog: true });
 
-
-
-let i = 0;
-
-setInterval(() => {
-    Win.PowerShell.isSessionActive('test', _ => {
-        console.log(_);
-    });
-}, 1500);
 
 /* 
  

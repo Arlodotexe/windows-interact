@@ -445,6 +445,7 @@ const Win = {
 
 				function collectOutput(data) {
 					clearInterval(outputTime);
+					collectErrors(''); // Nudge the error collector in case it's never called
 
 					if (getPowerShellSession(child).commandq[0] == undefined) Win.log('Tried to collect output, but the command queue was empty. This is a bug with Windows-Interact, please report it along with your setup on github', { colour: 'red' })
 					if (data.toString() !== '') getPowerShellSession(child).commandq[0].outputBin = getPowerShellSession(child).commandq[0].outputBin + data.toString();
@@ -456,7 +457,7 @@ const Win = {
 
 				function collectErrors(data) {
 					clearInterval(errTime);
-					if (data.toString() !== '') getCommandq(child)[0].errorBin = getCommandq(child)[0].errorBin + data.toString();
+					getCommandq(child)[0].errorBin = getCommandq(child)[0].errorBin + data.toString();
 
 					errTime = setTimeout(() => {
 						pushErrors();
@@ -472,8 +473,6 @@ const Win = {
 						getCommandq()[0].outputBin = replaceAll(getCommandq()[0].outputBin, 'End Win.PowerShell() command\n', '');
 						Win.log((getCommandq().length > 0 && (getCommandq()[0].options && getCommandq()[0].options.keepAlive && getCommandq()[0].options.id) ? '\x1b[33mPowerShell session "' + getCommandq()[0].options.id + '":\x1b[0m\n' : '') + getCommandq()[0].outputBin.toString().trim());
 					}
-
-					pushErrors();
 				}
 
 				function pushErrors() {
@@ -683,7 +682,6 @@ const Win = {
 							}
 						} else if (data.options.keepAlive == true && data.options.existingSession !== true) {
 							if (isVerbose('PowerShell')) Win.log('PowerShell session will be kept alive. ID: "' + options.id + '"', { colour: 'yellow' });
-
 						}
 						getPowerShellSession(data.child).out = [];
 						getPowerShellSession(data.child).err = [];
