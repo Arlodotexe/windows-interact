@@ -33,11 +33,14 @@ Win.appManager.register({
             Win.log('Notepad killed')
         }
     },
+    donation: {
+        path: Win.path`"C:\Program Files\BOINC\boincmgr.exe"`
+    }
 })
 
 Win.appManager.register.group({
     "test": {
-        apps: ["Pad", "VSCode", "boincmgr"],
+        apps: ["Pad", "donation"],
         onLaunch: function() {
             console.log('test launch');
         }
@@ -45,7 +48,10 @@ Win.appManager.register.group({
 }); 
 
 
-let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
+Win.appManager.kill.group('test');
+
+
+/* let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
 let note = 'get-process "notepad" | select ProcessName, MainWindowTitle';
 
 Win.PowerShell([...x, note, 'wr'], (result, err) => {
@@ -69,16 +75,14 @@ Win.PowerShell.newCommand('$vari = "Hello world Pt. 3"', (result, err) => {
 
 Win.PowerShell.newCommand('write-host $vari', (result, err) => {
     console.log('newCommand 4: ', result);
-}, { id: 'test', noLog: true }); */
+}, { id: 'test', noLog: true });
 
 
-/* 
- 
 Win.PowerShell('ls', result => {
     console.log('result 2 ', result);
-}, { noLog: true, id: 'test2', suppressErrors: true, keepAlive: false });  */
+}, { noLog: true, id: 'test2', suppressErrors: true, keepAlive: false }); */
 
-
+/*
 // Ignore this, this is for testing the audio detection
 
 

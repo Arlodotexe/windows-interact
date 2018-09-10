@@ -701,7 +701,7 @@ const Win = {
 		}
 
 		fn.newCommand = function(command, callback, options) {
-			
+
 			tryForUntil(10, 1500, `(function() {
 							for (let i in psVars.powerShellSessions) {
 								if (psVars.powerShellSessions[i].initialOptions.id == "${options.id}") {
@@ -929,7 +929,7 @@ const Win = {
 				}
 
 				Win.appManager.appWatcher = function() {
-					Win.PowerShell.isSessionActive('wi-appWatcher', result => {
+					Win.PowerShell.isSessionActive('windows-interact-internal-appWatcher', result => {
 						if (!result) {
 							Win.PowerShell('get-process "' + apps.join('", "') + '" | select ProcessName, MainWindowTitle', (stdout) => {
 								appWatchProcessing(stdout);
@@ -961,22 +961,50 @@ const Win = {
 
 			return fn;
 		})(),
-		launch: function(appName) {
-			if (!Win.appManager.registeredApps[appName]) {
-				Win.error('Unable to launch requested application. The requested app is either not registered or misspelled');
-			} else {
-				nircmd('execmd ' + Win.appManager.registeredApps[appName].path);
-				if (Win.appManager.registeredApps[appName].onLaunch) Win.appManager.registeredApps[appName].onLaunch();
+		launch: (function() {
+			let fn = function(appName) {
+				if (!Win.appManager.registeredApps[appName]) {
+					Win.error('Unable to launch requested application. The requested app is either not registered or misspelled');
+				} else {
+					nircmd('execmd ' + Win.appManager.registeredApps[appName].path);
+					if (Win.appManager.registeredApps[appName].onLaunch) Win.appManager.registeredApps[appName].onLaunch();
+				}
 			}
-		},
-		kill: function(appName) {
-			if (!Win.appManager.registeredApps[appName]) {
-				Win.error('Unable to kill requested application. The requested app is either not registered or misspelled');
-			} else {
-				Win.process.kill(Win.appManager.registeredApps[appName].processName);
-				if (Win.appManager.registeredApps[appName].onKill) Win.appManager.registeredApps[appName].onKill();
+
+			fn.group = function(groupName) {
+				for (let i in groups) {
+					if (groups[i][groupName] !== undefined) {
+						for (let o in groups[i][groupName].apps) {
+							Win.appManager.launch(groups[i][groupName].apps[o]);
+						}
+
+					}
+				}
 			}
-		},
+
+			return fn;
+		})(),
+		kill: (function() {
+			let fn = function(appName) {
+				if (!Win.appManager.registeredApps[appName]) {
+					Win.error('Unable to kill requested application. The requested app is either not registered or misspelled');
+				} else {
+					Win.process.kill(Win.appManager.registeredApps[appName].processName);
+					if (Win.appManager.registeredApps[appName].onKill) Win.appManager.registeredApps[appName].onKill();
+				}
+			}
+			fn.group = function(groupName) {
+				for (let i in groups) {
+					if (groups[i][groupName] !== undefined) {
+						for (let o in groups[i][groupName].apps) {
+							Win.appManager.kill(groups[i][groupName].apps[o]);
+						}
+
+					}
+				}
+			}
+			return fn;
+		})(),
 		hide: function(processName) {
 			nircmd('win hide process "' + processName + '"');
 		},
@@ -1012,10 +1040,10 @@ const Win = {
 		},
 		kill: function(nameOrPid) {
 			return new Promise(resolve => {
-				if (nameOrPid != '' && nameOrPid != undefined && nameOrPid != null) {
+				if (nameOrPid !== '' && nameOrPid !== undefined && nameOrPid !== null) {
 					Win.cmd('taskkill /F /IM "' + nameOrPid + '"', () => {
 						resolve();
-					});
+					}, { suppressErrors: true, noLog: true });
 				}
 			});
 		},
