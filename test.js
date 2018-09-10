@@ -47,20 +47,20 @@ Win.appManager.register.group({
     }
 }); 
 
-
+/* 
 Win.appManager.kill.group('test');
 
 
-/* let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
+ let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
 let note = 'get-process "notepad" | select ProcessName, MainWindowTitle';
 
-Win.PowerShell([...x, note, 'wr'], (result, err) => {
+Win.PowerShell([...x, note], (result, err) => {
     console.log('\n');
     console.log('result ', result);
 }, { noLog: true, id: 'test', suppressErrors: true, keepAlive: true });
 
 
-Win.PowerShell.newCommand('write-host "tesT"', (result, err) => {
+Win.PowerShell.newCommand( 'Start-Sleep 2', (result, err) => {
     console.log('newCommand: ', result);
 }, { id: 'test', noLog: true });
 
@@ -80,7 +80,38 @@ Win.PowerShell.newCommand('write-host $vari', (result, err) => {
 
 Win.PowerShell('ls', result => {
     console.log('result 2 ', result);
-}, { noLog: true, id: 'test2', suppressErrors: true, keepAlive: false }); */
+}, { noLog: true, id: 'test2', suppressErrors: true, keepAlive: false }); 
+ */
+
+    Win.PowerShell(`param([String]$prodName)    
+    [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null
+    [Windows.UI.Notifications.ToastNotification, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null
+    [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] > $null
+    
+    $ToastTemplate = '
+    <toast launch="app-defined-string">
+        <visual>
+            <binding template="ToastGeneric">
+                <text>'+$prodName+'</text>
+            </binding>
+        </visual>
+    </toast>'
+    
+    Write-Output $ToastTemplate;
+    
+    $currTime = (Get-Date).AddSeconds(10);
+    "currTime : " + $currTime
+    
+    $xml = New-Object Windows.Data.Xml.Dom.XmlDocument
+    $xml.LoadXml($toastXml.OuterXml)
+    
+    $schedNotification = New-Object Windows.UI.Notifications.ToastNotification($xml)
+    $schedNotification.SuppressPopup = $True
+    $notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($prodName)
+    $notifier.Show($schedNotification)
+    
+    $schedNotification = New-Object Windows.UI.Notifications.ScheduledToastNotification($xml, $currTime)
+    $notifier.AddToSchedule($schedNotification)`);
 
 /*
 // Ignore this, this is for testing the audio detection

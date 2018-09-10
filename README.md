@@ -28,6 +28,10 @@ New release will be delayed by a few days as I have found a very odd, breaking b
 This release brings the [PowerShell session manager](https://github.com/Arlodotexe/windows-interact#winpowershell)! More advanced than [node-powershell](https://www.npmjs.com/package/node-powershell), with automatic output collection and seperation, and the ability to run multiple command in succession by passing in array. 
 
 New in version (1.1.8): 
+ - `Win.appManager()` now has group app management
+    - Assign apps to a group with `Win.appManager.register.group()`
+    - Give all apps in a group the same `onLaunch` or `onKill`
+    - Launch or kill all of the apps in a group at once.
  - `Win.PowerShell()` now has a built in session manager!
    - `Win.PowerShell.addCommand()` to issue a new command
    -  `Win.PowerShell.end()` to end a session
@@ -37,10 +41,10 @@ New in version (1.1.8):
  - Added `Win.process.getPidByWindowTitle()`
 
  What's changed: 
- - Tons of bug fixes, maybe a few new bugs I haven't found yet (Report them for me? Thanks!)
- - The appManager has been refactored to allow naming an app with any name when registering
+ - Tons of bug fixes
+ - The appManager has been refactored to allow registering an app with any name, instead of the executable name
  - Fixes a lot of commands that would fail if your directory had a space in it
- - Adjusted `Win.process.kill()` to allow killing by PID
+ - Adjusted `Win.process.kill()` to allow killing by PID and fixed it so it doesn't show a large red error message when the app isn't running
  - Fixed an issue where options passed into `Win.PowerShell()` would overwrite options for subsequent command
  - The callback for `Win.PowerShell()` now fires after the commands have completed, instead of when the session is ended.
  - LOTS of fixes to how `Win.PowerShell()` collects output and errors when using multiple commands. ~95% quirk-free! Still working on it, but it's _much_ better than last version.

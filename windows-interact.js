@@ -647,13 +647,13 @@ const Win = {
 				}
 
 
-				if (getPowerShellSessionById(options.id) !== undefined) {
+				if (getPowerShellSessionById(options && options.id) !== undefined) {
 					Win.log('PowerShell session "' + options.id + '" is already alive. To add a new command to this session, please use Win.PowerShell.newCommand()', { colour: 'yellow' });
 				} else {
 					for (let i = 0; i < command.length; i++) {
 						if (i == command.length - 1) {
 							// Last command, should have callback attached 
-							options.callback = once(callback);
+							if(options && options.callback) options.callback = once(callback);
 						}
 						qCommand(command[i], options);
 					}
@@ -742,7 +742,7 @@ const Win = {
 		fn.isSessionActive = function(id, callback) {
 			if (psVars.powerShellSessions.length > 0) {
 				for (let i in psVars.powerShellSessions) {
-					if (psVars.powerShellSessions[i].initialOptions.id == id) {
+					if (psVars.powerShellSessions[i].initialOptions && psVars.powerShellSessions[i].initialOptions.id == id) {
 						callback(true);
 					} else if (i == psVars.powerShellSessions.length - 1) {
 						callback(false);
