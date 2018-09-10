@@ -9,7 +9,7 @@ Win.set.preferences({
         }
     }
 });
-
+/* 
 Win.appManager.register({
     VSCode: {
 		path: Win.path`C:\Program Files\Microsoft VS Code\Code.exe`,
@@ -41,13 +41,12 @@ Win.appManager.register.group({
             console.log('test launch');
         }
     }
-}); 
+});  */
 
-
-/* let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
+ let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
 let note = 'get-process "notepad" | select ProcessName, MainWindowTitle';
 
-Win.PowerShell([...x, note], (result, err) => {
+Win.PowerShell([...x], (result, err) => {
     console.log('\n');
     console.log('result ', result);
 }, { noLog: true, id: 'test', suppressErrors: false, keepAlive: true });
@@ -71,15 +70,6 @@ Win.PowerShell.newCommand('write-host $vari', (result, err) => {
 }, { id: 'test', noLog: true });
 
 
-
-let i = 0;
-
-setInterval(() => {
-    Win.PowerShell.isSessionActive('test', _ => {
-        console.log(_);
-    });
-}, 1500);
- */
 /* 
  
 Win.PowerShell('ls', result => {
