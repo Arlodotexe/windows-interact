@@ -53,13 +53,6 @@ Win.PowerShell([...x, note], (result, err) => {
 }, { noLog: true, id: 'test', suppressErrors: false, keepAlive: true });
 
 
-// Current mission: First command is getting overwritten by second command
-// No callbacks are being called, is output even being collected?
-
-// Where the green command are showing in windows-interact.js is where I am currently investigating the problem (function qCommand)
-
-
-
 Win.PowerShell.newCommand('write-host "tesT"', (result, err) => {
     console.log('newCommand: ', result);
 }, { id: 'test', noLog: true });
@@ -77,15 +70,25 @@ Win.PowerShell.newCommand('write-host $vari', (result, err) => {
     console.log('newCommand 4: ', result);
 }, { id: 'test', noLog: true });
 
- setTimeout(() => {
-    
-}, 2000); 
 
 
+let i = 0;
+
+setInterval(() => {
+    if (i < 15) {
+        // Prints "Loop: 0" - "Loop: 14" but it definitely doesn't come out in order. Fascinating that it works at all. 
+        Win.PowerShell.newCommand('write-host ' + i, (result, err) => {
+            console.log('Loop: ', result);
+        }, { id: 'test', noLog: true });
+        i++;
+    }
+}, 2000);
+
+/* 
  
 Win.PowerShell('ls', result => {
     console.log('result 2 ', result);
-}, { noLog: true, id: 'test2', suppressErrors: true, keepAlive: false }); 
+}, { noLog: true, id: 'test2', suppressErrors: true, keepAlive: false });  */
 
 
 // Ignore this, this is for testing the audio detection
