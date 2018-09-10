@@ -47,7 +47,7 @@ Win.appManager.register.group({
 let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
 let note = 'get-process "notepad" | select ProcessName, MainWindowTitle';
 
-Win.PowerShell([...x, note, note, note, note], (result, err) => {
+Win.PowerShell([...x, note], (result, err) => {
     console.log('\n');
     console.log('result ', result);
 }, { noLog: true, id: 'test', suppressErrors: false, keepAlive: true });
@@ -60,9 +60,23 @@ Win.PowerShell([...x, note, note, note, note], (result, err) => {
 
 
 
-Win.PowerShell.newCommand(com, (result, err) => {
+Win.PowerShell.newCommand('write-host "tesT"', (result, err) => {
     console.log('newCommand: ', result);
 }, { id: 'test', noLog: true });
+
+Win.PowerShell.newCommand('write-host "tesT 2"', (result, err) => {
+    console.log('newCommand 2: ', result);
+}, { id: 'test', noLog: true });
+
+Win.PowerShell.newCommand('$vari = "Hello world Pt. 3"', (result, err) => {
+    console.log('newCommand 3: ', result);
+}, { id: 'test', noLog: true });
+
+
+Win.PowerShell.newCommand('write-host $vari', (result, err) => {
+    console.log('newCommand 4: ', result);
+}, { id: 'test', noLog: true });
+
  setTimeout(() => {
     
 }, 2000); 

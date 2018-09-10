@@ -489,8 +489,8 @@ const Win = {
 					getPowerShellSession(child).commandq.shift();
 				}
 
-				function runNextInQ() {
-					if (getCommandq().length > 0) {
+				function runNextInQ(chld) {
+					if (getCommandq(chld).length > 0) {
 						child.stdin.write(`${getCommandq()[0].command + '; write-host "End Win.PowerShell() command";'}\r\n`);
 					}
 				}
@@ -546,7 +546,10 @@ const Win = {
 							tryit();
 						}
 
+						// The reason you can't use arrays for newCommands is because of this. It waits for the Q to empty for the target session, then pushes a new command to the q and writes the command. To make it work, I would probably need a backflow Q (stored on the powerShellSession object?) to catch incoming commands, dump them into the main Q when it empties, and then fire runNextInQ so it dominos
+						// If I do the above, I would need a way to find and execute other backflow Qs in the order they were received once the main Q finishes
 
+						// Otherwise, I could simple remove the below and find a better way. Maybe get a second opinion on this...
 						when(() => {
 							for (let i in psVars.powerShellSessions) {
 								if (psVars.powerShellSessions[i].initialOptions.id == options.id) {
@@ -565,13 +568,13 @@ const Win = {
 										psVars.powerShellSessions[i].commandq.push({ command: command, options: options, outputBin: '', errorBin: '' });
 										setParams(command, options, psVars.powerShellSessions[i].child);
 										
-										// Might be a bad place to do this
+										// Might be a bad place to do this?
 										getPowerShellSession(psVars.powerShellSessions[i].child).out = [];
 										getPowerShellSession(psVars.powerShellSessions[i].child).err = [];
 
 										setTimeout(() => {
 											psVars.powerShellSessions[i].child.stdin.write(`${psVars.powerShellSessions[i].commandq[0].command[0] + '; write-host "End Win.PowerShell() command"'}\r\n`);
-										}, 700);
+										}, 800);
 
 									} else if (i == psVars.powerShellSessions.length - 1) {
 										Win.log(`Could not find PowerShell session ${options.id} while attempting to push to the command queue`, { colour: 'red' })
@@ -613,7 +616,7 @@ const Win = {
 					for (let i in psVars.powerShellSessions) {
 						if (psVars.powerShellSessions[i].initialOptions.keepAlive == true) {
 							if (psVars.powerShellSessions[i].initialOptions.id == options.id) {
-								// Should this go here?
+								// Should this go here? Probably not, it might dump the output of a running command
 								/* 
 								getPowerShellSession(psVars.powerShellSessions[i].child).out = [];
 								getPowerShellSession(psVars.powerShellSessions[i].child).err = []; */
@@ -646,8 +649,10 @@ const Win = {
 						getPowerShellSession(data.child).checkingIfDone = true;
 
 						if (typeof data.callback == 'function' && (data.result.out.length > 1 || data.result.err.length > 1)) data.callback(data.result.out, data.result.err);
-
 						else if (typeof data.callback == 'function') data.callback(data.result.out.toString(), data.result.err.toString());
+
+						data.callback = undefined;
+						callback = undefined;
 
 						if (!(getPowerShellSession(data.child).initialOptions && (getPowerShellSession(data.child).initialOptions.existingSession == true || getPowerShellSession(data.child).initialOptions.keepAlive == true))) {
 
@@ -684,14 +689,14 @@ const Win = {
 		fn.newCommand = function(command, callback, options) {
 
 			tryForUntil(10, 1500, `(function() {
-													for (let i in psVars.powerShellSessions) {
-														if (psVars.powerShellSessions[i].initialOptions.id == "${options.id}") {
-															return true;
-														} else if (i == psVars.powerShellSessions.length - 1) {
-															return false;
-														}
-													}
-												})()`, () => {
+							for (let i in psVars.powerShellSessions) {
+								if (psVars.powerShellSessions[i].initialOptions.id == "${options.id}") {
+									return true;
+								} else if (i == psVars.powerShellSessions.length - 1) {
+									return false;
+								}
+							}
+						})()`, () => {
 					if ((function() {
 						for (let i in psVars.powerShellSessions) {
 							if (psVars.powerShellSessions[i].initialOptions.id == options.id) {
