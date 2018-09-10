@@ -933,18 +933,18 @@ const Win = {
 						if (!result) {
 							Win.PowerShell('get-process "' + apps.join('", "') + '" | select ProcessName, MainWindowTitle', (stdout) => {
 								appWatchProcessing(stdout);
-							}, { noLog: true, suppressErrors: true, keepAlive: true, id: 'wi-appWatcher' });
+							}, { noLog: true, suppressErrors: true, keepAlive: true, id: 'windows-interact-internal-appWatcher' });
 						} else {
 							Win.PowerShell.newCommand('get-process "' + apps.join('", "') + '" | select ProcessName, MainWindowTitle', (stdout) => {
 								appWatchProcessing(stdout);
-							}, { noLog: true, suppressErrors: true, keepAlive: true, id: 'wi-appWatcher' });
+							}, { noLog: true, suppressErrors: true, keepAlive: true, id: 'windows-interact-internal-appWatcher' });
 						}
 					});
 
 
 					setTimeout(() => {
 						Win.appManager.appWatcher();
-					}, (Win.prefs.appManagerRefreshInterval ? Win.prefs.appManagerRefreshInterval : 3000));
+					}, (Win.prefs.appManagerRefreshInterval ? Win.prefs.appManagerRefreshInterval : 2500));
 
 				};
 				Win.appManager.appWatcher();

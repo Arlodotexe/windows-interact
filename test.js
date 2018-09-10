@@ -3,13 +3,14 @@ let x = ['write-host "test"', 'write-host "Still alive?"'];
 const supplementals = require('./supplementals');
 
 Win.set.preferences({
+    appManagerRefreshInterval: 2500,
     log: {
         verbose: {
             PowerShell: true
         }
     }
 });
-/* 
+
 Win.appManager.register({
     VSCode: {
 		path: Win.path`C:\Program Files\Microsoft VS Code\Code.exe`,
@@ -42,7 +43,7 @@ Win.appManager.register.group({
         }
     }
 }); 
- */
+/* 
 
 let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
 let note = 'get-process "notepad" | select ProcessName, MainWindowTitle';
@@ -68,7 +69,7 @@ Win.PowerShell.newCommand('$vari = "Hello world Pt. 3"', (result, err) => {
 
 Win.PowerShell.newCommand('write-host $vari', (result, err) => {
     console.log('newCommand 4: ', result);
-}, { id: 'test', noLog: true });
+}, { id: 'test', noLog: true }); */
 
 
 /* 
