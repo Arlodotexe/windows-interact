@@ -416,6 +416,16 @@ const Win = {
 				}
 			}
 
+			function getPowerShellSessionById(id) {
+				for (let i in psVars.powerShellSessions) {
+					if (psVars.powerShellSessions[i].initialOptions.id == id) {
+						return (psVars.powerShellSessions[i]);
+					} else if (i == psVars.powerShellSessions.length - 1) {
+						return undefined;
+					}
+				}
+			}
+
 			function getCommandq(chld) {
 				if (chld == undefined) chld = child;
 				if (chld == undefined) Win.log('Child is not defined (commandq)', { colour: 'red' })
@@ -567,7 +577,7 @@ const Win = {
 
 										psVars.powerShellSessions[i].commandq.push({ command: command, options: options, outputBin: '', errorBin: '' });
 										setParams(command, options, psVars.powerShellSessions[i].child);
-										
+
 										// Might be a bad place to do this?
 										getPowerShellSession(psVars.powerShellSessions[i].child).out = [];
 										getPowerShellSession(psVars.powerShellSessions[i].child).err = [];
@@ -577,7 +587,7 @@ const Win = {
 										}, 800);
 
 									} else if (i == psVars.powerShellSessions.length - 1) {
-										Win.log(`Could not find PowerShell session ${options.id} while attempting to push to the command queue`, { colour: 'red' })
+										Win.log(`Could not find PowerShell session ${options.id} while attempting to push to the command queue`, { colour: 'red' });
 									}
 								}
 							}
@@ -627,6 +637,7 @@ const Win = {
 						}
 					}
 
+
 					for (let i = 0; i < command.length; i++) {
 						if (i == command.length - 1) {
 							// Last command, should have callback attached
@@ -636,12 +647,17 @@ const Win = {
 					}
 				}
 
-				for (let i = 0; i < command.length; i++) {
-					if (i == command.length - 1) {
-						// Last command, should have callback attached 
-						options.callback = once(callback);
+
+				if (getPowerShellSessionById(options.id) !== undefined) {
+					Win.log('PowerShell session "' + options.id + '" is already alive. To add a new command to this session, please use Win.PowerShell.newCommand()', { colour: 'yellow' });
+				} else {
+					for (let i = 0; i < command.length; i++) {
+						if (i == command.length - 1) {
+							// Last command, should have callback attached 
+							options.callback = once(callback);
+						}
+						qCommand(command[i], options);
 					}
-					qCommand(command[i], options);
 				}
 
 				function checkIfDone(data) {

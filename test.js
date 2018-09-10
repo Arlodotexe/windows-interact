@@ -9,7 +9,7 @@ Win.set.preferences({
         }
     }
 });
-
+/* 
 Win.appManager.register({
     VSCode: {
 		path: Win.path`C:\Program Files\Microsoft VS Code\Code.exe`,
@@ -42,12 +42,12 @@ Win.appManager.register.group({
         }
     }
 }); 
+ */
 
-
-/* let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
+let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
 let note = 'get-process "notepad" | select ProcessName, MainWindowTitle';
 
-Win.PowerShell([...x, note], (result, err) => {
+Win.PowerShell([...x, note, 'wr'], (result, err) => {
     console.log('\n');
     console.log('result ', result);
 }, { noLog: true, id: 'test', suppressErrors: false, keepAlive: true });
@@ -66,7 +66,7 @@ Win.PowerShell.newCommand('$vari = "Hello world Pt. 3"', (result, err) => {
 }, { id: 'test', noLog: true });
 
 
-Win.PowerShell.newCommand('write-host $vari', (result, err) => {
+Win.PowerShell.newCommand('write-host $vai', (result, err) => {
     console.log('newCommand 4: ', result);
 }, { id: 'test', noLog: true });
 
@@ -79,7 +79,7 @@ setInterval(() => {
         console.log(_);
     });
 }, 1500);
- */
+
 /* 
  
 Win.PowerShell('ls', result => {
