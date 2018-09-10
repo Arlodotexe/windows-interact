@@ -540,7 +540,7 @@ const Win = {
 						});
 					}
 
-					if (options && options.id !== undefined && options.existingSession == true) {
+					if (options && options.id !== undefined && options.existingSession == true && getPowerShellSessionById(options.id) == undefined) {
 						// Wait for the command q to empty out, then write this new command to an existing session
 
 						function when(conditions, callback, delay) {
@@ -701,7 +701,7 @@ const Win = {
 		}
 
 		fn.newCommand = function(command, callback, options) {
-
+			
 			tryForUntil(10, 1500, `(function() {
 							for (let i in psVars.powerShellSessions) {
 								if (psVars.powerShellSessions[i].initialOptions.id == "${options.id}") {

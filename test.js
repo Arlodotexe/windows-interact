@@ -43,7 +43,7 @@ Win.appManager.register.group({
         }
     }
 }); 
-/* 
+
 
 let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
 let note = 'get-process "notepad" | select ProcessName, MainWindowTitle';
