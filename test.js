@@ -11,7 +11,7 @@ Win.set.preferences({
     }
 });
 
-Win.appManager.register({
+/* Win.appManager.register({
     VSCode: {
 		path: Win.path`C:\Program Files\Microsoft VS Code\Code.exe`,
 		onLaunch: function() {
@@ -47,10 +47,10 @@ Win.appManager.register.group({
     }
 }); 
 
-/* 
+
 Win.appManager.kill.group('test');
 
-
+ */
  let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
 let note = 'get-process "notepad" | select ProcessName, MainWindowTitle';
 
@@ -81,37 +81,59 @@ Win.PowerShell.newCommand('write-host $vari', (result, err) => {
 Win.PowerShell('ls', result => {
     console.log('result 2 ', result);
 }, { noLog: true, id: 'test2', suppressErrors: true, keepAlive: false }); 
- */
+ 
 
-    Win.PowerShell(`param([String]$prodName)    
-    [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null
-    [Windows.UI.Notifications.ToastNotification, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null
-    [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] > $null
+Win.PowerShell(`
+$app = '{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\WindowsPowerShell\v1.0\powershell.exe'
+
+[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime]
+
+$Template = [Windows.UI.Notifications.ToastTemplateType]::ToastImageAndText01
+
+#Gets the Template XML so we can manipulate the values
+
+[xml]$ToastTemplate = ([Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent($Template).GetXml())
+
+
+[xml]$ToastTemplate = @"
+
+<toast launch="app-defined-string">
+
+  <visual>
+
+    <binding template="ToastGeneric">
+
+      <text>DNS Alert...</text>
+
+      <text>We noticed that you are near Wasaki. Thomas left a 5 star rating after his last visit, do you want to try it?</text>
+
+    </binding>
+
+  </visual>
+
+  <actions>
+
+    <action activationType="background" content="Remind me later" arguments="later"/>
+
+  </actions>
+
+</toast>
+
+"@
+
+
+$ToastXml = New-Object -TypeName Windows.Data.Xml.Dom.XmlDocument
+
+$ToastXml.LoadXml($ToastTemplate.OuterXml)
+
+$notify = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($app)
+
+$notify.Show($ToastXml)`, () => {
     
-    $ToastTemplate = '
-    <toast launch="app-defined-string">
-        <visual>
-            <binding template="ToastGeneric">
-                <text>'+$prodName+'</text>
-            </binding>
-        </visual>
-    </toast>'
-    
-    Write-Output $ToastTemplate;
-    
-    $currTime = (Get-Date).AddSeconds(10);
-    "currTime : " + $currTime
-    
-    $xml = New-Object Windows.Data.Xml.Dom.XmlDocument
-    $xml.LoadXml($toastXml.OuterXml)
-    
-    $schedNotification = New-Object Windows.UI.Notifications.ToastNotification($xml)
-    $schedNotification.SuppressPopup = $True
-    $notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($prodName)
-    $notifier.Show($schedNotification)
-    
-    $schedNotification = New-Object Windows.UI.Notifications.ScheduledToastNotification($xml, $currTime)
-    $notifier.AddToSchedule($schedNotification)`);
+    }, { keepAlive: true, id: 'test 3', noLog: true, suppressErrors: true });
+
+
+    Win.log('Testing', 'Something')
 
 /*
 // Ignore this, this is for testing the audio detection

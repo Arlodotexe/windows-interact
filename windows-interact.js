@@ -263,6 +263,21 @@ function log() {
 		console.log(dateString + param);
 	}
 	let fn = function(message, options) {
+		let messages = Array.from(arguments).filter(el => {
+			return (typeof el == 'string' || (typeof el == 'object' && !(el.colour !== undefined || el.background !== undefined)))
+		});
+
+		message = messages.join('');
+
+		options = Array.from(arguments).filter(el => {
+			return (typeof el == 'object' && (el.colour !== undefined || el.background !== undefined))
+		});
+
+		options = options[0];
+
+		for (let i in arguments) {
+			
+		}
 		let colour = '';
 		if (options && (options.colour || options.color)) {
 			colour = options.colour.toLowerCase() || options.color.toLowerCase();
@@ -681,7 +696,7 @@ const Win = {
 								}
 							}
 						} else if (data.options.keepAlive == true && data.options.existingSession !== true) {
-							if (isVerbose('PowerShell')) Win.log('PowerShell session will be kept alive. ID: "' + options.id + '"', { colour: 'yellow' });
+							if (isVerbose('PowerShell') && !data.options.id.includes('windows-interact-internal-')) Win.log('PowerShell session will be kept alive. ID: "' + options.id + '"', { colour: 'yellow' });
 						}
 						getPowerShellSession(data.child).out = [];
 						getPowerShellSession(data.child).err = [];
