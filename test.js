@@ -75,14 +75,10 @@ Win.PowerShell.newCommand('write-host $vari', (result, err) => {
 let i = 0;
 
 setInterval(() => {
-    if (i < 15) {
-        // Prints "Loop: 0" - "Loop: 14" but it definitely doesn't come out in order. Fascinating that it works at all. 
-        Win.PowerShell.newCommand('write-host ' + i, (result, err) => {
-            console.log('Loop: ', result);
-        }, { id: 'test', noLog: true });
-        i++;
-    }
-}, 2000);
+    Win.PowerShell.isSessionActive('test', _ => {
+        console.log(_);
+    });
+}, 1500);
 
 /* 
  

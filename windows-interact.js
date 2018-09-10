@@ -728,9 +728,9 @@ const Win = {
 		fn.isSessionActive = function(id, callback) {
 			if (psVars.powerShellSessions.length > 0) {
 				for (let i in psVars.powerShellSessions) {
-					if (psVars.powerShellSessions[i].id == id) {
+					if (psVars.powerShellSessions[i].initialOptions.id == id) {
 						callback(true);
-					} else if (i = psVars.powerShellSessions.length) {
+					} else if (i == psVars.powerShellSessions.length - 1) {
 						callback(false);
 					}
 				}
