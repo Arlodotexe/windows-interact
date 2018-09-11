@@ -19,13 +19,12 @@ With `windows-interact`, NodeJS gains the following functionality:
 - Different functions for running [PowerShell](https://github.com/Arlodotexe/windows-interact#winpowershell) or [CMD](https://github.com/Arlodotexe/windows-interact#wincmd) commands
 ---
 
-**The current released version is 1.1.7. [See the release notes](changelog.md)**
+**The current released version is 1.1.8. [See the release notes](changelog.md)**
 
 ## Current development status
 
-New release will be delayed by a few days as I have found a very odd, breaking bug in `Win.appManager()` that needs to be fixed
 
-This release brings the [PowerShell session manager](https://github.com/Arlodotexe/windows-interact#winpowershell)! More advanced than [node-powershell](https://www.npmjs.com/package/node-powershell), with automatic output collection and seperation, and the ability to run multiple command in succession by passing in array. 
+This is the biggest release of Windows-Interact ever! It brings an uncountable number of bug fixes and many new features, none of which are as huge as the arrival of the [PowerShell session manager](https://github.com/Arlodotexe/windows-interact#winpowershell)! More advanced than [node-powershell](https://www.npmjs.com/package/node-powershell), with automatic output collection and seperation, and the ability to run multiple command in succession by passing in array. 
 
 New in version (1.1.8): 
  - `Win.appManager()` now has group app management
@@ -33,7 +32,7 @@ New in version (1.1.8):
     - Give all apps in a group the same `onLaunch` or `onKill`
     - Launch or kill all of the apps in a group at once.
  - `Win.PowerShell()` 
-   - A shiny new, super advanced, mega futuristic session manager!
+   - A shiny new, super advanced, [mega futuristic session manager](https://github.com/Arlodotexe/windows-interact#winpowershell)!
         - `Win.PowerShell.addCommand()` to issue a new command
         -  `Win.PowerShell.end()` to end a session
         - New options for `Win.PowerShell()`'s `options` parameter: 
