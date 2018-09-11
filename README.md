@@ -121,7 +121,10 @@ Win.set.preferences({
         // Control verbosity of parts of windows-interact
         verbose: {
             // Show preformatted log when requests are made
-            requestTo: true
+            requestTo: true,
+            // Be verbose while managing PowerShell sessions
+            PowerShell: true,
+            appManager: true
         }
     }
 });
@@ -484,6 +487,12 @@ Win.process.onKill('notepad', function() {
 Win.process.getWindowTitle('notepad', function(output) {
     Win.log(output);
 });
+```
+
+#### Hide an application by process name
+
+```javascript
+Win.process.hide('notepad');
 ```
 
 #### Check if a process is running

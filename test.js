@@ -6,7 +6,8 @@ Win.set.preferences({
     appManagerRefreshInterval: 2500,
     log: {
         verbose: {
-            PowerShell: true
+            PowerShell: true,
+            appManager: true
         }
     }
 });
@@ -48,7 +49,13 @@ Win.appManager.register.group({
 }); 
 
 
-Win.appManager.launch.group('test');
+//Win.appManager.launch.group('test');
+
+Win.appManager.switchTo('Pad');
+
+setTimeout(() => {
+    Win.appManager.hide('Pad')
+}, 200);
 
 
 /*  let com = 'get-process "Code" | select ProcessName, MainWindowTitle';

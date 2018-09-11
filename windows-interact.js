@@ -837,6 +837,13 @@ const Win = {
 					processName = replaceAll(processName, '"', '');
 					Win.appManager.registeredApps[appName].processName = processName;
 
+					if (Win.appManager.registeredApps[appName].onKill) {
+						Win.appManager.registeredApps[appName].onKill = debounce(Win.appManager.registeredApps[appName].onKill, Win.prefs.appManagerRefreshInterval);
+					}
+					if (Win.appManager.registeredApps[appName].onLaunch) {
+						Win.appManager.registeredApps[appName].onLaunch = debounce(Win.appManager.registeredApps[appName].onLaunch, Win.prefs.appManagerRefreshInterval);
+					}
+
 					apps.push(replaceAll(processName, '.exe', ''));
 				});
 
@@ -1021,14 +1028,19 @@ const Win = {
 			}
 			return fn;
 		})(),
-		hide: function(processName) {
-			nircmd('win hide process "' + processName + '"');
+		hide: function(appName) {
+			for (let i in Win.appManager.registeredApps) {
+				if (Win.appManager.registeredApps[i].name == appName) {
+					nircmd('win hide process "' + Win.appManager.registeredApps[i].processName + '"');
+				}
+			}
+			
 		},
 		switchTo: function(appName) {
-			if (Win.appManager.registeredApps[appName] !== undefined && Win.appManager.registeredApps[appName].windowTitle !== undefined) {
+			if (Win.appManager.registeredApps[appName] !== undefined || Win.appManager.registeredApps[appName].windowTitle !== undefined) {
 				Win.PowerShell('$myshell = New-Object -com "Wscript.Shell"; $myshell.AppActivate("' + Win.appManager.registeredApps[appName].windowTitle + '")', (stdout) => {
 					if (stdout.includes('False')) {
-						Win.log('Using process name as fallback. This may not be as accurate');
+						if(isVerbose('appManager')) Win.log('Could not find app by windowTitle. Using process name as fallback to switch to app. This may not be as accurate', {colour: 'yellow'});
 						nircmd('win activate process "' + Win.appManager.registeredApps[appName].processName + '"');
 					}
 				}, { noLog: true });
@@ -1038,6 +1050,9 @@ const Win = {
 		}
 	},
 	process: {
+		hide: function(processName) {
+			nircmd('win hide process "' + processName + '"');
+		},
 		getPid: function(processName, callback) {
 			return new Promise(resolve => {
 				Win.PowerShell('get-process -ProcessName "' + replaceAll(processName, '.exe', '') + '" | Format-Table id', (stdout, stderr) => {
