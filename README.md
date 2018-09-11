@@ -59,10 +59,8 @@ This is the biggest release of Windows-Interact ever! It brings an uncountable n
  - Most or all methods will be converted to Promises instead of callbacks
  - Planning on adding `Win.get.audioDevices.output.isPlaying`, but the direct code only works from external scripts, not from Windows-interact itself. Not sure why, but will be coming in the next release!
  - Planning on removing dependency on requestify, perhaps building my own wrapper for nodes' native request methods with zero dependencies
- - I'm still recovering from a layoff, so development isn't as active as it could be. But I assure you, development is still alive and kicking :)
- - Got ideas? Contact me or open an issue. 
 
-Completely open to new features. Submit an issue labeled "Feature request" or contact me on twitter @[Arlodottxt](https://twitter.com/Arlodottxt) with your suggestions.
+Got ideas? Something you want windows-interact to include? _**Fantastic**_, contact me on twitter @[Arlodottxt](https://twitter.com/Arlodottxt) with your suggestions or open a new Issue on Github
 
 ---
 
