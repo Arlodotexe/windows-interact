@@ -17,6 +17,7 @@ With `windows-interact`, NodeJS gains the following functionality:
 - [Manage processes](https://github.com/Arlodotexe/windows-interact#winprocess)
 - Enhanced [console.log](https://github.com/Arlodotexe/windows-interact#winlog) and [error throwing](https://github.com/Arlodotexe/windows-interact#winerror)
 - Different functions for running [PowerShell](https://github.com/Arlodotexe/windows-interact#winpowershell) or [CMD](https://github.com/Arlodotexe/windows-interact#wincmd) commands
+
 ---
 
 **The current released version is 1.1.8. [See the release notes](changelog.md)**
