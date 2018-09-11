@@ -207,7 +207,7 @@ const authCode = {
 };
 
 function nircmd(command, callback, options) {
-	Win.PowerShell('.\\nircmd ' + command, callback, options ? options : { noLog: true });
+	Win.PowerShell(__dirname + '\\nircmd.exe ' + command, callback, options ? options : { noLog: true });
 }
 
 function speak() {
