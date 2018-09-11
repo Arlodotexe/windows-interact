@@ -11,7 +11,7 @@ Win.set.preferences({
     }
 });
 
-/* Win.appManager.register({
+Win.appManager.register({
     VSCode: {
 		path: Win.path`C:\Program Files\Microsoft VS Code\Code.exe`,
 		onLaunch: function() {
@@ -48,35 +48,45 @@ Win.appManager.register.group({
 }); 
 
 
-Win.appManager.kill.group('test');
+Win.appManager.launch.group('test');
 
- */
-let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
+
+/*  let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
 let note = 'get-process "notepad" | select ProcessName, MainWindowTitle';
 
-Win.PowerShell([...x], (result, err) => {
+Win.PowerShell([...x, note], (result, err) => {
     console.log('\n');
     console.log('result ', result);
 }, { noLog: true, id: 'test', suppressErrors: true, keepAlive: true });
 
 
-Win.PowerShell.newCommand('write-host TESTING', (result, err) => {
+Win.PowerShell.newCommand( 'Start-Sleep 2', (result, err) => {
     console.log('newCommand: ', result);
 }, { id: 'test', noLog: true });
 
-Win.PowerShell.newCommand('write-host "test 2"', (result, err) => {
+Win.PowerShell.newCommand('write-host "tesT 2"', (result, err) => {
     console.log('newCommand 2: ', result);
 }, { id: 'test', noLog: true });
+
+Win.PowerShell.newCommand('$vari = "Hello world Pt. 3"', (result, err) => {
+    console.log('newCommand 3: ', result);
+}, { id: 'test', noLog: true });
+
+
+Win.PowerShell.newCommand('write-host $vari', (result, err) => {
+    console.log('newCommand 4: ', result);
+}, { id: 'test', noLog: true });
+
+
 Win.PowerShell('ls', result => {
     console.log('result 2 ', result);
-}, { noLog: true, id: 'test2', suppressErrors: true, keepAlive: false }); 
+}, { noLog: true, id: 'test2', suppressErrors: true, keepAlive: false });  */
+ 
 
 
-Win.PowerShell(com, () => {
+Win.notify('Version 2.5 has been released to the Store', 'MyTube Companion has been updated!', Win.path`"C:\Users\chuck\OneDrive\Downloads\13 MIN OF DANK MEMES COMPILATION #28.gif"`)
 
-}, { keepAlive: true, id: 'test 3', noLog: true, suppressErrors: true });
-
-
+//Win.PowerShell('Start-Process rykentube:');
 /*
 // Ignore this, this is for testing the audio detection
 

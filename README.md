@@ -313,8 +313,8 @@ Show a toast notification in Windows 10 (Or tray balloon on older versions of wi
 If you need something more advanced than basic notifications, I'd recommend using [node-notifier](https://github.com/mikaelbr/node-notifier)
 
 ```javascript
-// Show toast notification
-Win.notify('Title', 'Message');
+// Show toast notification with an image or animated GIF
+Win.notify('Title', 'Message', Win.path`C:\path\to\image\or\animated.gif`);
 
 // Show single line toast notification
 Win.notify('Message'); 

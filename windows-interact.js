@@ -484,7 +484,7 @@ const Win = {
 
 					getPowerShellSession(child).out.push(getCommandq(child)[0].outputBin);
 
-					if (getCommandq()[0].outputBin.toString().trim() !== '' && getCommandq().length > 0 && !(getCommandq()[0].options && getCommandq()[0].options.noLog === true)) {
+					if (getCommandq()[0].outputBin.toString().trim() !== '' && getCommandq().length > 0 && !(getCommandq()[0].options && getCommandq()[0].options.noLog === true) && !(getPowerShellSession(child).initialOptions && getPowerShellSession(child).initialOptions.id && getPowerShellSession(child).initialOptions.id.includes('windows-interact-internal-'))) {
 						getCommandq()[0].outputBin = replaceAll(getCommandq()[0].outputBin, 'End Win.PowerShell() command\n', '');
 						Win.log((getCommandq().length > 0 && (getCommandq()[0].options && getCommandq()[0].options.keepAlive && getCommandq()[0].options.id) ? '\x1b[33mPowerShell session "' + getCommandq()[0].options.id + '":\x1b[0m\n' : '') + getCommandq()[0].outputBin.toString().trim());
 					}
@@ -643,8 +643,8 @@ const Win = {
 								getPowerShellSession(psVars.powerShellSessions[i].child).out = [];
 								getPowerShellSession(psVars.powerShellSessions[i].child).err = []; */
 							}
-						} else if(psVars.powerShellSessions[i] == undefined) {
-							Win.log('Could not find existing powershell session "', options.id,'" even though it should exist and was found previously. This is a problem with Win.PowerShell, please report an issue with details about your setup on GitHub', { colour: 'red' });
+						} else if (psVars.powerShellSessions[i] == undefined) {
+							Win.log('Could not find existing powershell session "', options.id, '" even though it should exist and was found previously. This is a problem with Win.PowerShell, please report an issue with details about your setup on GitHub', { colour: 'red' });
 							return (undefined);
 						}
 					}
@@ -659,8 +659,7 @@ const Win = {
 					}
 				}
 
-
-				if (getPowerShellSessionById(options && options.id) !== undefined) {
+				if ((options && options.id && getPowerShellSessionById(options.id) !== undefined)) {
 					Win.log('PowerShell session "' + options.id + '" is already alive. To add a new command to this session, please use Win.PowerShell.newCommand()', { colour: 'yellow' });
 				} else {
 					for (let i = 0; i < command.length; i++) {
@@ -753,16 +752,12 @@ const Win = {
 		}
 
 		fn.isSessionActive = function(id, callback) {
-			if (psVars.powerShellSessions.length > 0) {
-				for (let i in psVars.powerShellSessions) {
-					if (psVars.powerShellSessions[i].initialOptions && psVars.powerShellSessions[i].initialOptions.id == id) {
-						callback(true);
-					} else if (i == psVars.powerShellSessions.length - 1) {
-						callback(false);
-					}
+			for (let i in psVars.powerShellSessions) {
+				if (psVars.powerShellSessions[i] && psVars.powerShellSessions[i].initialOptions && psVars.powerShellSessions[i].initialOptions.id == id) {
+					callback(true);
+				} else if (i == psVars.powerShellSessions.length - 1) {
+					callback(false);
 				}
-			} else {
-				callback(false);
 			}
 		}
 
@@ -776,9 +771,17 @@ const Win = {
 
 		return fn;
 	})(),
-	notify: function(message, title) {
-		if (message == undefined) Win.error('Cannot send notification. No message was given');
-		nircmd('trayballoon "' + ((!title) ? ' ' : message) + '" "' + ((title) ? title : message) + '" "c:\\"');
+	notify: function(message, title, image) {
+		if (message == undefined) {
+			Win.error('Cannot send notification. No message was given');
+		} else {
+			if (Number(require('os').release().substr(0, 2)) < 10) {
+				// Anything below Windows 10
+				nircmd('trayballoon "' + ((!title) ? ' ' : message) + '" "' + ((title) ? title : message) + (image ? `" "${image}"` : '" "c:\\"'));
+			} else {
+				Win.PowerShell(['Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Unrestricted', 'Unblock-File -Path .\\Notify.ps1', `.\\Notify.ps1 "${(title ? title : 'Node.js')}" "${message}" "${replaceAll(image, '\\\\', '\\')}"`], undefined, { noLog: true, suppressErrors: true });
+			}
+		}
 	},
 	confirm: function(message, title) {
 		return new Promise(resolve => {
@@ -1022,17 +1025,15 @@ const Win = {
 			nircmd('win hide process "' + processName + '"');
 		},
 		switchTo: function(appName) {
-			let windowTitle = Win.appManager.registeredApps[appName].windowTitle;
-			let processName = Win.appManager.registeredApps[appName].processName;
-			if (windowTitle !== undefined) {
-				Win.PowerShell('$myshell = New-Object -com "Wscript.Shell"; $myshell.AppActivate("' + windowTitle + '")', (stdout) => {
+			if (Win.appManager.registeredApps[appName] !== undefined && Win.appManager.registeredApps[appName].windowTitle !== undefined) {
+				Win.PowerShell('$myshell = New-Object -com "Wscript.Shell"; $myshell.AppActivate("' + Win.appManager.registeredApps[appName].windowTitle + '")', (stdout) => {
 					if (stdout.includes('False')) {
 						Win.log('Using process name as fallback. This may not be as accurate');
-						nircmd('win activate process "' + processName + '"');
+						nircmd('win activate process "' + Win.appManager.registeredApps[appName].processName + '"');
 					}
 				}, { noLog: true });
 			} else {
-				Win.error('Could not find Window title "' + windowTitle + '" or process of requested app "' + appName + '". The app may not be running.');
+				Win.error('Could not find Window title or process of requested app "' + appName + '". The app may not be running or registered.');
 			}
 		}
 	},
