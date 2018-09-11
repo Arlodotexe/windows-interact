@@ -1,8 +1,11 @@
 # Changelog
 I only started keeping a changelog for Windows Interact as of 1.1.7, but if you really want to see all the changes across all of the released versions, you can compare different versions of README.md in Github.
 
-## 1.1.8
+## 1.2.0
 ---
+
+Originally released as 1.1.8 (with patches from 1.1.9), windows-interact was bumped to v1.2.0 due to the massive amount of new features and bug fixes.
+
 New in this version: 
  - `Win.appManager()` now has group app management
     - Assign apps to a group with `Win.appManager.register.group()`

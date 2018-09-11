@@ -20,14 +20,11 @@ With `windows-interact`, NodeJS gains the following functionality:
 
 ---
 
-**The current released version is 1.1.8. [See the release notes](changelog.md)**
-
-## Current development status
-
+**The current released version is 1.2.0. [See the release notes](changelog.md) if this version number differs from below**
 
 This is the biggest release of Windows-Interact ever! It brings an uncountable number of bug fixes and many new features, none of which are as huge as the arrival of the [PowerShell session manager](https://github.com/Arlodotexe/windows-interact#winpowershell)! More advanced than [node-powershell](https://www.npmjs.com/package/node-powershell), with automatic output collection and seperation, and the ability to run multiple command in succession by passing in array. 
 
-New in version (1.1.8): 
+## New in version (1.2.0): 
  - `Win.appManager()` now has group app management
     - Assign apps to a group with `Win.appManager.register.group()`
     - Give all apps in a group the same `onLaunch` or `onKill`
