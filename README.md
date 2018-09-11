@@ -32,35 +32,35 @@ New in version (1.1.8):
     - Assign apps to a group with `Win.appManager.register.group()`
     - Give all apps in a group the same `onLaunch` or `onKill`
     - Launch or kill all of the apps in a group at once.
- - `Win.PowerShell()` now has a built in session manager!
-   - `Win.PowerShell.addCommand()` to issue a new command
-   -  `Win.PowerShell.end()` to end a session
- - New options for `Win.PowerShell()`'s `options` parameter: 
-   - `keepAlive` - Do not end the child process when the command(s) are completed
-   - `ID` - Assign an identity to this PowerShell session in order to issue a new command or end it at a later time.
+ - `Win.PowerShell()` 
+   - A shiny new, super advanced, mega futuristic session manager!
+        - `Win.PowerShell.addCommand()` to issue a new command
+        -  `Win.PowerShell.end()` to end a session
+        - New options for `Win.PowerShell()`'s `options` parameter: 
+        - `keepAlive` - Do not end the child process when the command(s) are completed
+        - `ID` - Assign an identity to this PowerShell session in order to issue a new command or end it at a later time.
+    - `Win.PowerShell()` can now accept an array of commands, and automatically collects and seperates the output
+ - `Win.notify()` was broken on Windows 10 insider build 17746 and beyond, so I rewrote it from the ground up just for Windows 10 (and kept the old functionality for < 10). You can now use images or animated GIFs in notifications (and it's really freaking cool)
  - Added `Win.process.getPidByWindowTitle()`
  - `Win.log()` will not act more like `console.log()`. Any string that is passed as a parameter at any position will be printed back.
+ - More options for Verbosity in `Win.set.preferences()`
 
  What's changed: 
- - Tons of bug fixes
+ - Tons of bug fixes. Everywhere. This is the most changes in one version bump I've ever released, with 60+ git commits and hundreds if not 1 or 2 _thousand_ line changes
  - The appManager has been refactored to allow registering an app with any name, instead of the executable name
- - Fixes a lot of commands that would fail if your directory had a space in it
+ - Fixed a lot of commands that would fail if your directory had a space in it
  - Adjusted `Win.process.kill()` to allow killing by PID and fixed it so it doesn't show a large red error message when the app isn't running
- - Fixed an issue where options passed into `Win.PowerShell()` would overwrite options for subsequent command
- - The callback for `Win.PowerShell()` now fires after the commands have completed, instead of when the session is ended.
- - LOTS of fixes to how `Win.PowerShell()` collects output and errors when using multiple commands. ~95% quirk-free! Still working on it, but it's _much_ better than last version.
+ - Removed Win.authCode from the documentation. This old code has nothing to do with interacting with windows and will be removed in the future
  
  Known issues: 
  - `Win.PowerShell()`:
-   - Using `Start-Sleep` with any value greater than 800ms will cause some very odd issues with the internals of `Win.PowerShell()`. This is because 800ms is the extra time that each command is manually seperated to better discern output. This will be fixed in the next update, but for now, avoid using `Start-Sleep` if possible
- - `Win.notify()`:
-   - `notify` is broken on Windows 10 insider build 17746. This may fix itself, but if not, it will be fixed manually
+   - Using `Start-Sleep` with any value greater than 800ms will cause some very odd issues with the internals of `Win.PowerShell()`. This is because 800ms is the extra time that each command is manually seperated to better discern output. This will be fixed in the future, but for now, avoid using `Start-Sleep` if possible
 
  What's next: 
  - There will be a lot of refactoring coming soon, this project is getting massive and its time to split it up a little.
+ - Need better documentation. 
  - Most or all methods will be converted to Promises instead of callbacks
- - Planning on adding `Win.get.audioDevices.output.isPlaying`, but it the direct code only works from external scripts, not from Windows-interact itself. This will be coming soon!
- - Planning on a categories for appManager, which would allow for group launching & killing, or doing something generic whenever you would launch any app listed in that category.
+ - Planning on adding `Win.get.audioDevices.output.isPlaying`, but the direct code only works from external scripts, not from Windows-interact itself. Not sure why, but will be coming in the next release!
  - Planning on removing dependency on requestify, perhaps building my own wrapper for nodes' native request methods with zero dependencies
  - I'm still recovering from a layoff, so development isn't as active as it could be. But I assure you, development is still alive and kicking :)
  - Got ideas? Contact me or open an issue. 
@@ -92,20 +92,7 @@ Used to set various things within Windows, as well as set preferences for window
 ---
 
 ```javascript
-Win.set.preferences({ 
-    // Set master key (For Win.authCode)
-    masterKey: 'MASTERKEY',
-    authCodeParse: function(receivedCode) {
-    // Should return true or false if the receivedCode meets your criteria
-        if (receivedCode > 5) {
-            Win.alert('Correct code: ' + receivedCode)
-            return true;
-        }
-        else {
-            Win.alert('Incorrect code: ' + receivedCode)
-            return false;
-        }
-    },
+Win.set.preferences({
     // Default text to speech voice to use (For Win.speak)
     TTSVoice: 'Microsoft David Desktop',
     // Inverval at which the app manager gets the status of registered apps. Leaving unset defaults the interval to 5000
@@ -388,13 +375,11 @@ The App Manager is possibly the biggest part of Windows Interact. It allows you 
 
 To get started, you need to register your apps. You will need the absolute path of the executable at the minimum. To easily format a Windows path for use in Javascript, it is recommended that you use ```Win.path`C:\absolute\path` ```
 
-NOTICE: The registered name must be the same as the executable.
-
 #### Register a new application
 
 ```javascript
 Win.appManager.register({
-    'notepad': {
+    'Pad': {
         path: Win.path`C:\WINDOWS\system32\notepad.exe`
     },
     'Code': {
@@ -406,7 +391,7 @@ Win.appManager.register({
            Win.speak('VSCode was killed');
        }
     },
-    'firefox': {
+    'Mozilla': {
         path: Win.path`C:\Program Files\Mozilla Firefox\firefox.exe`,
         onKill: function() {
             Win.log('firefox killed');
@@ -416,6 +401,23 @@ Win.appManager.register({
         }
     }
 });
+```
+#### Register a group for previously registered app
+
+```javascript
+
+Win.appManager.register.group({
+    "Stuff": {
+        apps: ["Pad", "Mozilla"],
+        onLaunch: function() {
+            console.log('Something in stuff launched');
+        },
+        onKill: function() {
+            console.log('Something in stuff was killed');
+        }
+    }
+}); 
+
 ```
 
 #### Retrieve registered applications
@@ -434,6 +436,18 @@ Win.appManager.launch('notepad');
 
 ```javascript
 Win.appManager.kill('notepad');
+```
+
+#### Launch a registered group of apps
+
+```javascript
+Win.appManager.launch.group('Stuff');
+```
+
+#### Kill a registered group of apps
+
+```javascript
+Win.appManager.kill.group('Stuff');
 ```
 
 #### Hide a registered application
@@ -719,42 +733,6 @@ Win.requestTo('http://httpbin.org/put/', 'PUT', {
     Win.log(response)
 });
 
-```
-
-## `Win.authCode`
-
-Used to quickly authenticate a user
-
-This was originally designed for keeping just anyone from using Cortana or Alexa to do serious stuff like shutting down or restarting.
-By default, it will return as valid when the code starts with the Nth letter of a zero indexed alphabet, where N is the first digit of the current Second of your PC's System time. For example, if it the time is 5:15:08, '0' is parsed and the receivedCode should start with A. 
-
-You can set a custom parsing function, as well as a master key that will always be accepted.
-
-```javascript
-Win.set.preferences({
-    // Set a master key that is always accepted
-    masterKey: 'AREALLYLONGSTRINGWITHLOTSOFCOMPLICATEDCHARACTERS',
-    authCodeParse: function(receivedCode) {
-    // Should return true or false if the receivedCode meets your criteria
-    /**   Example start **/
-        if (receivedCode > 5) {
-            Win.alert('Correct code: ' + receivedCode)
-            return true;
-        }
-        else {
-            Win.alert('Incorrect code: ' + receivedCode)
-            return false;
-        }
-    }
-    /**   Example end **/
-});
-```
-
-
-```javascript
-if(Win.authCode.isValid('6')) {
-    console.log('It\'s valid');
-}
 ```
 
 ## `Win.confirm()`
