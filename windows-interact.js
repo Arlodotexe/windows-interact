@@ -806,7 +806,7 @@ const Win = {
 	},
 	prompt: function(message, title, placeholder) {
 		return new Promise(resolve => {
-			Win.PowerShell(`Add - Type - AssemblyName Microsoft.VisualBasic;[Microsoft.VisualBasic.Interaction]:: InputBox('` + message + `', '` + ((title) ? title : `Node`) + `', '` + ((placeholder) ? placeholder : ``) + `')`, (response) => {
+			Win.PowerShell(`Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.Interaction]::InputBox('` + message + `', '` + ((title) ? title : `Node`) + `', '` + ((placeholder) ? placeholder : ``) + `')`, (response) => {
 				resolve(response.trim());
 			}, { noLog: true });
 		});
