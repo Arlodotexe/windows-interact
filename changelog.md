@@ -1,6 +1,11 @@
 # Changelog
 I only started keeping a changelog for Windows Interact as of 1.1.7, but if you really want to see all the changes across all of the released versions, you can compare different versions of README.md in Github.
 
+## 1.2.2
+
+Minor update
+ - Fixed a breaking bug with Win.prompt()
+
 ## 1.2.1
 
 Minor update
