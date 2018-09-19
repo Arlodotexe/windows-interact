@@ -12,7 +12,7 @@ Win.set.preferences({
     }
 });
 
-Win.appManager.register({
+/* Win.appManager.register({
     VSCode: {
 		path: Win.path`C:\Program Files\Microsoft VS Code\Code.exe`,
 		onLaunch: function() {
@@ -46,17 +46,11 @@ Win.appManager.register.group({
             console.log('test launch');
         }
     }
-}); 
+}); */
 
-
-//Win.appManager.launch.group('test');
-
-Win.appManager.switchTo('Pad');
-
-setTimeout(() => {
-    Win.appManager.hide('Pad')
-}, 200);
-
+Win.get.audioDevices.input.transmitting(result => {
+    console.log(result);
+})
 
 /*  let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
 let note = 'get-process "notepad" | select ProcessName, MainWindowTitle';
@@ -91,7 +85,7 @@ Win.PowerShell('ls', result => {
  
 
 
-Win.notify('Version 2.5 has been released to the Store', 'MyTube Companion has been updated!', Win.path`"C:\Users\chuck\OneDrive\Downloads\13 MIN OF DANK MEMES COMPILATION #28.gif"`)
+//Win.notify('Version 2.5 has been released to the Store', 'MyTube Companion has been updated!', Win.path`"C:\Users\chuck\OneDrive\Downloads\13 MIN OF DANK MEMES COMPILATION #28.gif"`)
 
 //Win.PowerShell('Start-Process rykentube:');
 /*

@@ -779,7 +779,7 @@ const Win = {
 				// Anything below Windows 10
 				nircmd('trayballoon "' + ((!title) ? ' ' : message) + '" "' + ((title) ? title : message) + (image ? `" "${image}"` : '" "c:\\"'));
 			} else {
-				Win.PowerShell(['Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Unrestricted', 'Unblock-File -Path .\\Notify.ps1', `.\\Notify.ps1 "${(title ? title : 'Node.js')}" "${message}" "${replaceAll(image, '\\\\', '\\')}"`], undefined, { noLog: true, suppressErrors: true });
+				Win.PowerShell(['Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Unrestricted', 'Unblock-File -Path .\\PowerShellScripts\\Notify.ps1', `.\\PowerShellScripts\\Notify.ps1 "${(title ? title : 'Node.js')}" "${message}" "${replaceAll(image, '\\\\', '\\')}"`], undefined, { noLog: true, suppressErrors: true });
 			}
 		}
 	},
@@ -1034,13 +1034,13 @@ const Win = {
 					nircmd('win hide process "' + Win.appManager.registeredApps[i].processName + '"');
 				}
 			}
-			
+
 		},
 		switchTo: function(appName) {
 			if (Win.appManager.registeredApps[appName] !== undefined || Win.appManager.registeredApps[appName].windowTitle !== undefined) {
 				Win.PowerShell('$myshell = New-Object -com "Wscript.Shell"; $myshell.AppActivate("' + Win.appManager.registeredApps[appName].windowTitle + '")', (stdout) => {
 					if (stdout.includes('False')) {
-						if(isVerbose('appManager')) Win.log('Could not find app by windowTitle. Using process name as fallback to switch to app. This may not be as accurate', {colour: 'yellow'});
+						if (isVerbose('appManager')) Win.log('Could not find app by windowTitle. Using process name as fallback to switch to app. This may not be as accurate', { colour: 'yellow' });
 						nircmd('win activate process "' + Win.appManager.registeredApps[appName].processName + '"');
 					}
 				}, { noLog: true });
@@ -1125,7 +1125,7 @@ const Win = {
 			});
 		},
 		isRunning: function(processName, callback) {
-			return new Promise(resolve, reject => {
+			return new Promise((resolve, reject) => {
 				try {
 					Win.PowerShell('get-process "' + processName + '" | select ProcessName', (stdout) => {
 						if (stdout.includes(processName)) {
@@ -1143,6 +1143,27 @@ const Win = {
 		}
 	},
 	get: {
+		display: {
+			projectionMode: function(callback) {
+				Win.PowerShell(['Add-Type -AssemblyName System.Windows.Forms', '[System.Windows.Forms.Screen]::AllScreens'], result => {
+					if (result.includes('Primary      : True') && result.includes('Primary      : False')) {
+						callback('extended');
+					} else {
+						callback(result[1]);
+					}
+				}, { noLog: true });
+			},
+			resolution: function(callback) {
+				Win.PowerShell('Get-WmiObject win32_videocontroller | select CurrentHorizontalResolution, CurrentVerticalResolution', result => {
+					result = replaceAll(result, 'CurrentVerticalResolution', '');
+					result = replaceAll(result, 'CurrentHorizontalResolution', '');
+					result = replaceAll(result, '-', '');
+					result = result.trim().split('                      ');
+					result = { height: result[0], width: result[1] };
+					callback(result);
+				}, { noLog: true });
+			}
+		},
 		audioDevices: {
 			list: callback => {
 				Win.PowerShell('Get-AudioDevice -List', (result) => {
@@ -1184,10 +1205,9 @@ const Win = {
 						callback(result.toLowerCase() == 'true');
 					}, { noLog: true });
 				},
-				isPlaying: callback => {
-					Win.PowerShell(supplementals.AudioDetection, result => {
-						//console.log(result);
-						if (result.trim() == 'True') {
+				transmitting: callback => {
+					Win.PowerShell(['Unblock-File -Path .\\PowerShellScripts\\AudioDetection.ps1', `.\\PowerShellScripts\\AudioDetection.ps1 output`], result => {
+						if (result[1].trim() == 'True') {
 							callback(true);
 						} else {
 							callback(false);
@@ -1212,11 +1232,45 @@ const Win = {
 					Win.PowerShell('Get-AudioDevice -RecordingMute', result => {
 						callback(result.toLowerCase() == 'true');
 					}, { noLog: true });
+				},
+				transmitting: callback => {
+					Win.PowerShell(['Unblock-File -Path .\\PowerShellScripts\\AudioDetection.ps1', `.\\PowerShellScripts\\AudioDetection.ps1 input`], result => {
+						if (result[1].trim() == 'True') {
+							callback(true);
+						} else {
+							callback(false);
+						}
+					}, { noLog: true });
 				}
 			}
 		}
 	},
 	set: {
+		display: {
+			resolution: function(width, height, callback) {
+				Win.PowerShell(`.\\PowerShellScripts\\Set-ScreenResolution.ps1 -width ${width} -height ${height}`, (result) => {
+					callback(result.trim());
+				}, { noLog: true });
+			},
+			projectionMode: function(mode) {
+				switch (mode) {
+					case 'primary':
+						Win.cmd('%windir%\System32\DisplaySwitch.exe /internal');
+						break;
+					case 'duplicate':
+						Win.cmd('%windir%\System32\DisplaySwitch.exe /clone');
+						break;
+					case 'extend':
+						Win.cmd('%windir%\System32\DisplaySwitch.exe /extend');
+						break;
+					case 'secondary':
+						Win.cmd('%windir%\System32\DisplaySwitch.exe /external');
+						break;
+					default:
+						Win.log('A valid projection mode was not given. Valid options are "primary", "secondary", "extend" or "duplicate"', { colour: 'yellow' });
+				}
+			}
+		},
 		audioDevices: {
 			output: {
 				volume: function(vol) {

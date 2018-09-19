@@ -16,7 +16,7 @@ With `windows-interact`, NodeJS gains the following functionality:
 - [Manage a list of registered apps](https://github.com/Arlodotexe/windows-interact#winappmanager) (with lots of extra features)
 - [Manage processes](https://github.com/Arlodotexe/windows-interact#winprocess)
 - Enhanced [console.log](https://github.com/Arlodotexe/windows-interact#winlog) and [error throwing](https://github.com/Arlodotexe/windows-interact#winerror)
-- Different functions for running [PowerShell](https://github.com/Arlodotexe/windows-interact#winpowershell) or [CMD](https://github.com/Arlodotexe/windows-interact#wincmd) commands
+- Advanced [PowerShell](https://github.com/Arlodotexe/windows-interact#winpowershell) session manager, and clean [CMD](https://github.com/Arlodotexe/windows-interact#wincmd) command
 
 ---
 
@@ -24,30 +24,14 @@ With `windows-interact`, NodeJS gains the following functionality:
 
 This is the biggest release of Windows-Interact ever! It brings an uncountable number of bug fixes and many new features, none of which are as huge as the arrival of the [PowerShell session manager](https://github.com/Arlodotexe/windows-interact#winpowershell)! More advanced than [node-powershell](https://www.npmjs.com/package/node-powershell), with automatic output collection and seperation, and the ability to run multiple command in succession by passing in array. 
 
-## New in version (1.2.0): 
- - `Win.appManager()` now has group app management
-    - Assign apps to a group with `Win.appManager.register.group()`
-    - Give all apps in a group the same `onLaunch` or `onKill`
-    - Launch or kill all of the apps in a group at once.
- - `Win.PowerShell()` 
-   - A shiny new, super advanced, [mega futuristic session manager](https://github.com/Arlodotexe/windows-interact#winpowershell)!
-        - `Win.PowerShell.addCommand()` to issue a new command
-        -  `Win.PowerShell.end()` to end a session
-        - New options for `Win.PowerShell()`'s `options` parameter: 
-        - `keepAlive` - Do not end the child process when the command(s) are completed
-        - `ID` - Assign an identity to this PowerShell session in order to issue a new command or end it at a later time.
-    - `Win.PowerShell()` can now accept an array of commands, and automatically collects and seperates the output
- - `Win.notify()` was broken on Windows 10 insider build 17746 and beyond, so I rewrote it from the ground up just for Windows 10 (and kept the old functionality for < 10). You can now use images or animated GIFs in notifications (and it's really freaking cool)
- - Added `Win.process.getPidByWindowTitle()`
- - `Win.log()` will not act more like `console.log()`. Any string that is passed as a parameter at any position will be printed back.
- - More options for Verbosity in `Win.set.preferences()`
+## New in version (1.2.3): 
+ - New display methods, including:
+    - Get/Set resolution
+    - Get/Set projection mode
+ - Added detection for audio transmitted through both input and output (`Win.get.audioDevices.output.transmitting`, `Win.get.audioDevices.input.transmitting`)
 
  What's changed: 
- - Tons of bug fixes. Everywhere. This is the most changes in one version bump I've ever released, with 60+ git commits and hundreds if not 1 or 2 _thousand_ line changes
- - The appManager has been refactored to allow registering an app with any name, instead of the executable name
- - Fixed a lot of commands that would fail if your directory had a space in it
- - Adjusted `Win.process.kill()` to allow killing by PID and fixed it so it doesn't show a large red error message when the app isn't running
- - Removed Win.authCode from the documentation. This old code has nothing to do with interacting with windows and will be removed in the future
+ - Squashed a few loose bugs
  
  Known issues: 
  - `Win.PowerShell()`:
@@ -57,7 +41,6 @@ This is the biggest release of Windows-Interact ever! It brings an uncountable n
  - There will be a lot of refactoring coming soon, this project is getting massive and its time to split it up a little.
  - Need better documentation. 
  - Most or all methods will be converted to Promises instead of callbacks
- - Planning on adding `Win.get.audioDevices.output.isPlaying`, but the direct code only works from external scripts, not from Windows-interact itself. Not sure why, but will be coming in the next release!
  - Planning on removing dependency on requestify, perhaps building my own wrapper for nodes' native request methods with zero dependencies
 
 Got ideas? Something you want windows-interact to include? _**Fantastic**_, contact me on twitter @[Arlodottxt](https://twitter.com/Arlodottxt) with your suggestions or open a new Issue on Github
@@ -110,6 +93,21 @@ Win.set.preferences({
         }
     }
 });
+```
+
+## Setting display properties
+--
+#### Set the resolution of the primary display
+```javascript
+Win.get.display.resolution(result => {
+    console.log(result); //--> { height: '1920', width: '1080' }
+});
+```
+
+#### Set the projection mode
+```javascript
+// Accepted values are  "primary", "secondary", "extend" or "duplicate"
+Win.set.display.projectionMode(mode);
 ```
 
 ## Setting audio devices
