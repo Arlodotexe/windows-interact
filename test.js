@@ -48,40 +48,32 @@ Win.appManager.register.group({
     }
 }); */
 
-Win.get.audioDevices.input.transmitting(result => {
-    console.log(result);
-})
 
-/*  let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
+Win.playAudio(Win.path`"C:\Users\chuck\OneDrive\Desktop (1)\Projects\Video editing\Extras\Ding.mp3"`);
+
+setTimeout(() => {
+    Win.stopAudio(Win.path`"C:\Users\chuck\OneDrive\Desktop (1)\Projects\Video editing\Extras\Ding.mp3"`);
+}, 1500);
+
+let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
 let note = 'get-process "notepad" | select ProcessName, MainWindowTitle';
 
 Win.PowerShell([...x, note], (result, err) => {
     console.log('\n');
     console.log('result ', result);
-}, { noLog: true, id: 'test', suppressErrors: true, keepAlive: true });
+}, { noLog: false, id: 'test', suppressErrors: true, keepAlive: true });
 
+setTimeout(() => {
+}, 4000);
 
-Win.PowerShell.newCommand( 'Start-Sleep 2', (result, err) => {
-    console.log('newCommand: ', result);
-}, { id: 'test', noLog: true });
-
-Win.PowerShell.newCommand('write-host "tesT 2"', (result, err) => {
-    console.log('newCommand 2: ', result);
-}, { id: 'test', noLog: true });
-
-Win.PowerShell.newCommand('$vari = "Hello world Pt. 3"', (result, err) => {
-    console.log('newCommand 3: ', result);
-}, { id: 'test', noLog: true });
-
-
-Win.PowerShell.newCommand('write-host $vari', (result, err) => {
-    console.log('newCommand 4: ', result);
-}, { id: 'test', noLog: true });
+setTimeout(() => {
+    Win.PowerShell.endSession('test');
+}, 5000);
 
 
 Win.PowerShell('ls', result => {
     console.log('result 2 ', result);
-}, { noLog: true, id: 'test2', suppressErrors: true, keepAlive: false });  */
+}, { noLog: true, id: 'test2', suppressErrors: true, keepAlive: false });
  
 
 

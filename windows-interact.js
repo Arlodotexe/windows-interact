@@ -624,7 +624,7 @@ const Win = {
 				function end(cb, options, child) {
 					child.on('exit', () => {
 						if (typeof cb == 'function') cb();
-						if (!(options && options.noLog === true)) Win.log(`Ended PowerShell session "${options.id}"`);
+						if (isVerbose('PowerShell')) Win.log(`Ended PowerShell session "${options.id}"`);
 					});
 					child.stdin.end();
 				}
@@ -763,7 +763,7 @@ const Win = {
 
 		fn.endSession = function(id, callback) {
 			for (let i in psVars.powerShellSessions) {
-				if (psVars.powerShellSessions[i].id == id) {
+				if (psVars.powerShellSessions[i].initialOptions.id == id) {
 					psVars.powerShellSessions[i].end(callback, psVars.powerShellSessions[i].initialOptions, psVars.powerShellSessions[i].child);
 				}
 			}
@@ -1386,27 +1386,21 @@ const Win = {
 
 		if (region == 'full') nircmd('savescreenshotfull ' + path);
 		else if (region == 'window') nircmd('savescreenshotwin ' + path);
+		else Win.log('Paramter region must have a value of "full" or "window"', { colour: 'yellow' });
 	},
 	playAudio: function(path) {
 		path = replaceAll(path, '\\\\', '\\');
 		if (path.includes('.wav')) {
-			Win.PowerShell([`$soundplayer = New - Object Media.SoundPlayer '` + path + `'`, ` $soundplayer.Play(); `], null, { keepAlive: true });
+			Win.PowerShell([`$soundplayer = New-Object Media.SoundPlayer '` + path + `'`, ` $soundplayer.Play(); `], null, { keepAlive: true });
 		} else {
-			Win.PowerShell(`Add - Type - AssemblyName presentationCore;
-										$mediaPlayer = New - Object System.Windows.Media.MediaPlayer;
+			Win.PowerShell(`Add-Type -AssemblyName presentationCore;
+										$mediaPlayer = New-Object System.Windows.Media.MediaPlayer;
 										$mediaPlayer.open("${path}");
-										$mediaPlayer.Play()`, undefined, { keepAlive: true, noLog: true });
+										$mediaPlayer.Play()`, undefined, { keepAlive: true, noLog: true, id: "windows-interact-internal-audioplayer" });
 		}
 	},
 	stopAudio: function(path) {
-		for (let i in psVars.powerShellSessions) {
-			if (psVars.powerShellSessions[i].command[0].includes(replaceAll(path, '\\\\', '\\'))) {
-				if (path.includes('.wav')) {
-					psVars.powerShellSessions[i].newCommand(`$soundplayer.Stop()`);
-					psVars.powerShellSessions[i].end();
-				} else psVars.powerShellSessions[i].end();
-			}
-		}
+		Win.PowerShell.endSession("windows-interact-internal-audioplayer");
 	},
 	filePicker: function(windowTitle, initialDirectory, filter, allowMultiSelect, callback) {
 		if (filter && filter.filterby && typeof filter.filterby == 'string' && filter.filterby.charAt(0) == '.') filter.filterby = '*' + filter.filterby;
