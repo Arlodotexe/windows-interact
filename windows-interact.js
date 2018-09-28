@@ -623,7 +623,7 @@ const Win = {
 				function end(cb, options, child) {
 					child.on('exit', () => {
 						if (typeof cb == 'function') cb();
-						if (isVerbose('PowerShell')) Win.log(`Ended PowerShell session "${options.id}"`, { colour: 'yellow' });
+						if (isVerbose('PowerShell') && !options.id.includes('windows-interact-internal-')) Win.log(`Ended PowerShell session "${options.id}"`, { colour: 'yellow' });
 					});
 					child.stdin.end();
 				}
