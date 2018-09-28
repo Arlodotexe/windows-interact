@@ -751,11 +751,14 @@ const Win = {
 		}
 
 		fn.isSessionActive = function(id, callback) {
-			for (let i in psVars.powerShellSessions) {
-				if (psVars.powerShellSessions[i] && psVars.powerShellSessions[i].initialOptions && psVars.powerShellSessions[i].initialOptions.id == id) {
-					callback(true);
-				} else if (i == psVars.powerShellSessions.length - 1) {
-					callback(false);
+			if (psVars.powerShellSessions.length < 1) callback(false);
+			else {
+				for (let i in psVars.powerShellSessions) {
+					if (psVars.powerShellSessions[i] && psVars.powerShellSessions[i].initialOptions && psVars.powerShellSessions[i].initialOptions.id == id) {
+						callback(true);
+					} else if (i == psVars.powerShellSessions.length) {
+						callback(false);
+					}
 				}
 			}
 		}
@@ -767,7 +770,6 @@ const Win = {
 				}
 			}
 		}
-
 		return fn;
 	})(),
 	notify: function(message, title, image) {
@@ -778,7 +780,7 @@ const Win = {
 				// Anything below Windows 10
 				nircmd('trayballoon "' + ((!title) ? ' ' : message) + '" "' + ((title) ? title : message) + (image ? `" "${image}"` : '" "c:\\"'));
 			} else {
-				Win.PowerShell(['Unblock-File -Path "' + __dirname + '\\PowerShellScripts\\Notify.ps1"', `cd "${__dirname}\\PowerShellScripts\\"; .\\Notify.ps1 "${(title ? title : 'Node.js')}" "${message}" ${image?'"' + replaceAll(image, '\\\\', '\\') + '"':''}`], undefined, { noLog: true, suppressErrors: true });
+				Win.PowerShell(['Unblock-File -Path "' + __dirname + '\\PowerShellScripts\\Notify.ps1"', `cd "${__dirname}\\PowerShellScripts\\"; .\\Notify.ps1 "${(title ? title : 'Node.js')}" "${message}" ${image ? '"' + replaceAll(image, '\\\\', '\\') + '"' : ''}`], undefined, { noLog: true, suppressErrors: true });
 			}
 		}
 	},
@@ -1154,9 +1156,9 @@ const Win = {
 						if (error !== '') {
 							let errorResponse = 'Something went wrong with windows-interact while executing Win.get.lastInput().';
 							let errorTrail = 'To see the stack trace, set stackTrace: true in the verbosity preferences.';
-	
+
 							if (isVerbose('stackTrace')) errorTrail = error;
-	
+
 							Win.error(errorResponse + errorTrail);
 							reject(errorResponse + errorTrail);
 						}
@@ -1165,7 +1167,7 @@ const Win = {
 						result = result.split(':').map(item => Number(item));
 
 						if (typeof (cb) == 'function') cb(result);
-						if(result) resolve(result);
+						if (result) resolve(result);
 					}, { noLog: true, suppressErrors: true });
 				});
 			},
@@ -1411,7 +1413,7 @@ const Win = {
 			if (path == undefined) {
 				path = '*clipboard*';
 			} else path = '"' + path + '"';
-	
+
 			if (region == 'full') nircmd('savescreenshotfull ' + path, () => {
 				resolve();
 			});

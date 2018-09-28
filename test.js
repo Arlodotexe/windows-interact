@@ -13,8 +13,6 @@ Win.set.preferences({
     }
 });
 
-Win.notify('test');
-/* 
 Win.appManager.register({
     VSCode: {
         path: Win.path`C:\Program Files\Microsoft VS Code\Code.exe`,
@@ -63,12 +61,13 @@ Win.appManager.register.group({
 });
 
 
-Win.window.maximize('firefox');
-Win.window.move(1920, 0, 'firefox'); */
-
-
+Win.PowerShell.isSessionActive('windows-interact-internal-appWatcher', result => {
+    console.log('result: ' + result);
+});
 setInterval(() => {
-    //console.log(Win.appManager.registeredApps);
+    Win.PowerShell.isSessionActive('windows-interact-internal-appWatcher', result => {
+        console.log('result: ' + result);
+    });
 }, 2000);
 
 
