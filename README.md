@@ -20,11 +20,11 @@ With `windows-interact`, NodeJS gains the following functionality:
 
 ---
 
-**The current released version is 1.2.0. [See the release notes](changelog.md) if this version number differs from below**
+**The current released version is 1.2.3. [See the release notes](changelog.md) if this version number differs from below**
 
 This is the biggest release of Windows-Interact ever! It brings an uncountable number of bug fixes and many new features, none of which are as huge as the arrival of the [PowerShell session manager](https://github.com/Arlodotexe/windows-interact#winpowershell)! More advanced than [node-powershell](https://www.npmjs.com/package/node-powershell), with automatic output collection and seperation, and the ability to run multiple command in succession by passing in array. 
 
-## New in version (1.2.3): 
+## New in version (1.3.0): 
  - New display methods, including:
     - Get/Set resolution
     - Set projection mode
@@ -37,7 +37,7 @@ This is the biggest release of Windows-Interact ever! It brings an uncountable n
     - Added verbosity options
     - onLaunch and onKill now return the name of the affected application
  - Fixed with Win.notify (This was broken in the last release, so sorry!)
-  
+ 
  
  Known issues: 
  - `Win.PowerShell()`:
