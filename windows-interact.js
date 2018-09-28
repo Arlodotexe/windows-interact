@@ -207,7 +207,7 @@ const authCode = {
 };
 
 function nircmd(command, callback, options) {
-	let defaultPsOpts = { keepAlive:true, id: 'windows-interact-internal-nircmd', noLog: true }
+	let defaultPsOpts = { keepAlive: true, id: 'windows-interact-internal-nircmd', noLog: true }
 	Win.PowerShell.isSessionActive('windows-interact-internal-nircmd', result => {
 		if (result) {
 			Win.PowerShell.newCommand(__dirname + '\\nircmd.exe ' + command, callback, Object.assign(defaultPsOpts, options));
@@ -802,7 +802,7 @@ const Win = {
 	alert: function(message, title) {
 		return new Promise(resolve => {
 			if (message && message.trim() !== '') {
-				Win.PowerShell(`$wshell = New - Object - ComObject Wscript.Shell
+				Win.PowerShell(`$wshell = New-Object -ComObject Wscript.Shell
 				$wshell.Popup("${message}", 0, "${((!title) ? 'Node' : title)}")`, () => {
 						resolve();
 					});
