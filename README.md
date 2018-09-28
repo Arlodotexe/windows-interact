@@ -958,6 +958,8 @@ Win.toggleMediaPlayback();
 
 ### Take a screenshot
 
+`Win.screenshot(region, path) => : Promise`
+
 ```javascript
 // Screenshot the entire screen and save to clipboard
 Win.screenshot();
