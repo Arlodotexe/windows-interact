@@ -100,13 +100,14 @@ Win.set.preferences({
     }
 });
 ```
+---
+## Display
 
-## Setting display properties
---
 #### Set the resolution of the primary display
+`Win.set.display.resolution(width, height, callback) => : void`
 ```javascript
-Win.get.display.resolution(result => {
-    console.log(result); //--> { height: '1920', width: '1080' }
+Win.set.display.resolution(1920, 1080, () => {
+    console.log('Done');
 });
 ```
 
@@ -115,9 +116,10 @@ Win.get.display.resolution(result => {
 // Accepted values are  "primary", "secondary", "extend" or "duplicate"
 Win.set.display.projectionMode(mode);
 ```
-
-## Setting audio devices
 ---
+
+## Audio Devices
+
 ### Input
 #### Set the volume of the current input device
 ```javascript
@@ -125,7 +127,7 @@ Win.set.audioDevices.input.volume('50');
 ```
 
 #### Set the mute state of the current input device
-This 99% accurate due to the math required behind the scenes
+
 ```javascript
 Win.set.audioDevices.input.mute();
 ```
@@ -140,13 +142,13 @@ Win.set.audioDevices.input.default('Headset Earphone');
 
 ### Output
 #### Set the volume of the current output device
-This 99% accurate due to the math required behind the scenes
+
 ```javascript
 Win.set.audioDevices.output.volume('50');
 ```
 
 #### Set the mute state of the current output device
-This 99% accurate due to the math required behind the scenes
+
 ```javascript
 Win.set.audioDevices.output.mute();
 ```
@@ -157,7 +159,7 @@ Win.set.audioDevices.output.mute();
 Win.set.audioDevices.output.default('Headset Earphone');
 ```
 
----
+<br>
 
 ## `Win.get`
 Used to get the status of various things within Windows
@@ -189,7 +191,7 @@ Win.get.display.resolution(result => {
     console.log(result) // : { height: '1920', width: '1080' }
 });
 ```
-
+---
 ## Audio Devices
 
 
@@ -202,7 +204,6 @@ Win.get.audioDevices.input.volume(function(result) {
 ```
 
 #### Get the mute state of the current input device
-This 99% accurate due to the math required behind the scenes
 ```javascript
 Win.get.audioDevices.input.mute(function(result) {
     console.log(result); // Mute state of the current default device
@@ -221,7 +222,7 @@ Win.get.audioDevices.input.default(function(result) {
 
 ### Output
 #### Get the volume of the current output device
-This 99% accurate due to the math required behind the scenes
+
 ```javascript
 Win.get.audioDevices.output.volume(function(result) {
     console.log(result); // Volume level of the current default device
@@ -229,7 +230,7 @@ Win.get.audioDevices.output.volume(function(result) {
 ```
 
 #### Get the mute state of the current output device
-This 99% accurate due to the math required behind the scenes
+
 ```javascript
 Win.get.audioDevices.output.mute(function(result) {
     console.log(result); // Mute state of the current default device
