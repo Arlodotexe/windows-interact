@@ -207,7 +207,14 @@ const authCode = {
 };
 
 function nircmd(command, callback, options) {
-	Win.PowerShell(__dirname + '\\nircmd.exe ' + command, callback, options ? options : { noLog: true });
+	let defaultPsOpts = { keepAlive:true, id: 'windows-interact-internal-nircmd', noLog: true }
+	Win.PowerShell.isSessionActive('windows-interact-internal-nircmd', result => {
+		if (result) {
+			Win.PowerShell.newCommand(__dirname + '\\nircmd.exe ' + command, callback, Object.assign(defaultPsOpts, options));
+		} else {
+			Win.PowerShell(__dirname + '\\nircmd.exe ' + command, callback, Object.assign(defaultPsOpts, options));
+		}
+	});
 }
 
 function speak() {
