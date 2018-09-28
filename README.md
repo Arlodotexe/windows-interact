@@ -175,7 +175,7 @@ Used to get the status of various things within Windows
 ```javascript
 // Log the Idle time
 Win.get.lastInput()
-    .then(console.log);
+    .then(console.log); // : [hours, minutes, seconds]
 ```
 ---
 

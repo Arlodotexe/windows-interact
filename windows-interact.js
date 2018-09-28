@@ -1150,7 +1150,7 @@ const Win = {
 		user: {
 			idleTime: function(cb) {
 				return new Promise((resolve, reject) => {
-					Win.PowerShell([`Unblock-File -Path "` + __dirname + `\\PowerShellScripts\\LastInput.ps1"; cd "${__dirname}\\PowerShellScripts\\"; .\\LastInput.ps1`], (result, error) => {
+					Win.PowerShell([`Unblock-File -Path "` + __dirname + `\\PowerShellScripts\\IdleDetection.ps1"; cd "${__dirname}\\PowerShellScripts\\"; .\\IdleDetection.ps1`], (result, error) => {
 						if (error !== '') {
 							let errorResponse = 'Something went wrong with windows-interact while executing Win.get.lastInput().';
 							let errorTrail = 'To see the stack trace, set stackTrace: true in the verbosity preferences.';
@@ -1160,6 +1160,10 @@ const Win = {
 							Win.error(errorResponse + errorTrail);
 							reject(errorResponse + errorTrail);
 						}
+						result = replaceAll(result, 'Idle for', '');
+						result = replaceAll(result, '\n', '');
+						result = result.split(':').map(item => Number(item));
+
 						if (typeof (cb) == 'function') cb(result);
 						if(result) resolve(result);
 					}, { noLog: true, suppressErrors: true });

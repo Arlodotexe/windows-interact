@@ -14,13 +14,12 @@ Win.set.preferences({
 });
 
 //Win.notify('test');
-
-Win.get.lastInput()
+setTimeout(() => {
+    
+    Win.get.user.idleTime()
     .then(console.log);
-
-Win.get.display.projectionMode(result => {
-    console.log(result)
-})
+    
+}, 2000);
 /* 
 Win.appManager.register({
     VSCode: {
