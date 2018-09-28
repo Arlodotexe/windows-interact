@@ -13,13 +13,7 @@ Win.set.preferences({
     }
 });
 
-//Win.notify('test');
-setTimeout(() => {
-    
-    Win.get.user.idleTime()
-    .then(console.log);
-    
-}, 2000);
+Win.notify('test');
 /* 
 Win.appManager.register({
     VSCode: {

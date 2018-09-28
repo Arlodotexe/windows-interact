@@ -778,7 +778,7 @@ const Win = {
 				// Anything below Windows 10
 				nircmd('trayballoon "' + ((!title) ? ' ' : message) + '" "' + ((title) ? title : message) + (image ? `" "${image}"` : '" "c:\\"'));
 			} else {
-				Win.PowerShell(['Unblock-File -Path "' + __dirname + '\\PowerShellScripts\\Notify.ps1"', `cd "${__dirname}\\PowerShellScripts\\"; .\\Notify.ps1 "${(title ? title : 'Node.js')}" "${message}" "${replaceAll(image, '\\\\', '\\')}"`], undefined, { noLog: true, suppressErrors: true });
+				Win.PowerShell(['Unblock-File -Path "' + __dirname + '\\PowerShellScripts\\Notify.ps1"', `cd "${__dirname}\\PowerShellScripts\\"; .\\Notify.ps1 "${(title ? title : 'Node.js')}" "${message}" ${image?'"' + replaceAll(image, '\\\\', '\\') + '"':''}`], undefined, { noLog: true, suppressErrors: true });
 			}
 		}
 	},
