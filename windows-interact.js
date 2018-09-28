@@ -1423,19 +1423,26 @@ const Win = {
 			else Win.log('Paramter region must have a value of "full" or "window"', { colour: 'yellow' });
 		});
 	},
-	playAudio: function(path) {
+	playAudio: function(path, id) {
 		path = replaceAll(path, '\\\\', '\\');
 		if (path.includes('.wav')) {
-			Win.PowerShell([`$soundplayer = New-Object Media.SoundPlayer '` + path + `'`, ` $soundplayer.Play(); `], null, { keepAlive: true });
+			Win.PowerShell([`$soundplayer = New-Object Media.SoundPlayer '` + path + `'`, ` $soundplayer.Play(); `], null, { keepAlive: true, id: "windows-interact-internal-audioplayer-" + id });
 		} else {
 			Win.PowerShell(`Add-Type -AssemblyName presentationCore;
 										$mediaPlayer = New-Object System.Windows.Media.MediaPlayer;
 										$mediaPlayer.open("${path}");
-										$mediaPlayer.Play()`, undefined, { keepAlive: true, noLog: true, id: "windows-interact-internal-audioplayer" });
+										$mediaPlayer.Play()`, undefined, { keepAlive: true, noLog: true, id: "windows-interact-internal-audioplayer-" + id });
 		}
 	},
-	stopAudio: function(path) {
-		Win.PowerShell.endSession("windows-interact-internal-audioplayer");
+	stopAudio: function(id) {
+		Win.PowerShell.isSessionActive('windows-interact-internal-audioplayer-' + id, result => {
+			console.log(result);
+			if (result) {
+				Win.PowerShell.endSession("windows-interact-internal-audioplayer-" + id);
+			} else {
+				Win.error('Unable to stop audio. ID given does not exist as an active audio session');
+			}
+		});
 	},
 	filePicker: function(windowTitle, initialDirectory, filter, allowMultiSelect, callback) {
 		if (filter && filter.filterby && typeof filter.filterby == 'string' && filter.filterby.charAt(0) == '.') filter.filterby = '*' + filter.filterby;

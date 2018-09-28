@@ -60,15 +60,11 @@ Win.appManager.register.group({
     }
 });
 
+Win.playAudio(Win.path`"C:\Users\chuck\OneDrive\Desktop (1)\Memes\Sound effects\I sawed this boat in half meme.mp3"`, "test");
 
-Win.PowerShell.isSessionActive('windows-interact-internal-appWatcher', result => {
-    console.log('result: ' + result);
-});
-setInterval(() => {
-    Win.PowerShell.isSessionActive('windows-interact-internal-appWatcher', result => {
-        console.log('result: ' + result);
-    });
-}, 2000);
+setTimeout(() => {
+    Win.stopAudio('test')
+}, 2500);
 
 
 /* Win.playAudio(Win.path`"C:\Users\chuck\OneDrive\Desktop (1)\Projects\Video editing\Extras\Ding.mp3"`);
