@@ -264,13 +264,13 @@ function log() {
 	}
 	let fn = function(message, options) {
 		let messages = Array.from(arguments).filter(el => {
-			return (typeof el == 'string' || (typeof el == 'object' && !(el.colour !== undefined || el.background !== undefined)))
+			return (typeof el == 'string' || (typeof el == 'object' && !(el.colour !== undefined || el.background !== undefined || el.showTime !== undefined)))
 		});
 
 		message = messages.join('');
 
 		options = Array.from(arguments).filter(el => {
-			return (typeof el == 'object' && (el.colour !== undefined || el.background !== undefined))
+			return (typeof el == 'object' && (el.colour !== undefined || el.background !== undefined || el.showTime !== undefined))
 		});
 
 		options = options[0];
