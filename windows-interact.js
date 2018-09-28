@@ -1407,13 +1407,19 @@ const Win = {
 		Win.PowerShell('(New-Object -ComObject shell.application).toggleDesktop()');
 	},
 	screenshot: function(region, path) {
-		if (path == undefined) {
-			path = '*clipboard*';
-		} else path = '"' + path + '"';
-
-		if (region == 'full') nircmd('savescreenshotfull ' + path);
-		else if (region == 'window') nircmd('savescreenshotwin ' + path);
-		else Win.log('Paramter region must have a value of "full" or "window"', { colour: 'yellow' });
+		return new Promise(resolve => {
+			if (path == undefined) {
+				path = '*clipboard*';
+			} else path = '"' + path + '"';
+	
+			if (region == 'full') nircmd('savescreenshotfull ' + path, () => {
+				resolve();
+			});
+			else if (region == 'window') nircmd('savescreenshotwin ' + path, () => {
+				resolve();
+			});
+			else Win.log('Paramter region must have a value of "full" or "window"', { colour: 'yellow' });
+		});
 	},
 	playAudio: function(path) {
 		path = replaceAll(path, '\\\\', '\\');
