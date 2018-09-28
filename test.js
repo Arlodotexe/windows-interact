@@ -6,13 +6,21 @@ Win.set.preferences({
     appManagerRefreshInterval: 2500,
     log: {
         verbose: {
+            stackTrace: true,
             PowerShell: true,
             appManager: true
         }
     }
 });
 
-Win.notify('test')
+//Win.notify('test');
+
+Win.get.lastInput()
+    .then(console.log);
+
+Win.get.display.projectionMode(result => {
+    console.log(result)
+})
 /* 
 Win.appManager.register({
     VSCode: {

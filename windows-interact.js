@@ -623,7 +623,7 @@ const Win = {
 				function end(cb, options, child) {
 					child.on('exit', () => {
 						if (typeof cb == 'function') cb();
-						if (isVerbose('PowerShell')) Win.log(`Ended PowerShell session "${options.id}"`, {colour: 'yellow'});
+						if (isVerbose('PowerShell')) Win.log(`Ended PowerShell session "${options.id}"`, { colour: 'yellow' });
 					});
 					child.stdin.end();
 				}
@@ -778,7 +778,7 @@ const Win = {
 				// Anything below Windows 10
 				nircmd('trayballoon "' + ((!title) ? ' ' : message) + '" "' + ((title) ? title : message) + (image ? `" "${image}"` : '" "c:\\"'));
 			} else {
-				Win.PowerShell(['Unblock-File -Path "' + __dirname + '\\PowerShellScripts\\Notify.ps1"', `cd "${ __dirname}\\PowerShellScripts\\"; .\\Notify.ps1 "${(title ? title : 'Node.js')}" "${message}" "${replaceAll(image, '\\\\', '\\')}"`], undefined, { noLog: true, suppressErrors: true });
+				Win.PowerShell(['Unblock-File -Path "' + __dirname + '\\PowerShellScripts\\Notify.ps1"', `cd "${__dirname}\\PowerShellScripts\\"; .\\Notify.ps1 "${(title ? title : 'Node.js')}" "${message}" "${replaceAll(image, '\\\\', '\\')}"`], undefined, { noLog: true, suppressErrors: true });
 			}
 		}
 	},
@@ -845,7 +845,7 @@ const Win = {
 
 					apps.push(replaceAll(processName, '.exe', ''));
 
-					if (isVerbose('appManager')) Win.log('Registered new app: ',  Win.appManager.registeredApps[appName].processName, {colour: 'yellow'});
+					if (isVerbose('appManager')) Win.log('Registered new app: ', Win.appManager.registeredApps[appName].processName, { colour: 'yellow' });
 				});
 
 				// Add function to get group membership by app name
@@ -982,7 +982,7 @@ const Win = {
 					let entry = new Object;
 					entry[groupName] = props;
 					groups.push(entry);
-					if (isVerbose('appManager')) Win.log('Registered new group: ',  groupName, {colour: 'yellow'});
+					if (isVerbose('appManager')) Win.log('Registered new group: ', groupName, { colour: 'yellow' });
 				});
 			};
 
@@ -1147,10 +1147,29 @@ const Win = {
 		}
 	},
 	get: {
+		user: {
+			idleTime: function(cb) {
+				return new Promise((resolve, reject) => {
+					Win.PowerShell([`Unblock-File -Path "` + __dirname + `\\PowerShellScripts\\LastInput.ps1"; cd "${__dirname}\\PowerShellScripts\\"; .\\LastInput.ps1`], (result, error) => {
+						if (error !== '') {
+							let errorResponse = 'Something went wrong with windows-interact while executing Win.get.lastInput().';
+							let errorTrail = 'To see the stack trace, set stackTrace: true in the verbosity preferences.';
+	
+							if (isVerbose('stackTrace')) errorTrail = error;
+	
+							Win.error(errorResponse + errorTrail);
+							reject(errorResponse + errorTrail);
+						}
+						if (typeof (cb) == 'function') cb(result);
+						if(result) resolve(result);
+					}, { noLog: true, suppressErrors: true });
+				});
+			},
+		},
 		display: {
 			projectionMode: function(callback) {
 				Win.PowerShell(['Add-Type -AssemblyName System.Windows.Forms', '[System.Windows.Forms.Screen]::AllScreens'], result => {
-					if (result.includes('Primary      : True') && result.includes('Primary      : False')) {
+					if (result[1].includes('Primary      : True') && result[1].includes('Primary      : False')) {
 						callback('extended');
 					} else {
 						callback(result[1]);

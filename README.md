@@ -27,12 +27,14 @@ This is the biggest release of Windows-Interact ever! It brings an uncountable n
 ## New in version (1.2.3): 
  - New display methods, including:
     - Get/Set resolution
-    - Get/Set projection mode
+    - Set projection mode
+ - Added `Win.get.lastInput()` to check the last keyboard or mouse input from the user
  - Added detection for audio transmitted through both input and output (`Win.get.audioDevices.output.transmitting`, `Win.get.audioDevices.input.transmitting`)
 
  What's changed: 
- - Added verbosity for appManager
+ - Added `stackTrace` as a verbosity option. From now on, most methods that use PowerShell will start hiding their large and irrelevant error stack trace unless this option is enabled
  - App Manager:
+    - Added verbosity options
     - onLaunch and onKill now return the name of the affected application
  - Fixed with Win.notify (This was broken in the last release, so sorry!)
   
@@ -158,8 +160,38 @@ Win.set.audioDevices.output.default('Headset Earphone');
 ---
 
 ## `Win.get`
+Used to get the status of various things within Windows
 
-Used to get the status of various things within Windows (currently, this is limited to audio devices)
+---
+
+## User
+
+#### Get the Idle time of the current user
+
+`Win.get.user.idleTime(callback) => : Promise`
+
+```javascript
+// Log the Idle time
+Win.get.lastInput()
+    .then(console.log);
+```
+---
+
+## Display
+
+#### Get the current display resolution
+
+`Win.get.display.resolution(callback) => : void`
+
+
+```javascript
+Win.get.display.resolution(result => {
+    console.log(result) // : { height: '1920', width: '1080' }
+});
+```
+
+## Audio Devices
+
 
 ### Input
 #### Get the volume of the current input device
