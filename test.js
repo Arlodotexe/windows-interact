@@ -12,19 +12,18 @@ Win.set.preferences({
     }
 });
 
-/* Win.appManager.register({
+Win.appManager.register({
     VSCode: {
-		path: Win.path`C:\Program Files\Microsoft VS Code\Code.exe`,
-		onLaunch: function() {
-			Win.log('VSCode launched');
-			setTimeout(() => {
-			}, 500);
-		},
-		onKill: function() {
-			Win.log('VSCode killed');
-
-		}
-	},
+        path: Win.path`C:\Program Files\Microsoft VS Code\Code.exe`,
+        onLaunch: function() {
+            Win.log('VSCode launched');
+            setTimeout(() => {
+            }, 500);
+        },
+        onKill: function() {
+            Win.log('VSCode killed');
+        }
+    },
     Pad: {
         path: Win.path`C:\WINDOWS\system32\notepad.exe`,
         onLaunch: function() {
@@ -37,19 +36,40 @@ Win.set.preferences({
     donation: {
         path: Win.path`"C:\Program Files\BOINC\boincmgr.exe"`
     }
-})
+});
 
 Win.appManager.register.group({
     "test": {
         apps: ["Pad", "donation"],
-        onLaunch: function() {
-            console.log('test launch');
+        onLaunch: function(appName) {
+            console.log('test launch: ', appName);
+        },
+        onKill: function(appName) {
+            console.log(appName); 
+        }
+    },
+    "test 2": {
+        apps: ["Pad", "donation"],
+        onLaunch: function(appName) {
+            console.log('test launch: ', appName);
+        },
+        onKill: function(appName) {
+            console.log(appName); 
         }
     }
-}); */
+});
 
 
-Win.playAudio(Win.path`"C:\Users\chuck\OneDrive\Desktop (1)\Projects\Video editing\Extras\Ding.mp3"`);
+Win.window.maximize('firefox');
+Win.window.move(1920, 0, 'firefox');
+
+
+setInterval(() => {
+    //console.log(Win.appManager.registeredApps);
+}, 2000);
+
+
+/* Win.playAudio(Win.path`"C:\Users\chuck\OneDrive\Desktop (1)\Projects\Video editing\Extras\Ding.mp3"`);
 
 setTimeout(() => {
     Win.stopAudio(Win.path`"C:\Users\chuck\OneDrive\Desktop (1)\Projects\Video editing\Extras\Ding.mp3"`);
@@ -64,17 +84,14 @@ Win.PowerShell([...x, note], (result, err) => {
 }, { noLog: false, id: 'test', suppressErrors: true, keepAlive: true });
 
 setTimeout(() => {
-}, 4000);
-
-setTimeout(() => {
     Win.PowerShell.endSession('test');
 }, 5000);
 
 
 Win.PowerShell('ls', result => {
     console.log('result 2 ', result);
-}, { noLog: true, id: 'test2', suppressErrors: true, keepAlive: false });
- 
+}, { noLog: true, id: 'test2', suppressErrors: true, keepAlive: false }); */
+
 
 
 //Win.notify('Version 2.5 has been released to the Store', 'MyTube Companion has been updated!', Win.path`"C:\Users\chuck\OneDrive\Downloads\13 MIN OF DANK MEMES COMPILATION #28.gif"`)

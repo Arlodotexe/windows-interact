@@ -31,7 +31,11 @@ This is the biggest release of Windows-Interact ever! It brings an uncountable n
  - Added detection for audio transmitted through both input and output (`Win.get.audioDevices.output.transmitting`, `Win.get.audioDevices.input.transmitting`)
 
  What's changed: 
- - Squashed a few loose bugs
+ - Added verbosity for appManager
+ - App Manager:
+    - onLaunch and onKill now return the name of the affected application
+ - Fixed with Win.notify (This was broken in the last release, so sorry!)
+  
  
  Known issues: 
  - `Win.PowerShell()`:

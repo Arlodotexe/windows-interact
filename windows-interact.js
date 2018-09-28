@@ -411,7 +411,6 @@ const Win = {
 	PowerShell: (function() {
 		let fn = function(command, callback, options) {
 
-
 			const spawn = require("child_process").spawn;
 			let child = spawn("powershell.exe", ["-Command", "-"]);
 			child.stdin.setEncoding('utf-8');
@@ -624,7 +623,7 @@ const Win = {
 				function end(cb, options, child) {
 					child.on('exit', () => {
 						if (typeof cb == 'function') cb();
-						if (isVerbose('PowerShell')) Win.log(`Ended PowerShell session "${options.id}"`);
+						if (isVerbose('PowerShell')) Win.log(`Ended PowerShell session "${options.id}"`, {colour: 'yellow'});
 					});
 					child.stdin.end();
 				}
@@ -779,7 +778,7 @@ const Win = {
 				// Anything below Windows 10
 				nircmd('trayballoon "' + ((!title) ? ' ' : message) + '" "' + ((title) ? title : message) + (image ? `" "${image}"` : '" "c:\\"'));
 			} else {
-				Win.PowerShell(['Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Unrestricted', 'Unblock-File -Path .\\PowerShellScripts\\Notify.ps1', `.\\PowerShellScripts\\Notify.ps1 "${(title ? title : 'Node.js')}" "${message}" "${replaceAll(image, '\\\\', '\\')}"`], undefined, { noLog: true, suppressErrors: true });
+				Win.PowerShell(['Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Unrestricted', 'Unblock-File -Path "' + __dirname + '\\PowerShellScripts\\Notify.ps1"', `"${ __dirname}\\PowerShellScripts\\Notify.ps1" "${(title ? title : 'Node.js')}" "${message}" "${replaceAll(image, '\\\\', '\\')}"`], undefined, { noLog: true, suppressErrors: true });
 			}
 		}
 	},
@@ -845,7 +844,11 @@ const Win = {
 					}
 
 					apps.push(replaceAll(processName, '.exe', ''));
+
+					if (isVerbose('appManager')) Win.log('Registered new app: ',  Win.appManager.registeredApps[appName].processName, {colour: 'yellow'});
 				});
+
+				// Add function to get group membership by app name
 
 				function setIsRunning(processName, bool) {
 					for (let i in Win.appManager.registeredApps) {
@@ -918,7 +921,7 @@ const Win = {
 								Object.entries(groups[i]).forEach(([groupName, props]) => {
 									if (groups[i][groupName].apps.includes(getNameByProcessName(appName)) && groups[i][groupName].onKill) {
 										groups[i][groupName].onKill = debounce(groups[i][groupName].onKill, 2000, true);
-										groups[i][groupName].onKill();
+										groups[i][groupName].onKill(appName);
 									}
 								});
 							}
@@ -935,7 +938,7 @@ const Win = {
 								Object.entries(groups[i]).forEach(([groupName, props]) => {
 									if (groups[i][groupName].apps.includes(getNameByProcessName(appName)) && groups[i][groupName].onLaunch) {
 										groups[i][groupName].onLaunch = debounce(groups[i][groupName].onLaunch, 2000, true);
-										groups[i][groupName].onLaunch();
+										groups[i][groupName].onLaunch(appName);
 									}
 								});
 							}
@@ -979,6 +982,7 @@ const Win = {
 					let entry = new Object;
 					entry[groupName] = props;
 					groups.push(entry);
+					if (isVerbose('appManager')) Win.log('Registered new group: ',  groupName, {colour: 'yellow'});
 				});
 			};
 
@@ -1206,7 +1210,7 @@ const Win = {
 					}, { noLog: true });
 				},
 				transmitting: callback => {
-					Win.PowerShell(['Unblock-File -Path .\\PowerShellScripts\\AudioDetection.ps1', `.\\PowerShellScripts\\AudioDetection.ps1 output`], result => {
+					Win.PowerShell(['Unblock-File -Path "' + __dirname + '\\PowerShellScripts\\AudioDetection.ps1"', __dirname + `\\PowerShellScripts\\AudioDetection.ps1 output`], result => {
 						if (result[1].trim() == 'True') {
 							callback(true);
 						} else {
@@ -1255,16 +1259,16 @@ const Win = {
 			projectionMode: function(mode) {
 				switch (mode) {
 					case 'primary':
-						Win.cmd('%windir%\System32\DisplaySwitch.exe /internal');
+						Win.cmd('%windir%\\System32\\DisplaySwitch.exe /internal');
 						break;
 					case 'duplicate':
-						Win.cmd('%windir%\System32\DisplaySwitch.exe /clone');
+						Win.cmd('%windir%\\System32\\DisplaySwitch.exe  /clone');
 						break;
 					case 'extend':
-						Win.cmd('%windir%\System32\DisplaySwitch.exe /extend');
+						Win.cmd('%windir%\\System32\\DisplaySwitch.exe  /extend');
 						break;
 					case 'secondary':
-						Win.cmd('%windir%\System32\DisplaySwitch.exe /external');
+						Win.cmd('%windir%\\System32\\DisplaySwitch.exe  /external');
 						break;
 					default:
 						Win.log('A valid projection mode was not given. Valid options are "primary", "secondary", "extend" or "duplicate"', { colour: 'yellow' });
