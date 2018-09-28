@@ -1436,7 +1436,6 @@ const Win = {
 	},
 	stopAudio: function(id) {
 		Win.PowerShell.isSessionActive('windows-interact-internal-audioplayer-' + id, result => {
-			console.log(result);
 			if (result) {
 				Win.PowerShell.endSession("windows-interact-internal-audioplayer-" + id);
 			} else {
