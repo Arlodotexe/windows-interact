@@ -1,5 +1,4 @@
 const Win = require('./windows-interact');
-let x = ['write-host "test"', 'write-host "Still alive?"'];
 const supplementals = require('./supplementals');
 
 Win.set.preferences({
@@ -39,7 +38,7 @@ Win.appManager.register({
     }
 });
 
-Win.appManager.register.group({
+/* Win.appManager.register.group({
     "test": {
         apps: ["Pad", "donation"],
         onLaunch: function(appName) {
@@ -60,18 +59,8 @@ Win.appManager.register.group({
     }
 });
 
-Win.playAudio(Win.path`"C:\Users\chuck\OneDrive\Desktop (1)\Memes\Sound effects\I sawed this boat in half meme.mp3"`, "test");
-
-setTimeout(() => {
-    Win.stopAudio('test')
-}, 2500);
-
-
-/* Win.playAudio(Win.path`"C:\Users\chuck\OneDrive\Desktop (1)\Projects\Video editing\Extras\Ding.mp3"`);
-
-setTimeout(() => {
-    Win.stopAudio(Win.path`"C:\Users\chuck\OneDrive\Desktop (1)\Projects\Video editing\Extras\Ding.mp3"`);
-}, 1500);
+ */
+let x = ['write-host "test"', 'write-host "Still alive?"'];
 
 let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
 let note = 'get-process "notepad" | select ProcessName, MainWindowTitle';
@@ -86,26 +75,10 @@ setTimeout(() => {
 }, 5000);
 
 
-Win.PowerShell('ls', result => {
+/* Win.PowerShell('ls', result => {
     console.log('result 2 ', result);
-}, { noLog: true, id: 'test2', suppressErrors: true, keepAlive: false }); */
+}, { noLog: true, id: 'test2', suppressErrors: true, keepAlive: false });  */
 
 
 
-//Win.notify('Version 2.5 has been released to the Store', 'MyTube Companion has been updated!', Win.path`"C:\Users\chuck\OneDrive\Downloads\13 MIN OF DANK MEMES COMPILATION #28.gif"`)
-
-//Win.PowerShell('Start-Process rykentube:');
-/*
-// Ignore this, this is for testing the audio detection
-
-
-/*
-setTimeout(() => {
-}, 2000);
-/* Win.get.audioDevices.output.isPlaying(result => {
-    console.log(result);
-}); */
-
-/* Win.PowerShell(supplementals.AudioDetection, result => {
-        //console.log(result)
-    }); */
+//Win.notify('You can put GIFs in a notification', 'Hey look!', Win.path`"C:\Users\chuck\OneDrive\Downloads\13 MIN OF DANK MEMES COMPILATION #28.gif"`)
