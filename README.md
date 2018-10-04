@@ -32,6 +32,7 @@ This is the biggest release of Windows-Interact ever! It brings an uncountable n
  - Added detection for audio transmitted through both input and output (`Win.get.audioDevices.output.transmitting`, `Win.get.audioDevices.input.transmitting`).
 
  What's changed: 
+ - Fixed a bug where Window Titles in `Win.appManager.registeredApps` would all be the same as the first app
  - Fixed an error associated with the AudioDeviceCmdlets module that appeared when installing windows-interact
  - Added `stackTrace` as a verbosity option. From now on, most methods that use PowerShell will start hiding their large and irrelevant error stack trace unless this option is enabled
  - App Manager:

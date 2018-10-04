@@ -2,7 +2,7 @@ const Win = require('./windows-interact');
 
 Win.set.preferences({
     log: {
-        showTime: true,
+        showTime: false,
         verbose: {
             stackTrace: true,
             PowerShell: true,
@@ -11,7 +11,31 @@ Win.set.preferences({
     }
 });
 
-Win.appManager.register({
+Win.window.resize(1200, 900, 'Code.exe');
+
+
+let x = ['write-host "test"', 'write-host "Still alive?"'];
+let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
+let note = 'get-process "notepad" | select ProcessName, MainWindowTitle';
+
+
+/* Win.PowerShell([...x, note], (result, err) => {
+    console.log('\n');
+    console.log('result ', result);
+}, { noLog: false, id: 'test', suppressErrors: true, keepAlive: true });
+
+setTimeout(() => {
+    Win.PowerShell.endSession('test');
+}, 5000); */
+
+
+/* Win.PowerShell('ls', result => {
+    console.log('result 2 ', result);
+}, { noLog: true, id: 'test2', suppressErrors: true, keepAlive: false });  */
+
+
+
+/* Win.appManager.register({
     VSCode: {
         path: Win.path`C:\Program Files\Microsoft VS Code\Code.exe`,
         onLaunch: function() {
@@ -56,30 +80,4 @@ Win.appManager.register.group({
             Win.log('test kill 2: ', appName); 
         }
     }
-});
-
-
- 
-
-let x = ['write-host "test"', 'write-host "Still alive?"'];
-let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
-let note = 'get-process "notepad" | select ProcessName, MainWindowTitle';
-
-
-/* Win.PowerShell([...x, note], (result, err) => {
-    console.log('\n');
-    console.log('result ', result);
-}, { noLog: false, id: 'test', suppressErrors: true, keepAlive: true });
-
-setTimeout(() => {
-    Win.PowerShell.endSession('test');
-}, 5000); */
-
-
-/* Win.PowerShell('ls', result => {
-    console.log('result 2 ', result);
-}, { noLog: true, id: 'test2', suppressErrors: true, keepAlive: false });  */
-
-
-
-//Win.notify('You can put GIFs in a notification', 'Hey look!', Win.path`"C:\Users\chuck\OneDrive\Downloads\13 MIN OF DANK MEMES COMPILATION #28.gif"`)
+}); */

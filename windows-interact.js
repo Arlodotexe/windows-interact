@@ -526,7 +526,7 @@ const Win = {
 				}
 
 				function qCommand(command, options) {
-					if (getPowerShellSession(child) !== undefined && options.existingSession !== true) {
+					if (getPowerShellSession(child) !== undefined && (options && options.existingSession !== true)) {
 						// If the session already exist, no need to push a new one
 						getCommandq(child).push({ command: command, options: options, outputBin: '', errorBin: '' });
 					} else if (options && options.id && options.existingSession == true) {
