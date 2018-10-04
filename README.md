@@ -28,8 +28,8 @@ This is the biggest release of Windows-Interact ever! It brings an uncountable n
  - New display methods, including:
     - Get/Set resolution
     - Set projection mode
- - Added `Win.get.lastInput()` to check the last keyboard or mouse input from the user
- - Added detection for audio transmitted through both input and output (`Win.get.audioDevices.output.transmitting`, `Win.get.audioDevices.input.transmitting`)
+ - Added `Win.get.user.idleTime()` to check the idle time of the user (last keyboard or mouse input)
+ - Added detection for audio transmitted through both input and output (`Win.get.audioDevices.output.transmitting`, `Win.get.audioDevices.input.transmitting`).
 
  What's changed: 
  - Fixed an error associated with the AudioDeviceCmdlets module that appeared when installing windows-interact

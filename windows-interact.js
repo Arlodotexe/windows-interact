@@ -858,7 +858,7 @@ const Win = {
 					if (isVerbose('appManager')) Win.log('Registered new app: ', Win.appManager.registeredApps[appName].processName, { colour: 'yellow' });
 				});
 
-				// Add function to get group membership by app name
+				// TODO Add function to get group membership by app name
 
 				function setIsRunning(processName, bool) {
 					for (let i in Win.appManager.registeredApps) {
@@ -964,7 +964,6 @@ const Win = {
 							windowTitle = windowTitle.trim();
 							Win.appManager.registeredApps[getNameByProcessName(appName)].windowTitle = windowTitle;
 						}, { noLog: true, suppressErrors: true, id: 'windows-interact-internal-appWatcher' });
-
 					}
 				}
 
