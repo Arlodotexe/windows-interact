@@ -1,8 +1,8 @@
 const Win = require('./windows-interact');
 
 Win.set.preferences({
-    appManagerRefreshInterval: 2500,
     log: {
+        showTime: true,
         verbose: {
             stackTrace: true,
             PowerShell: true,
@@ -26,10 +26,10 @@ Win.appManager.register({
     Pad: {
         path: Win.path`C:\WINDOWS\system32\notepad.exe`,
         onLaunch: function() {
-            Win.log('Notepad Launched')
+            // Win.log('Notepad Launched')
         },
         onKill: function() {
-            Win.log('Notepad killed')
+            // Win.log('Notepad killed')
         }
     },
     donation: {
@@ -37,32 +37,28 @@ Win.appManager.register({
     }
 });
 
-/* Win.appManager.register.group({
+Win.appManager.register.group({
     "test": {
         apps: ["Pad", "donation"],
         onLaunch: function(appName) {
-            console.log('test launch: ', appName);
+            Win.log('test launch: ', appName);
         },
         onKill: function(appName) {
-            console.log(appName); 
+            Win.log('test kill: ', appName); 
         }
     },
     "test 2": {
-        apps: ["Pad", "donation"],
+        apps: ["Pad"],
         onLaunch: function(appName) {
-            console.log('test launch: ', appName);
+            Win.log('test launch 2: ', appName);
         },
         onKill: function(appName) {
-            console.log(appName); 
+            Win.log('test kill 2: ', appName); 
         }
     }
 });
 
- */
 
- setInterval(() => {
-     console.log(Win.appManager.registeredApps);
-}, 500); 
  
 
 let x = ['write-host "test"', 'write-host "Still alive?"'];

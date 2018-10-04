@@ -909,35 +909,38 @@ const Win = {
 				}
 
 				function appWatchProcessing(stdout) {
+					if (Win.prefs.appManagerRefreshInterval == undefined) {
+						Win.prefs.appManagerRefreshInterval = 2500;
+					}
+
 					for (let i in apps) {
 						let appName = apps[i];
 						if (stdout.includes(apps[i])) {
 							setIsRunning(apps[i], true);
 							setTimeout(() => {
 								setWasRunning(apps[i], true);
-							}, (Win.prefs.appManagerRefreshInterval ? Win.prefs.appManagerRefreshInterval / 2 : 2500));
+							}, Win.prefs.appManagerRefreshInterval);
 						} else {
 							setIsRunning(apps[i], false);
 							setTimeout(() => {
 								setWasRunning(apps[i], false);
-							}, (Win.prefs.appManagerRefreshInterval ? Win.prefs.appManagerRefreshInterval / 2 : 2500));
+							}, Win.prefs.appManagerRefreshInterval);
 						}
 
-						if (!getIsRunning(apps[i]) && getWasRunning(apps[i]) && Win.appManager.registeredApps[getNameByProcessName(apps[i])].onKill) {
+						if (registrationComplete && !getIsRunning(apps[i]) && getWasRunning(apps[i]) && Win.appManager.registeredApps[getNameByProcessName(apps[i])].onKill) {
 							Win.appManager.registeredApps[getNameByProcessName(apps[i])].onKill();
 						}
-						if (!getIsRunning(apps[i]) && getWasRunning(apps[i])) {
+
+						if (registrationComplete && !getIsRunning(apps[i]) && getWasRunning(apps[i])) {
 							for (let i in groups) {
 								Object.entries(groups[i]).forEach(([groupName, props]) => {
-									if (groups[i][groupName].apps.includes(getNameByProcessName(apps[i])) && groups[i][groupName].onKill) {
+									if (groups[i][groupName].apps.includes(getNameByProcessName(appName)) && typeof groups[i][groupName].onKill == 'function') {
 										groups[i][groupName].onKill = debounce(groups[i][groupName].onKill, 2000, true);
-										groups[i][groupName].onKill(apps[i]);
+										groups[i][groupName].onKill(appName);
 									}
 								});
 							}
 						}
-
-						if (!registrationComplete) registrationComplete = true;
 
 						if (registrationComplete && getIsRunning(apps[i]) && !getWasRunning(apps[i]) && Win.appManager.registeredApps[getNameByProcessName(apps[i])].onLaunch) {
 							Win.appManager.registeredApps[getNameByProcessName(apps[i])].onLaunch();
@@ -946,9 +949,9 @@ const Win = {
 						if (registrationComplete && getIsRunning(apps[i]) && !getWasRunning(apps[i])) {
 							for (let i in groups) {
 								Object.entries(groups[i]).forEach(([groupName, props]) => {
-									if (groups[i][groupName].apps.includes(getNameByProcessName(apps[i])) && groups[i][groupName].onLaunch) {
+									if (groups[i][groupName].apps.includes(getNameByProcessName(appName)) && groups[i][groupName].onLaunch) {
 										groups[i][groupName].onLaunch = debounce(groups[i][groupName].onLaunch, 2000, true);
-										groups[i][groupName].onLaunch(apps[i]);
+										groups[i][groupName].onLaunch(appName);
 									}
 								});
 							}
@@ -960,6 +963,8 @@ const Win = {
 							windowTitle = windowTitle.trim();
 							Win.appManager.registeredApps[getNameByProcessName(appName)].windowTitle = windowTitle;
 						}, { noLog: true, suppressErrors: true, id: 'windows-interact-internal-appWatcher' });
+
+						if (registrationComplete === false) registrationComplete = true;
 					}
 				}
 
