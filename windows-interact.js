@@ -912,27 +912,27 @@ const Win = {
 				function appWatchProcessing(stdout) {
 					for (let i in apps) {
 						let appName = apps[i];
-						if (stdout.includes(appName)) {
-							setIsRunning(appName, true);
+						if (stdout.includes(apps[i])) {
+							setIsRunning(apps[i], true);
 							setTimeout(() => {
-								setWasRunning(appName, true);
+								setWasRunning(apps[i], true);
 							}, (Win.prefs.appManagerRefreshInterval ? Win.prefs.appManagerRefreshInterval / 2 : 2500));
 						} else {
-							setIsRunning(appName, false);
+							setIsRunning(apps[i], false);
 							setTimeout(() => {
-								setWasRunning(appName, false);
+								setWasRunning(apps[i], false);
 							}, (Win.prefs.appManagerRefreshInterval ? Win.prefs.appManagerRefreshInterval / 2 : 2500));
 						}
 
-						if (!getIsRunning(appName) && getWasRunning(appName) && Win.appManager.registeredApps[getNameByProcessName(appName)].onKill) {
-							Win.appManager.registeredApps[getNameByProcessName(appName)].onKill();
+						if (!getIsRunning(apps[i]) && getWasRunning(apps[i]) && Win.appManager.registeredApps[getNameByProcessName(apps[i])].onKill) {
+							Win.appManager.registeredApps[getNameByProcessName(apps[i])].onKill();
 						}
-						if (!getIsRunning(appName) && getWasRunning(appName)) {
+						if (!getIsRunning(apps[i]) && getWasRunning(apps[i])) {
 							for (let i in groups) {
 								Object.entries(groups[i]).forEach(([groupName, props]) => {
-									if (groups[i][groupName].apps.includes(getNameByProcessName(appName)) && groups[i][groupName].onKill) {
+									if (groups[i][groupName].apps.includes(getNameByProcessName(apps[i])) && groups[i][groupName].onKill) {
 										groups[i][groupName].onKill = debounce(groups[i][groupName].onKill, 2000, true);
-										groups[i][groupName].onKill(appName);
+										groups[i][groupName].onKill(apps[i]);
 									}
 								});
 							}
@@ -940,28 +940,32 @@ const Win = {
 
 						if (!registrationComplete) registrationComplete = true;
 
-						if (registrationComplete && getIsRunning(appName) && !getWasRunning(appName) && Win.appManager.registeredApps[getNameByProcessName(appName)].onLaunch) {
-							Win.appManager.registeredApps[getNameByProcessName(appName)].onLaunch();
+						if (registrationComplete && getIsRunning(apps[i]) && !getWasRunning(apps[i]) && Win.appManager.registeredApps[getNameByProcessName(apps[i])].onLaunch) {
+							Win.appManager.registeredApps[getNameByProcessName(apps[i])].onLaunch();
 						}
 
-						if (registrationComplete && getIsRunning(appName) && !getWasRunning(appName)) {
+						if (registrationComplete && getIsRunning(apps[i]) && !getWasRunning(apps[i])) {
 							for (let i in groups) {
 								Object.entries(groups[i]).forEach(([groupName, props]) => {
-									if (groups[i][groupName].apps.includes(getNameByProcessName(appName)) && groups[i][groupName].onLaunch) {
+									if (groups[i][groupName].apps.includes(getNameByProcessName(apps[i])) && groups[i][groupName].onLaunch) {
 										groups[i][groupName].onLaunch = debounce(groups[i][groupName].onLaunch, 2000, true);
-										groups[i][groupName].onLaunch(appName);
+										groups[i][groupName].onLaunch(apps[i]);
 									}
 								});
 							}
 						}
 
-						windowTitle = replaceAll(stdout, '\r\nProcessName', '');
-						windowTitle = replaceAll(windowTitle, 'MainWindowTitle', '');
-						windowTitle = windowTitle.replace(/(-{5,})/g, '');
-						windowTitle = windowTitle.replace(/(\w+)([^\w]\s{2})/g, '');
-						windowTitle = windowTitle.trim();
+						Win.PowerShell.newCommand(`get-process "${apps[i]}" | select MainWindowTitle`, result => {
+							let windowTitle = replaceAll(result, 'MainWindowTitle', '');
+							windowTitle = windowTitle.replace(/(-{5,})/g, '');
 
-						Win.appManager.registeredApps[getNameByProcessName(appName)].windowTitle = windowTitle;
+							windowTitle = windowTitle.substring(windowTitle.indexOf(apps[i]), windowTitle.lastIndexOf(apps[i]));
+
+							windowTitle = windowTitle.replace(/(\w+)([^\w]\s{2})/g, '');
+							windowTitle = windowTitle.trim();
+							Win.appManager.registeredApps[getNameByProcessName(appName)].windowTitle = windowTitle;
+						}, { noLog: true, suppressErrors: true, id: 'windows-interact-internal-appWatcher' });
+
 					}
 				}
 

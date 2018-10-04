@@ -60,19 +60,30 @@ Win.appManager.register({
 });
 
  */
+/* 
+ setInterval(() => {
+     console.log(Win.appManager.registeredApps);
+ }, 2000); */
 let x = ['write-host "test"', 'write-host "Still alive?"'];
 
 let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
 let note = 'get-process "notepad" | select ProcessName, MainWindowTitle';
 
-Win.PowerShell([...x, note], (result, err) => {
+Win.PowerShell(['New-Item "$($profile | split-path)\\Modules\\AudioDeviceCmdlets" -Type directory -Force',
+'Copy-Item "' + __dirname + '\\AudioDeviceCmdlets.dll" "$($profile | split-path)\\Modules\\AudioDeviceCmdlets\\AudioDeviceCmdlets.dll"',
+'Set-Location "$($profile | Split-Path)\\Modules\\AudioDeviceCmdlets"',
+'Get-ChildItem | Unblock-File', 'Import-Module AudioDeviceCmdlets'], () => { 
+
+}, { noLog: true });
+
+/* Win.PowerShell([...x, note], (result, err) => {
     console.log('\n');
     console.log('result ', result);
 }, { noLog: false, id: 'test', suppressErrors: true, keepAlive: true });
 
 setTimeout(() => {
     Win.PowerShell.endSession('test');
-}, 5000);
+}, 5000); */
 
 
 /* Win.PowerShell('ls', result => {
