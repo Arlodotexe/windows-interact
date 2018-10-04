@@ -1,5 +1,5 @@
 const Win = require('./windows-interact');
-
+/* 
 Win.set.preferences({
     log: {
         showTime: false,
@@ -9,14 +9,35 @@ Win.set.preferences({
             appManager: true
         }
     }
-});
-
-Win.window.resize(1200, 900, 'Code.exe');
-
+}); */
+(async function() {
+    
+    await Win.prompt('Test', 'Title');
+    await Win.alert('Test');
+    await Win.alert('Tickle');
+})();
 
 let x = ['write-host "test"', 'write-host "Still alive?"'];
 let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
 let note = 'get-process "notepad" | select ProcessName, MainWindowTitle';
+
+/* async function crawl(data) {
+    return new Promise(resolve => {
+        if (typeof data == 'string' || typeof data == 'number' || typeof data == 'boolean') {
+            resolve('\x1b[33m' + data + '\x1b[0m');
+        } else if (typeof data == 'object') {
+            Object.entries(data).forEach(async function([name, props]) {
+                let newData = await crawl(props);
+                resolve(newData);
+            });
+        }
+    });
+}
+(async function() {
+    let y = await crawl({'data': 'Test', 'Number': 5})
+    console.log(y);
+})() */
+
 
 
 /* Win.PowerShell([...x, note], (result, err) => {

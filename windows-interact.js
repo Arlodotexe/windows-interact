@@ -88,62 +88,6 @@ function nextRebounce() {
 		}
 	}
 }
-function rebounce(callback, wait) {
-	rebounceQ.push({ callback, wait });
-	nextRebounce();
-};
-
-function postbounce(func, wait, cb) {
-	let timeout;
-	return function() {
-		let context = this, args = arguments;
-		let later = function() {
-			cb();
-			timeout = null;
-		}
-		clearTimeout(timeout);
-		timeout = setTimeout(later, wait);
-		func.apply(context, args);
-	}
-}
-
-var TimerQueue = (function() {
-	var timers = [];
-	var running = false;
-	var currentInterval;
-	var currentTimer;
-
-	this.addTimer = function(fn, delay) {
-		timers.push({ fn: fn, delay: delay });
-
-		function exec() {
-			currentTimer.fn();
-			clearInterval(currentInterval);
-			if (timers.length > 0) {
-				currentTimer = timers.shift();
-				currentInterval = setInterval(exec, currentTimer.delay);
-			} else {
-				running = false;
-			}
-		}
-
-		if (!running) {
-			running = true;
-			currentTimer = timers.shift();
-			currentInterval = setInterval(exec, currentTimer.delay);
-		}
-	};
-
-	this.clear = function() {
-		if (currentInterval) {
-			clearInterval(currentInterval);
-		}
-		timers = [];
-		running = false;
-	};
-
-	return this;
-});
 
 async function tryForUntil(tries, delay, conditions, toTry, notMetCallback, successCallback) {
 	for (let i = 0; i < tries; i++) {
@@ -217,6 +161,17 @@ function nircmd(command, callback, options) {
 	});
 }
 
+function internalCommand(command, callback, options) {
+	let defaultPsOpts = { keepAlive: true, id: 'windows-interact-internal-misc', noLog: true };
+	Win.PowerShell.isSessionActive('windows-interact-internal-misc', result => {
+		if (result) {
+			Win.PowerShell.newCommand(command, callback, Object.assign(defaultPsOpts, options));
+		} else {
+			Win.PowerShell(command, callback, Object.assign(defaultPsOpts, options));
+		}
+	});
+}
+
 function speak() {
 	let speechQ = [];
 	let fn = function(phrase, TTSVoice, speed, callback) {
@@ -274,17 +229,41 @@ function log() {
 			return (typeof el == 'string' || (typeof el == 'object' && !(el.colour !== undefined || el.background !== undefined || el.showTime !== undefined)))
 		});
 
-		message = messages.join('');
+		message = messages.map(el => {
+			if (typeof el == 'string' || (typeof el == 'object' && !(el.colour !== undefined || el.background !== undefined || el.showTime !== undefined))) {
+				if (typeof el == 'object') {
+
+					// crawls an object for data
+					// Test types
+					// Finds object -> crawl() it
+					// Finds string || number -> Make it yellow
+					// return
+
+					/* async function crawl(data) {
+						return new Promise(resolve => {
+							if (typeof data == 'string' || typeof data == 'number' || typeof data == 'boolean') {
+								resolve('\x1b[33m' + data + '\x1b[0m');
+							} else if (typeof data == object) {
+								Object.entries(el).forEach(async function([name, props]) {
+									let newData = await crawl(props);
+									resolve(newData);
+								});
+							}
+						});
+					}
+					el = crawl(el); */
+					return JSON.stringify(el).toString();
+				} else {
+					return el
+				}
+			}
+		}).join(' ');
 
 		options = Array.from(arguments).filter(el => {
 			return (typeof el == 'object' && (el.colour !== undefined || el.background !== undefined || el.showTime !== undefined))
 		});
 
 		options = options[0];
-
-		for (let i in arguments) {
-
-		}
 		let colour = '';
 		if (options && (options.colour || options.color)) {
 			colour = options.colour.toLowerCase() || options.color.toLowerCase();
@@ -526,6 +505,7 @@ const Win = {
 				}
 
 				function qCommand(command, options) {
+					// Should be reading from options.child? could be different if entry point is newCommand
 					if (getPowerShellSession(child) !== undefined && (options && options.existingSession !== true)) {
 						// If the session already exist, no need to push a new one
 						getCommandq(child).push({ command: command, options: options, outputBin: '', errorBin: '' });
@@ -642,7 +622,7 @@ const Win = {
 
 					options.existingSession = true;
 					for (let i = 0; i < psVars.powerShellSessions + 1; i++) {
-						if (psVars.powerShellSessions[i] && psVars.powerShellSessions[i].initialOptions.keepAlive == true) {
+						if (psVars.powerShellSessions[i] && psVars.powerShellSessions[i].initialOptions && psVars.powerShellSessions[i].initialOptions.keepAlive == true) {
 							if (psVars.powerShellSessions[i].initialOptions.id == options.id) {
 								// Should this go here? Probably not, it might dump the output of a running command
 								/* 
@@ -710,8 +690,6 @@ const Win = {
 						}, 10);
 					}
 				}
-
-
 			} catch (err) {
 				console.trace(err)
 				//Win.error(err);
@@ -719,8 +697,8 @@ const Win = {
 		}
 
 		fn.newCommand = function(command, callback, options) {
-			if ((typeof command == 'object' || typeof command == 'string')) {
-				Win.error('First parameter of Win.PowerShell.newCommand must be an array or string');
+			if (typeof command !== 'string') {
+				Win.error('First parameter of Win.PowerShell.newCommand must be a string');
 			} else if (typeof callback !== 'function') {
 				Win.error('Second parameter of Win.PowerShell.newCommand must be a function');
 			} else if (typeof options !== 'object') {
@@ -728,7 +706,6 @@ const Win = {
 			} else if (options && options.id == undefined) {
 				Win.error('Third parameter of Win.PowerShell.newCommand must contain an ID to target an existing session');
 			} else {
-
 				tryForUntil(10, 1500, `(function() {
 							for (let i in psVars.powerShellSessions) {
 								if (psVars.powerShellSessions[i].initialOptions.id == "${options.id}") {
@@ -804,30 +781,26 @@ const Win = {
 	},
 	confirm: function(message, title) {
 		return new Promise(resolve => {
-			Win.PowerShell('$wshell = New-Object -ComObject Wscript.Shell;$wshell.Popup("' + (message) + '",0,"' + ((!title) ? 'Node' : title) + '",0x1)', function(stdout) {
+			internalCommand('$wshell = New-Object -ComObject Wscript.Shell;$wshell.Popup("' + (message) + '",0,"' + ((!title) ? 'Node' : title) + '",0x1)', function(stdout) {
 				resolve((stdout.trim() == '1') ? true : false);
 			}, { noLog: true });
 		});
-
 	},
 	alert: function(message, title) {
 		return new Promise(resolve => {
 			if (message && message.trim() !== '') {
-				Win.PowerShell(`$wshell = New-Object -ComObject Wscript.Shell
+				internalCommand(`$wshell = New-Object -ComObject Wscript.Shell
 				$wshell.Popup("${message}", 0, "${((!title) ? 'Node' : title)}")`, () => {
 						resolve();
 					});
-				nircmd('infobox "' + (message) + '" "' + ((!title) ? 'Node' : title) + '"', () => {
-
-				});
 			}
 		});
 	},
 	prompt: function(message, title, placeholder) {
 		return new Promise(resolve => {
-			Win.PowerShell(`Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.Interaction]::InputBox('` + message + `', '` + ((title) ? title : `Node`) + `', '` + ((placeholder) ? placeholder : ``) + `')`, (response) => {
+			internalCommand(`Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.Interaction]::InputBox('` + message + `', '` + ((title) ? title : `Node`) + `', '` + ((placeholder) ? placeholder : ``) + `')`, (response) => {
 				resolve(response.trim());
-			}, { noLog: true });
+			});
 		});
 	},
 	appManager: {

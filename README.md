@@ -32,6 +32,7 @@ This is the biggest release of Windows-Interact ever! It brings an uncountable n
  - Added detection for audio transmitted through both input and output (`Win.get.audioDevices.output.transmitting`, `Win.get.audioDevices.input.transmitting`).
 
  What's changed: 
+ - Fixed a bug with `Win.alert()` and `Win.confirm()`
  - Fixed a bug where Window Titles in `Win.appManager.registeredApps` would all be the same as the first app
  - Fixed an error associated with the AudioDeviceCmdlets module that appeared when installing windows-interact
  - Added `stackTrace` as a verbosity option. From now on, most methods that use PowerShell will start hiding their large and irrelevant error stack trace unless this option is enabled
@@ -46,8 +47,9 @@ This is the biggest release of Windows-Interact ever! It brings an uncountable n
    - Using `Start-Sleep` with any value greater than 800ms will cause some very odd issues with the internals of `Win.PowerShell()`. This is because 800ms is the extra time that each command is manually seperated to better discern output. This will be fixed in the future, but for now, avoid using `Start-Sleep` if possible
 
  What's next: 
+ - `Win.PowerShell()` is going to be optimized as much as possible and ran through with a fine tooth comb over the next few months.  
  - There will be a lot of refactoring coming soon, this project is getting massive and its time to split it up a little.
- - Need better documentation. 
+ - Better documentation / An official, actually navigateable website.
  - Most or all methods will be converted to Promises instead of callbacks
  - Planning on removing dependency on requestify, perhaps building my own wrapper for nodes' native request methods with zero dependencies
 
