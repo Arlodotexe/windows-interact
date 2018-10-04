@@ -2,7 +2,6 @@ const exec = require('child_process').exec;
 const fs = require('fs');
 const say = require('say');
 const requestify = require('requestify');
-const supplementals = require('./supplementals');
 let prefs = {};
 
 let psVars = {
