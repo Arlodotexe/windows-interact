@@ -62,7 +62,7 @@ Win.appManager.register({
 
  setInterval(() => {
      console.log(Win.appManager.registeredApps);
-}, 2000); 
+}, 500); 
  
 
 let x = ['write-host "test"', 'write-host "Still alive?"'];

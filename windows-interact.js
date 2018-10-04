@@ -954,13 +954,9 @@ const Win = {
 							}
 						}
 
-						Win.PowerShell.newCommand(`get-process "${apps[i]}" | select MainWindowTitle`, result => {
+						Win.PowerShell.newCommand(`get-process "${appName}" | select MainWindowTitle`, result => {
 							let windowTitle = replaceAll(result, 'MainWindowTitle', '');
 							windowTitle = windowTitle.replace(/(-{5,})/g, '');
-
-							windowTitle = windowTitle.substring(windowTitle.indexOf(apps[i]), windowTitle.lastIndexOf(apps[i]));
-
-							windowTitle = windowTitle.replace(/(\w+)([^\w]\s{2})/g, '');
 							windowTitle = windowTitle.trim();
 							Win.appManager.registeredApps[getNameByProcessName(appName)].windowTitle = windowTitle;
 						}, { noLog: true, suppressErrors: true, id: 'windows-interact-internal-appWatcher' });
