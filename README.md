@@ -21,7 +21,7 @@ With `windows-interact`, NodeJS gains the following functionality:
 
 ---
 
-**The current released version is 1.2.3. [See the release notes](changelog.md) if this version number differs from below**
+**The current released version is 1.3.0. [See the release notes](changelog.md) if this version number differs from below**
 
 This is the biggest release of Windows-Interact ever! It brings an uncountable number of bug fixes and many new features, none of which are as huge as the arrival of the [PowerShell session manager](https://github.com/Arlodotexe/windows-interact#winpowershell)!
 
@@ -41,7 +41,7 @@ This is the biggest release of Windows-Interact ever! It brings an uncountable n
  - Fixed bugs with `Win.alert()` and `Win.confirm()` and now uses the same PowerShell Session under the hood to prevent excessive process spawning 
  - Fixed a bug where Window Titles in `Win.appManager.registeredApps` would all be the same as the first app
  - Fixed an error associated with the AudioDeviceCmdlets module that appeared when installing windows-interact
- - Fixed with Win.notify (This was broken in the last release, so sorry!)
+ - Fixed `Win.notify()` and `Win.filePicker()` (These were broken in the last release, so sorry!)
  - Cleanup up miscellaneous internal code
  
  
@@ -225,6 +225,15 @@ Win.get.audioDevices.input.default(function(result) {
 });
 ```
 
+#### Get the audio transmission state of the default input device (Microphone detection)
+`Win.get.audioDevices.input.transmitting(callback => : boolean);`
+
+```javascript
+Win.get.audioDevices.input.transmitting((result) => {
+    console.log(result); // Whether or not there is audio being transmitted through the default input 
+});
+```
+
 ---
 
 ### Output
@@ -252,10 +261,21 @@ Win.get.audioDevices.output.default(function(result) {
 });
 ```
 
+#### Get the audio transmission state of the default output device
+
+`Win.get.audioDevices.output.transmitting(callback => : boolean);`
+```javascript
+Win.get.audioDevices.output.transmitting((result) => {
+    console.log(result); // Whether or not there is audio being transmitted through the default output device
+});
+```
+
 
 ## `Win.log()`
 ---
-An alternative to `console.log`. It will push the output of the log to the console and record each entry in a .txt file, and provide styling options for the text
+`Win.log(message, {background: 'color', color: 'color'}); => : void`
+
+An alternative to `console.log`. It pushes the output of the log to the console and can record each entry in a .txt file, while providing simple colour options for the text
 
 Available colours for background and text are:
 
@@ -279,7 +299,10 @@ Win.set.preferences({
         // Control verbosity of parts of windows-interact
         verbose: {
             // Show preformatted log when requests are made
-            requestTo: true
+            requestTo: true,
+            // Be verbose while managing PowerShell sessions
+            PowerShell: true,
+            appManager: true
         }
     }
 });
@@ -287,20 +310,19 @@ Win.set.preferences({
 
 Usage:
 ```javascript
-Win.log(message, {backgroundColor: 'color', color: 'color'});
 
 // Log information to the console and .txt file
 Win.log('Logged information');
 
-// Log information to the console and .txt file, with colored background and text
-Win.log('Logged ', 'information', {background: 'color', color: 'color'});
+// Log information to the console and .txt file, with colored background and text, and don't show the timestamp (even if enabled in preferences)
+Win.log('Logged ', 'information', {background: 'color', color: 'color', showTime: false});
 
 Win.log.speak(phrase, voice, speed, options);
 // Log information to the console and .txt file, and also Win.speak() it
 Win.log.speak('Testing'); 
 
 // Log information to the console and .txt file, Win.speak() it with a specific voice, at half speed, with a black background and a blue text colour
-Win.log.speak('Testing', 'Microsoft David Desktop', 0.5, {backgroundColor: 'black', colour: 'blue'})
+Win.log.speak('Testing', 'Microsoft David Desktop', 0.5, {background: 'black', colour: 'blue'})
 ```
 
 
@@ -656,9 +678,7 @@ Run one or more PowerShell commands.
 
 You can run a single powershell command by passing a string, or run multiple commands in the same powershell instance by passing commands in an array.
 
-When you pass an array to run multiple commands, the returned output and errors will be an array, not a string.
-
-**NOTE**: It will do its best to seperate the outputs using tactics such as delaying each commands' execution a bit and only collecting the output for a command postbounce, but there are still some quirks.
+When you pass an array to run multiple commands, the returned output and errors will be an array, not a string. The indexes of commands will matche the indexes of output returned
 
 This is playing with real power. See [here](https://docs.microsoft.com/en-us/powershell/module/?view=powershell-6) and [here](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/?view=powershell-6) for resources on what you can do with PowerShell to automate and interact with Windows, beyond what Windows interact provides
 

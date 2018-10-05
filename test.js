@@ -11,9 +11,28 @@ Win.set.preferences({
     }
 }); */
 
-Win.log(function() { }, 'test', { bg: 'red', test: 3 }, 4);
-console.log(function() { }, 'test', { bg: 'red', test: 3 }, 4);
+Win.filePicker('Choose an app', 'C:\\Program Files\\', {filtertext: 'Programs', filterby: '*.exe'}, false, function(result){
+    console.log(result); // Path of a single chosen .exe file
+});
 
+/* Win.PowerShell([`
+$WindowTitle = "${(windowTitle ? windowTitle : `Select a File`)}";
+$InitialDirectory = "${(initialDirectory ? replaceAll(initialDirectory, '\\\\', '\\') : `C:\\`)}";
+${(filter && filter.filtertext && filter.filterby) ? `$Filter = "${filter.filtertext} (${filter.filterby})|${filter.filterby}"` : ''}
+$AllowMultiSelect = ${(allowMultiSelect == true ? '$true' : '$false')};
+
+    Add-Type -AssemblyName System.Windows.Forms;
+    $openFileDialog = New-Object System.Windows.Forms.OpenFileDialog;
+    $openFileDialog.Title = $WindowTitle;
+    if (![string]::IsNullOrWhiteSpace($InitialDirectory)) { $openFileDialog.InitialDirectory = $InitialDirectory }
+    $openFileDialog.Filter = $Filter;
+    if ($AllowMultiSelect) { $openFileDialog.MultiSelect = $true }
+    $openFileDialog.ShowHelp = $true;
+    $openFileDialog.ShowDialog() > $null;
+    if ($AllowMultiSelect) { return $openFileDialog.Filenames } else { return $openFileDialog.Filename }
+    if (![string]:: IsNullOrEmpty($filePath)) { Write-Host "$filePath" } else { "No file was selected" }`])
+ */
+    
 let x = ['write-host "test"', 'write-host "Still alive?"'];
 let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
 let note = 'get-process "notepad" | select ProcessName, MainWindowTitle';
