@@ -213,125 +213,78 @@ function speak() {
 }
 
 function log() {
-	function now(param, options) {
+	const colours = {
+		red: '\x1b[31m',
+		green: '\x1b[32m',
+		yellow: '\x1b[33m',
+		blue: '\x1b[34m',
+		magenta: '\x1b[35m',
+		cyan: '\x1b[36m',
+		white: '\x1b[37m',
+		black: '\x1b[30m'
+	};
+	const backgrounds = {
+		red: '\x1b[41m',
+		green: '\x1b[42m',
+		yellow: '\x1b[43m',
+		blue: '\x1b[44m',
+		magenta: '\x1b[45m',
+		cyan: '\x1b[46m',
+		white: '\x1b[47m',
+		black: '\x1b[40m'
+	}
+	let fn = function(message, options) {
 		let dateString = '';
-		if (Win.prefs.log && Win.prefs.log.showTime) {
+		let colour = '';
+
+		let messages = Array.from(arguments).filter(el => {
+			return (typeof el == 'string' || typeof el == 'function' || typeof el == 'number' || (typeof el == 'object' && !(el.colour !== undefined || el.color !== undefined || el.background !== undefined || el.showTime !== undefined)))
+		});
+
+		message = messages.map(el => {
+			if (typeof el == 'string' || typeof el == 'number' || typeof el == 'function' || (typeof el == 'object' && !(el.colour !== undefined || el.color !== undefined || el.background !== undefined || el.showTime !== undefined))) {
+				if (typeof el == 'object') return JSON.stringify(el).toString();
+				else if (typeof el == 'function') return '\x1b[36m[Function]\x1b[0m';
+				else if (typeof el == 'number')  return '\x1b[33m' + el + '\x1b[0m';
+				else return el;
+			}
+		}).join(' ');
+
+		options = Array.from(arguments).filter(el => {
+			return (typeof el == 'object' && (el.colour !== undefined || el.color !== undefined || el.background !== undefined || el.showTime !== undefined))
+		});
+		options = options[0]; // Take the first options object given
+
+
+		if (options && (options.colour || options.color)) {
+			colour = colours[(options.colour || options.color).toLowerCase()];
+			if (colour == undefined) {
+				Win.error('Invalid colour "' + (options.colour || options.color) + '". See documentation for a complete list of colours');
+				colour = '';
+			}
+		}
+		if (options && (options.background || options.backgroundColor)) {
+			let background = backgrounds[(options.background || options.backgroundColor).toLowerCase()];
+
+			if (background == undefined) {
+				Win.error('Invalid background colour "' + (options.background || options.backgroundColor) + '". See documentation for a complete list of background colours');
+				background = '';
+			}
+			colour = colour + background;
+		}
+
+		if ((options && options.showTime === true) || (Win.prefs.log && Win.prefs.log.showTime === true)) {
 			dateString = new Date().toLocaleTimeString().toString() + ': ';
 		}
 		if (options && options.showTime == false) {
 			dateString = '';
 		}
-		if (Win.prefs.log && Win.prefs.log.outputFile) fs.createWriteStream(Win.prefs.log.outputFile, { flags: 'a' }).write(dateString + param + '\n');
-		console.log(dateString + param);
-	}
-	let fn = function(message, options) {
-		let messages = Array.from(arguments).filter(el => {
-			return (typeof el == 'string' || (typeof el == 'object' && !(el.colour !== undefined || el.background !== undefined || el.showTime !== undefined)))
-		});
 
-		message = messages.map(el => {
-			if (typeof el == 'string' || (typeof el == 'object' && !(el.colour !== undefined || el.background !== undefined || el.showTime !== undefined))) {
-				if (typeof el == 'object') {
+		message = dateString + colour + message + '\x1b[0m';
 
-					// crawls an object for data
-					// Test types
-					// Finds object -> crawl() it
-					// Finds string || number -> Make it yellow
-					// return
+		if (Win.prefs.log && Win.prefs.log.outputFile) fs.createWriteStream(Win.prefs.log.outputFile, { flags: 'a' }).write(message + '\n');
+		console.log(message);
 
-					/* async function crawl(data) {
-						return new Promise(resolve => {
-							if (typeof data == 'string' || typeof data == 'number' || typeof data == 'boolean') {
-								resolve('\x1b[33m' + data + '\x1b[0m');
-							} else if (typeof data == object) {
-								Object.entries(el).forEach(async function([name, props]) {
-									let newData = await crawl(props);
-									resolve(newData);
-								});
-							}
-						});
-					}
-					el = crawl(el); */
-					return JSON.stringify(el).toString();
-				} else {
-					return el
-				}
-			}
-		}).join(' ');
-
-		options = Array.from(arguments).filter(el => {
-			return (typeof el == 'object' && (el.colour !== undefined || el.background !== undefined || el.showTime !== undefined))
-		});
-
-		options = options[0];
-		let colour = '';
-		if (options && (options.colour || options.color)) {
-			colour = options.colour.toLowerCase() || options.color.toLowerCase();
-			switch (colour) {
-				case 'red':
-					colour = '\x1b[31m';
-					break;
-				case 'green':
-					colour = '\x1b[32m';
-					break;
-				case 'yellow':
-					colour = '\x1b[33m';
-					break;
-				case 'blue':
-					colour = '\x1b[34m';
-				case 'magenta':
-					colour = '\x1b[35m';
-					break;
-				case 'cyan':
-					colour = '\x1b[36m';
-					break;
-				case 'white':
-					colour = '\x1b[37m';
-					break;
-				case 'black':
-					colour = '\x1b[30m';
-					break;
-				default:
-					Win.error('Log: Could not find the colour ' + colour + '. See documentation for a complete list of colours');
-			}
-		}
-		if (options && (options.background || options.backgroundColor)) {
-			let background = options.background.toLowerCase() || options.backgroundColor.toLowerCase();
-			switch (background) {
-				case 'red':
-					background = '\x1b[41m';
-					break;
-				case 'green':
-					background = '\x1b[42m';
-					break;
-				case 'yellow':
-					background = '\x1b[43m';
-					break;
-				case 'blue':
-					background = '\x1b[44m';
-				case 'magenta':
-					background = '\x1b[45m';
-					break;
-				case 'cyan':
-					background = '\x1b[46m';
-					break;
-				case 'white':
-					background = '\x1b[47m';
-					break;
-				case 'black':
-					background = '\x1b[40m';
-					break;
-				default:
-					Win.error('Log: Could not find the background colour ' + background + '. See documentation for a complete list of background colours');
-			}
-			colour = colour + background;
-		}
-		if (!options) {
-			now(message, options);
-		} else {
-			colour = colour + message + '\x1b[0m';
-			now(colour, options);
-		}
 	};
 	fn.speak = function(phrase, voice, speed, options) {
 		Win.speak(phrase, voice, speed);

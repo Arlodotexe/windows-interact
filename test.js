@@ -11,7 +11,9 @@ Win.set.preferences({
     }
 }); */
 
-Win.log('test', {color: 'g'})
+Win.log(function() { }, 'test', { bg: 'red', test: 3 }, 4);
+console.log(function() { }, 'test', { bg: 'red', test: 3 }, 4);
+
 let x = ['write-host "test"', 'write-host "Still alive?"'];
 let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
 let note = 'get-process "notepad" | select ProcessName, MainWindowTitle';
