@@ -15,14 +15,15 @@ With `windows-interact`, NodeJS gains the following functionality:
 - [Manipulate windows](https://github.com/Arlodotexe/windows-interact#winwindow) (Maximize, Minimize, etc.)
 - [Manage a list of registered apps](https://github.com/Arlodotexe/windows-interact#winappmanager) (with lots of extra features)
 - [Manage processes](https://github.com/Arlodotexe/windows-interact#winprocess)
-- Enhanced [console.log](https://github.com/Arlodotexe/windows-interact#winlog) and [error throwing](https://github.com/Arlodotexe/windows-interact#winerror)
-- Advanced [PowerShell](https://github.com/Arlodotexe/windows-interact#winpowershell) session manager, and clean [CMD](https://github.com/Arlodotexe/windows-interact#wincmd) command
+- Enhanced [logging](https://github.com/Arlodotexe/windows-interact#winlog) and [error throwing](https://github.com/Arlodotexe/windows-interact#winerror)
+- VERY Advanced [PowerShell](https://github.com/Arlodotexe/windows-interact#winpowershell) session manager
+  -  More advanced than [node-powershell](https://www.npmjs.com/package/node-powershell), with automatic output collection and seperation, and the ability to run multiple command in succession by passing in array. 
 
 ---
 
 **The current released version is 1.2.3. [See the release notes](changelog.md) if this version number differs from below**
 
-This is the biggest release of Windows-Interact ever! It brings an uncountable number of bug fixes and many new features, none of which are as huge as the arrival of the [PowerShell session manager](https://github.com/Arlodotexe/windows-interact#winpowershell)! More advanced than [node-powershell](https://www.npmjs.com/package/node-powershell), with automatic output collection and seperation, and the ability to run multiple command in succession by passing in array. 
+This is the biggest release of Windows-Interact ever! It brings an uncountable number of bug fixes and many new features, none of which are as huge as the arrival of the [PowerShell session manager](https://github.com/Arlodotexe/windows-interact#winpowershell)!
 
 ## New in version (1.3.0): 
  - New display methods, including:
@@ -32,14 +33,16 @@ This is the biggest release of Windows-Interact ever! It brings an uncountable n
  - Added detection for audio transmitted through both input and output (`Win.get.audioDevices.output.transmitting`, `Win.get.audioDevices.input.transmitting`).
 
  What's changed: 
+ - Added `stackTrace` as a verbosity option. From now on, most methods that use PowerShell will start hiding their large and irrelevant error stack trace unless this option is enabled
+ - `Win.log()` now parses Javascript objects and prints functions properly (Similar to console.log. Formatting and color is coming soon)
+ - App Manager:
+    - Added verbosity options
+    - onLaunch and onKill now return the name of the relevant application
  - Fixed bugs with `Win.alert()` and `Win.confirm()` and now uses the same PowerShell Session under the hood to prevent excessive process spawning 
  - Fixed a bug where Window Titles in `Win.appManager.registeredApps` would all be the same as the first app
  - Fixed an error associated with the AudioDeviceCmdlets module that appeared when installing windows-interact
- - Added `stackTrace` as a verbosity option. From now on, most methods that use PowerShell will start hiding their large and irrelevant error stack trace unless this option is enabled
- - App Manager:
-    - Added verbosity options
-    - onLaunch and onKill now return the name of the affected application
  - Fixed with Win.notify (This was broken in the last release, so sorry!)
+ - Cleanup up miscellaneous internal code
  
  
  Known issues: 
@@ -47,7 +50,7 @@ This is the biggest release of Windows-Interact ever! It brings an uncountable n
    - Using `Start-Sleep` with any value greater than 800ms will cause some very odd issues with the internals of `Win.PowerShell()`. This is because 800ms is the extra time that each command is manually seperated to better discern output. This will be fixed in the future, but for now, avoid using `Start-Sleep` if possible
 
  What's next: 
- - `Win.PowerShell()` is going to be optimized as much as possible and ran through with a fine tooth comb over the next few months.  
+ - `Win.PowerShell()` is going to be optimized as much as possible and ran through with a fine tooth comb over the next few months.
  - There will be a lot of refactoring coming soon, this project is getting massive and its time to split it up a little.
  - Better documentation / An official, actually navigateable website.
  - Most or all methods will be converted to Promises instead of callbacks
@@ -436,18 +439,18 @@ Win.appManager.register({
     }
 });
 ```
-#### Register a group for previously registered app
+#### Group together registered apps
 
 ```javascript
 
 Win.appManager.register.group({
     "Stuff": {
         apps: ["Pad", "Mozilla"],
-        onLaunch: function() {
-            console.log('Something in stuff launched');
+        onLaunch: function(appName) {
+            console.log(appName + ' launched');
         },
-        onKill: function() {
-            console.log('Something in stuff was killed');
+        onKill: function(appName) {
+            console.log(appName + ' killed');
         }
     }
 }); 

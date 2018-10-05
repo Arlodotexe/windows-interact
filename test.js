@@ -10,13 +10,8 @@ Win.set.preferences({
         }
     }
 }); */
-(async function() {
-    
-    await Win.prompt('Test', 'Title');
-    await Win.alert('Test');
-    await Win.alert('Tickle');
-})();
 
+Win.log('test', {color: 'g'})
 let x = ['write-host "test"', 'write-host "Still alive?"'];
 let com = 'get-process "Code" | select ProcessName, MainWindowTitle';
 let note = 'get-process "notepad" | select ProcessName, MainWindowTitle';
