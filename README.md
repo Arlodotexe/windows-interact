@@ -23,8 +23,6 @@ With `windows-interact`, NodeJS gains the following functionality:
 
 **The current released version is 1.3.0. [See the release notes](changelog.md) if this version number differs from below**
 
-This is the biggest release of Windows-Interact ever! It brings an uncountable number of bug fixes and many new features, none of which are as huge as the arrival of the [PowerShell session manager](https://github.com/Arlodotexe/windows-interact#winpowershell)!
-
 ## New in version (1.3.0): 
  - New display methods, including:
     - Get/Set resolution
