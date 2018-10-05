@@ -1,6 +1,9 @@
 # Changelog
 I only started keeping a changelog for Windows Interact as of 1.1.7, but if you really want to see all the changes across all of the released versions, you can compare different versions of README.md in Github.
 
+### Patch 1.3.1:
+ - Fixed Win.PowerShell.newCommand rejecting empty 2nd and 3rd parameters
+
 ## 1.3.0
 
 New in this version: 
@@ -28,14 +31,10 @@ New in this version:
    - Using `Start-Sleep` with any value greater than 800ms will cause some very odd issues with the internals of `Win.PowerShell()`. This is because 800ms is the extra time that each command is manually seperated to better discern output. This will be fixed in the future, but for now, avoid using `Start-Sleep` if possible
 
 
-## 1.2.2
-
-Minor update
+## Patch 1.2.2
  - Fixed a breaking bug with Win.prompt()
 
-## 1.2.1
-
-Minor update
+##  Patch1.2.1
  - Changed some NPM stuff
 
 ## 1.2.0

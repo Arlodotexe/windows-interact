@@ -21,7 +21,10 @@ With `windows-interact`, NodeJS gains the following functionality:
 
 ---
 
-**The current released version is 1.3.0. [See the release notes](changelog.md) if this version number differs from below**
+**The current released version is 1.3.1. [See the release notes](changelog.md) if this version number differs from below**
+
+### Patch 1.3.1:
+ - Fixed Win.PowerShell.newCommand rejecting empty 2nd and 3rd parameters
 
 ## New in version (1.3.0): 
  - New display methods, including:
