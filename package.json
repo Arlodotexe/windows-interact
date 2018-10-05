@@ -1,6 +1,6 @@
 {
   "name": "windows-interact",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "NPM Library of various tools for interacting with and automating Windows ",
   "keywords": [
     "windows", "interact", "window", "minimize", "maximize", "notification", "notify", "toast", "powershell", "node-powershell", "screenshot", "screen shot", "audio", "playback", "control", "input", "output", "audio devices",  "logger", "file picker", "screen saver", "process", "managment", "app", "manager", "nircmd"
