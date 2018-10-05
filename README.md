@@ -33,8 +33,8 @@ This is the biggest release of Windows-Interact ever! It brings an uncountable n
  - Added detection for audio transmitted through both input and output (`Win.get.audioDevices.output.transmitting`, `Win.get.audioDevices.input.transmitting`).
 
  What's changed: 
- - Added `stackTrace` as a verbosity option. From now on, most methods that use PowerShell will start hiding their large and irrelevant error stack trace unless this option is enabled
- - `Win.log()` now parses Javascript objects and prints functions properly (Similar to console.log. Formatting and color is coming soon)
+ - Added `stackTrace` as a verbosity option. From now on, most internal methods that use PowerShell will start hiding their large and irrelevant error stack trace unless this option is enabled
+ - `Win.log()` now parses Javascript objects properly (Similar to console.log. Formatting and color is coming soon)
  - App Manager:
     - Added verbosity options
     - onLaunch and onKill now return the name of the relevant application

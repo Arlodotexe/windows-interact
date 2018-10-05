@@ -1,6 +1,33 @@
 # Changelog
 I only started keeping a changelog for Windows Interact as of 1.1.7, but if you really want to see all the changes across all of the released versions, you can compare different versions of README.md in Github.
 
+## 1.3.0
+
+New in this version: 
+ - New display methods, including:
+    - Get/Set resolution
+    - Set projection mode
+ - Added `Win.get.user.idleTime()` to check the idle time of the user (last keyboard or mouse input)
+ - Added detection for audio transmitted through both input and output (`Win.get.audioDevices.output.transmitting`, `Win.get.audioDevices.input.transmitting`).
+
+ What's changed: 
+ - Added `stackTrace` as a verbosity option. From now on, most internal methods that use PowerShell will start hiding their large and irrelevant error stack trace unless this option is enabled
+ - `Win.log()` now parses Javascript objects properly (Similar to console.log. Formatting and color is coming soon)
+ - App Manager:
+    - Added verbosity options
+    - onLaunch and onKill now return the name of the relevant application
+ - Fixed bugs with `Win.alert()` and `Win.confirm()` and now uses the same PowerShell Session under the hood to prevent excessive process spawning 
+ - Fixed a bug where Window Titles in `Win.appManager.registeredApps` would all be the same as the first app
+ - Fixed an error associated with the AudioDeviceCmdlets module that appeared when installing windows-interact
+ - Fixed `Win.notify()` and `Win.filePicker()` (These were broken in the last release, so sorry!)
+ - Cleanup up miscellaneous internal code
+ 
+ 
+ Known issues: 
+ - `Win.PowerShell()`:
+   - Using `Start-Sleep` with any value greater than 800ms will cause some very odd issues with the internals of `Win.PowerShell()`. This is because 800ms is the extra time that each command is manually seperated to better discern output. This will be fixed in the future, but for now, avoid using `Start-Sleep` if possible
+
+
 ## 1.2.2
 
 Minor update
@@ -14,7 +41,7 @@ Minor update
 ## 1.2.0
 ---
 
-Originally released as 1.1.8 (with patches from 1.1.9), windows-interact was bumped to v1.2.0 due to the massive amount of new features and bug fixes.
+Originally released as 1.1.8 (with patches from 1.1.9), windows-interact was bumped to v1.2.0 due to the massive amount of new features and bug fixes. This version also marks the start of proper Semanitc Versioning in Windows-Interact
 
 New in this version: 
  - `Win.appManager()` now has group app management
