@@ -652,9 +652,9 @@ const Win = {
 		fn.newCommand = function(command, callback, options) {
 			if (typeof command !== 'string') {
 				Win.error('First parameter of Win.PowerShell.newCommand must be a string');
-			} else if (typeof callback !== 'function') {
+			} else if (typeof callback !== 'function' && callback !== undefined) {
 				Win.error('Second parameter of Win.PowerShell.newCommand must be a function');
-			} else if (typeof options !== 'object') {
+			} else if (typeof options !== 'object' && options !== undefined) {
 				Win.error('Third parameter of Win.PowerShell.newCommand must be an object');
 			} else if (options && options.id == undefined) {
 				Win.error('Third parameter of Win.PowerShell.newCommand must contain an ID to target an existing session');

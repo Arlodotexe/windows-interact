@@ -11,10 +11,8 @@ Win.set.preferences({
     }
 }); */
 
-Win.filePicker('Choose an app', 'C:\\Program Files\\', {filtertext: 'Programs', filterby: '*.exe'}, false, function(result){
-    console.log(result); // Path of a single chosen .exe file
-});
 
+Win.set.audioDevices.output.volume(50);
 /* Win.PowerShell([`
 $WindowTitle = "${(windowTitle ? windowTitle : `Select a File`)}";
 $InitialDirectory = "${(initialDirectory ? replaceAll(initialDirectory, '\\\\', '\\') : `C:\\`)}";
