@@ -1368,7 +1368,7 @@ const Win = {
 			else if (region == 'window') nircmd('savescreenshotwin ' + path, () => {
 				resolve();
 			});
-			else Win.log('Paramter region must have a value of "full" or "window"', { colour: 'yellow' });
+			else Win.log('Parameter region must have a value of "full" or "window"', { colour: 'yellow' });
 		});
 	},
 	playAudio: function(path, id) {
@@ -1387,7 +1387,7 @@ const Win = {
 			if (result) {
 				Win.PowerShell.endSession("windows-interact-internal-audioplayer-" + id);
 			} else {
-				Win.error('Unable to stop audio. ID given does not exist as an active audio session');
+				Win.error('Unable to stop audio. Supplied ID does not exist as an active audio session');
 			}
 		});
 	},
