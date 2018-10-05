@@ -1402,21 +1402,21 @@ const Win = {
 		}
 
 		Win.PowerShell([`
-										function Read-OpenFileDialog([string]$WindowTitle, [string]$InitialDirectory, [string]$Filter = "All files (*.*)|*.*", [switch]$AllowMultiSelect)
-		{
-								Add-Type - AssemblyName System.Windows.Forms
-			$openFileDialog = New - Object System.Windows.Forms.OpenFileDialog
-			$openFileDialog.Title = $WindowTitle
-			if(![string]:: IsNullOrWhiteSpace($InitialDirectory)) { $openFileDialog.InitialDirectory = $InitialDirectory }
-						$openFileDialog.Filter = $Filter
-						if ($AllowMultiSelect) { $openFileDialog.MultiSelect = $true }
-						$openFileDialog.ShowHelp = $true	# Without this line the ShowDialog() function may hang depending on system configuration and running from console vs.ISE.
-							$openFileDialog.ShowDialog() > $null
-						if ($AllowMultiSelect) { return $openFileDialog.Filenames } else { return $openFileDialog.Filename }
-					} `,
-			`
-					$filePath = Read - OpenFileDialog - WindowTitle "${(windowTitle ? windowTitle : `Select a File`)}" - InitialDirectory '${(initialDirectory ? replaceAll(initialDirectory, '\\\\', '\\') : `C:\\`)}' ${(filter && filter.filtertext && filter.filterby) ? `-Filter "${filter.filtertext} (${filter.filterby})|${filter.filterby}"` : ''} ${(allowMultiSelect ? `-AllowMultiSelect` : '')}; if (![string]:: IsNullOrEmpty($filePath)) { Write - Host "$filePath" } else { "No file was selected" }
-						`], result => {
+		$WindowTitle = "${(windowTitle ? windowTitle : `Select a File`)}";
+		$InitialDirectory = "${(initialDirectory ? replaceAll(initialDirectory, '\\\\', '\\') : `C:\\`)}";
+		${(filter && filter.filtertext && filter.filterby) ? `$Filter = "${filter.filtertext} (${filter.filterby})|${filter.filterby}"` : ''}
+		$AllowMultiSelect = ${(allowMultiSelect == true ? '$true' : '$false')};
+		
+			Add-Type -AssemblyName System.Windows.Forms;
+			$openFileDialog = New-Object System.Windows.Forms.OpenFileDialog;
+			$openFileDialog.Title = $WindowTitle;
+			if (![string]::IsNullOrWhiteSpace($InitialDirectory)) { $openFileDialog.InitialDirectory = $InitialDirectory }
+			$openFileDialog.Filter = $Filter;
+			if ($AllowMultiSelect) { $openFileDialog.MultiSelect = $true }
+			$openFileDialog.ShowHelp = $true;
+			$openFileDialog.ShowDialog() > $null;
+			if ($AllowMultiSelect) { return $openFileDialog.Filenames } else { return $openFileDialog.Filename }
+			if (![string]:: IsNullOrEmpty($filePath)) { Write-Host "$filePath" } else { "No file was selected" }`], result => {
 				if (typeof callback == 'function') callback(result[0].includes('No file was selected') ? undefined : result[0]);
 			}, { noLog: true });
 	},
