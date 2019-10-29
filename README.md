@@ -19,6 +19,9 @@ With `windows-interact`, NodeJS gains the following functionality:
 - VERY Advanced [PowerShell](https://github.com/Arlodotexe/windows-interact#winpowershell) session manager
   -  More advanced than [node-powershell](https://www.npmjs.com/package/node-powershell), with automatic output collection and seperation, and the ability to run multiple command in succession by passing in array. 
 
+### **This project is no longer maintained**. 
+It was written long ago, before I really knew what I was doing. It will likely not be updated in the future. PRs still welcome
+
 ---
 
 **The current released version is 1.3.1. [See the release notes](changelog.md) if this version number differs from below**
