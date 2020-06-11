@@ -2,6 +2,11 @@
 
 This library is a collection of tools for interacting with and automating Windows. It is designed to simplify and enhance existing tools while providing access to powerful new features.
 
+### **This project is no longer maintained**. 
+It was written long ago, before I really knew what I was doing. It will likely not be updated in the future. PRs still welcome.
+
+---
+
 With `windows-interact`, NodeJS gains the following functionality:
 
 - [Control over audio devices](https://github.com/Arlodotexe/windows-interact#set-the-volume-of-the-current-audio-device)
@@ -18,9 +23,6 @@ With `windows-interact`, NodeJS gains the following functionality:
 - Enhanced [logging](https://github.com/Arlodotexe/windows-interact#winlog) and [error throwing](https://github.com/Arlodotexe/windows-interact#winerror)
 - VERY Advanced [PowerShell](https://github.com/Arlodotexe/windows-interact#winpowershell) session manager
   -  More advanced than [node-powershell](https://www.npmjs.com/package/node-powershell), with automatic output collection and seperation, and the ability to run multiple command in succession by passing in array. 
-
-### **This project is no longer maintained**. 
-It was written long ago, before I really knew what I was doing. It will likely not be updated in the future. PRs still welcome
 
 ---
 
